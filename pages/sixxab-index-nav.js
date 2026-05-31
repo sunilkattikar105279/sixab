@@ -1,6 +1,5 @@
-Sixxab index nav · JS
 import { useState, useEffect, useRef } from "react"
- 
+
 const TIERS = [
   {
     id: "starter", name: "Starter", price: 29,
@@ -21,20 +20,20 @@ const TIERS = [
     cta: "Start for $34.50 / mo", highlight: false,
   },
 ]
- 
+
 const DEMO_MSGS = [
   { role: "user", text: "I want to launch a SaaS tool for HVAC contractors in Dallas. Where do I start?" },
   { role: "ai", text: "Sharp niche. Here's your Day 1 plan:\n\n1. Build a single-output MVP: proposal writer that turns a job form into a professional PDF in 60 seconds.\n2. Price at $49/mo — contractors bill $150/hr, this saves them 2 hours a week.\n3. DM 10 HVAC owners on LinkedIn today with a free trial.\n\nWhat's your tech skill level — can you ship a React app?" },
   { role: "user", text: "Yes I can code. What's the fastest way to get first revenue?" },
   { role: "ai", text: "Build in 6 hours, charge in 24:\n\n• Hour 1–3: Claude API + 1 intake form → output on Vercel free\n• Hour 4: Stripe checkout, $49/mo\n• Hour 5: Landing page, demo screenshot, live link\n• Hour 6: DM 20 warm contacts — offer 50% off for feedback\n\nYou only need 1 paying customer to prove the model. Go." },
 ]
- 
+
 const PROOF = [
   { name: "Marcus T.", role: "Solo founder, Dallas", quote: "Closed my first $2,400 client on Day 3. SIXXAB told me exactly what to say and who to call." },
   { name: "Priya S.", role: "Freelance consultant", quote: "Idea to landing page in 48 hours. The strategy sessions feel like a McKinsey advisor in my pocket." },
   { name: "Jason K.", role: "SaaS entrepreneur", quote: "Hit $5k MRR in 6 weeks. The niche framework alone was worth 10× the price." },
 ]
- 
+
 // ── SIXXAB SVG Icon ──────────────────────────────────────────────────────
 function SixabIcon({ size = 32 }) {
   return (
@@ -45,7 +44,7 @@ function SixabIcon({ size = 32 }) {
     </svg>
   )
 }
- 
+
 // ── SIXXAB Wordmark ─────────────────────────────────────────────────────
 function SixabWordmark({ size = 28, domainSize = 11, dark = false }) {
   const base = dark ? "#0A0E1A" : "#F5F5F0"
@@ -60,7 +59,7 @@ function SixabWordmark({ size = 28, domainSize = 11, dark = false }) {
     </div>
   )
 }
- 
+
 export default function SixabLanding() {
   const [activeMsg, setActiveMsg] = useState(0)
   const [typed, setTyped] = useState("")
@@ -71,7 +70,7 @@ export default function SixabLanding() {
   const [scrollY, setScrollY] = useState(0)
   const demoRef = useRef(null)
   const pricingRef = useRef(null)
- 
+
   useEffect(() => {
     if (activeMsg >= DEMO_MSGS.length) return
     const msg = DEMO_MSGS[activeMsg]
@@ -83,13 +82,13 @@ export default function SixabLanding() {
     }, 14)
     return () => clearInterval(iv)
   }, [activeMsg])
- 
+
   useEffect(() => {
     const fn = () => setScrollY(window.scrollY)
     window.addEventListener("scroll", fn, { passive: true })
     return () => window.removeEventListener("scroll", fn)
   }, [])
- 
+
   async function handleCheckout(tier) {
     // Check if user is logged in — if not, send to login/signup with plan context
     const storedUser = typeof window !== "undefined" && sessionStorage.getItem("sixxab_user")
@@ -109,10 +108,10 @@ export default function SixabLanding() {
     } catch (err) { alert("Checkout error: " + err.message) }
     finally { setLoading(false) }
   }
- 
+
   const [betaError, setBetaError] = useState("")
   const [betaLoading, setBetaLoading] = useState(false)
- 
+
   async function handleBeta(e) {
     e.preventDefault()
     if (!email || !email.includes("@")) { setBetaError("Enter a valid email address."); return }
@@ -125,7 +124,7 @@ export default function SixabLanding() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || "Something went wrong")
- 
+
       // Surface Resend error directly on screen — remove once email is confirmed working
       if (data.debugInfo && !data.debugInfo.welcome?.ok) {
         const err = data.debugInfo.welcome?.resendError || "unknown error"
@@ -141,12 +140,12 @@ export default function SixabLanding() {
       setBetaLoading(false)
     }
   }
- 
+
   const scrollTo = ref => ref.current?.scrollIntoView({ behavior: "smooth" })
- 
+
   const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0", INK = "#111520"
   const navBg = scrollY > 20 ? "rgba(10,14,26,0.96)" : "transparent"
- 
+
   return (
     <>
       <style>{`
@@ -177,7 +176,7 @@ export default function SixabLanding() {
         .nav-link:hover{color:${CHALK}}
         @media(max-width:640px){.nav-links{display:none!important}}
       `}</style>
- 
+
       {/* ── NAV ── */}
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 5%", height: 62, background: navBg, backdropFilter: scrollY > 20 ? "blur(14px)" : "none", transition: "background .3s", borderBottom: scrollY > 20 ? "0.5px solid rgba(255,255,255,.07)" : "none" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -194,29 +193,29 @@ export default function SixabLanding() {
           <button className="btn-amber" style={{ padding: "7px 18px", fontSize: 13 }} onClick={() => scrollTo(pricingRef)}>Get 50% off →</button>
         </div>
       </nav>
- 
+
       {/* ── HERO ── */}
       <section style={{ minHeight: "100vh", background: N, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 5% 80px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 65% 50% at 50% 38%, rgba(239,159,39,.1) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(239,159,39,.15) 1px, transparent 1px)", backgroundSize: "34px 34px", opacity: .15, pointerEvents: "none" }} />
- 
+
         <div className="fade1" style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "5px 14px", borderRadius: 20, border: "1px solid rgba(239,159,39,.3)", background: "rgba(239,159,39,.08)", fontSize: 12, fontWeight: 500, color: AMBER, marginBottom: 28 }}>
           <span className="pulsedot" /> Beta launch — 50% off founding members
         </div>
- 
+
         <h1 className="fade2" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(48px, 7vw, 88px)", color: CHALK, textAlign: "center", maxWidth: 820, marginBottom: 20, lineHeight: 1.05, letterSpacing: 2 }}>
           Your entire startup.<br />In one bo<span style={{ color: AMBER, fontStyle: "italic" }}>x</span>.
         </h1>
- 
+
         <p className="fade3" style={{ fontSize: "clamp(15px, 2vw, 19px)", color: "rgba(245,245,240,.58)", textAlign: "center", maxWidth: 540, marginBottom: 38 }}>
           SIXXAB packs strategy, launch, marketing and sales into one AI — so any founder can go from idea to revenue in 48 hours.
         </p>
- 
+
         <div className="fade3" style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginBottom: 60 }}>
           <button className="btn-amber" onClick={() => scrollTo(pricingRef)}>Start for $14.50 / mo →</button>
           <button className="btn-ghost" onClick={() => scrollTo(demoRef)}>See it live ↓</button>
         </div>
- 
+
         {/* DEMO WINDOW */}
         <div className="fade4" ref={demoRef} style={{ width: "100%", maxWidth: 720 }}>
           <div style={{ background: "#1C2235", borderRadius: "14px 14px 0 0", padding: "10px 16px", display: "flex", alignItems: "center", gap: 6, border: "1px solid rgba(255,255,255,.07)", borderBottom: "none" }}>
@@ -238,14 +237,14 @@ export default function SixabLanding() {
           </div>
         </div>
       </section>
- 
+
       {/* PROOF STRIP */}
       <div style={{ background: INK, borderTop: "1px solid rgba(255,255,255,.05)", padding: "13px 5%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap", fontSize: 13, color: "rgba(255,255,255,.45)" }}>
         {[["🎯", "Dallas-born"], ["247+", "founders inside"], ["2.3 days", "avg first revenue"], ["72", "Net Promoter Score"]].map(([val, lbl], i) => (
           <span key={i}>{i > 0 && <span style={{ margin: "0 8px", opacity: .3 }}>·</span>}<strong style={{ color: CHALK }}>{val}</strong> {lbl}</span>
         ))}
       </div>
- 
+
       {/* HOW IT WORKS */}
       <section style={{ padding: "90px 5%", background: "#fff" }}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -269,7 +268,7 @@ export default function SixabLanding() {
           ))}
         </div>
       </section>
- 
+
       {/* PRICING */}
       <section ref={pricingRef} style={{ padding: "90px 5%", background: "#F7F8FA" }}>
         <div style={{ textAlign: "center", marginBottom: 46 }}>
@@ -308,7 +307,7 @@ export default function SixabLanding() {
           🛡️ <strong style={{ color: "#475569" }}>14-day money-back guarantee</strong> — if SIXXAB doesn't help you make progress in 2 weeks, full refund. No questions.
         </p>
       </section>
- 
+
       {/* TESTIMONIALS */}
       <section style={{ background: N, padding: "90px 5%" }}>
         <div style={{ textAlign: "center", marginBottom: 46 }}>
@@ -328,7 +327,7 @@ export default function SixabLanding() {
           ))}
         </div>
       </section>
- 
+
       {/* BETA CTA */}
       <section style={{ background: AMBER, padding: "72px 5%", textAlign: "center" }}>
         {/* Counter row */}
@@ -338,7 +337,7 @@ export default function SixabLanding() {
           ))}
           <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(10,14,26,.75)", marginLeft: 6 }}>247 founders already inside</span>
         </div>
- 
+
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(32px, 5vw, 58px)", color: N, marginBottom: 10, letterSpacing: 1.5, lineHeight: 1.05 }}>
           Get 50% off.<br />Locked forever.
         </h2>
@@ -346,7 +345,7 @@ export default function SixabLanding() {
           Founding member rate: <strong style={{ color: N }}>$14.50 · $24.50 · $34.50/mo</strong><br />
           Your price never goes up — ever.
         </p>
- 
+
         {betaSubmitted ? (
           <div style={{ background: "rgba(10,14,26,.1)", borderRadius: 14, padding: "20px 28px", display: "inline-block", maxWidth: 440 }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
@@ -394,7 +393,7 @@ export default function SixabLanding() {
           </div>
         )}
       </section>
- 
+
       {/* FOOTER */}
       <footer style={{ background: INK, borderTop: "1px solid rgba(255,255,255,.06)", padding: "28px 5%", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
