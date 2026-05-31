@@ -5,8 +5,8 @@ const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
 export default function DiscoveryPage() {
   // ── SET YOUR CALENDLY LINK HERE ─────────────────────────────────────────
   // Go to calendly.com → create a 20-min event → copy the link
-  // Example: https://calendly.com/sunil-kattikar/20min
-  const CALENDLY = "https://calendly.com/sunil-kattikar/20min"
+  // Example: https://calendly.com/sunil-kattikar
+  const CALENDLY = "https://calendly.com/sunil-kattikar"
   // ────────────────────────────────────────────────────────────────────────
 
   return (
