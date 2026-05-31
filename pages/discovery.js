@@ -1,14 +1,14 @@
 import Head from "next/head"
- 
+
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
- 
+
 export default function DiscoveryPage() {
   // ── SET YOUR CALENDLY LINK HERE ─────────────────────────────────────────
   // Go to calendly.com → create a 20-min event → copy the link
   // Example: https://calendly.com/sunil-kattikar/20min
   const CALENDLY = "https://calendly.com/sunil-kattikar/20min"
   // ────────────────────────────────────────────────────────────────────────
- 
+
   return (
     <>
       <Head>
@@ -21,7 +21,7 @@ export default function DiscoveryPage() {
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;min-height:100vh}
         a{text-decoration:none}
       `}</style>
- 
+
       {/* Nav */}
       <nav style={{background:N,padding:"0 5%",height:58,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
         <a href="/" style={{display:"flex",alignItems:"center",gap:10}}>
@@ -44,7 +44,7 @@ export default function DiscoveryPage() {
           <a href="/login" style={{padding:"6px 16px",borderRadius:8,background:AMBER,color:N,fontSize:13,fontWeight:600}}>Get started</a>
         </div>
       </nav>
- 
+
       {/* Hero */}
       <div style={{background:N,padding:"48px 5% 40px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:20,border:"1px solid rgba(239,159,39,.3)",background:"rgba(239,159,39,.08)",fontSize:12,fontWeight:500,color:AMBER,marginBottom:18}}>
@@ -62,10 +62,10 @@ export default function DiscoveryPage() {
           <span>✓ Pure strategy — no pitch</span>
         </div>
       </div>
- 
+
       {/* Main content */}
       <div style={{maxWidth:1100,margin:"0 auto",padding:"36px 20px 80px",display:"grid",gridTemplateColumns:"1fr 300px",gap:24,alignItems:"start"}}>
- 
+
         {/* Calendly embed — full iframe */}
         <div style={{background:"#fff",borderRadius:16,border:"1px solid #E2E8F0",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.06)"}}>
           {/* Card header */}
@@ -80,7 +80,7 @@ export default function DiscoveryPage() {
               Available this week
             </div>
           </div>
- 
+
           {/* Calendly iframe */}
           <iframe
             src={CALENDLY}
@@ -92,10 +92,10 @@ export default function DiscoveryPage() {
             style={{display:"block",border:"none",minHeight:700}}
           />
         </div>
- 
+
         {/* Sidebar */}
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
- 
+
           {/* What we cover */}
           <div style={{background:N,borderRadius:14,padding:20}}>
             <div style={{fontSize:11,fontWeight:600,color:"rgba(245,245,240,.45)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:14}}>What we'll cover</div>
@@ -114,7 +114,7 @@ export default function DiscoveryPage() {
               </div>
             ))}
           </div>
- 
+
           {/* Testimonial */}
           <div style={{background:"#fff",borderRadius:14,border:"1px solid #E2E8F0",padding:16}}>
             <div style={{color:AMBER,fontSize:13,marginBottom:8}}>★★★★★</div>
@@ -123,7 +123,7 @@ export default function DiscoveryPage() {
             </p>
             <div style={{fontSize:12,fontWeight:600,color:N}}>Marcus T. · Solo founder, Dallas</div>
           </div>
- 
+
           {/* What you'll leave with */}
           <div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:14,padding:16}}>
             <div style={{fontSize:12,fontWeight:600,color:"#166534",marginBottom:10}}>🎯 You'll walk away with</div>
@@ -138,7 +138,7 @@ export default function DiscoveryPage() {
               </div>
             ))}
           </div>
- 
+
           {/* Alternative contact */}
           <div style={{background:"#fff",borderRadius:14,border:"1px solid #E2E8F0",padding:16}}>
             <div style={{fontSize:12,fontWeight:600,color:"#64748B",marginBottom:10}}>Can't find a time?</div>
@@ -153,7 +153,7 @@ export default function DiscoveryPage() {
           </div>
         </div>
       </div>
- 
+
       {/* Footer */}
       <footer style={{background:"#111520",borderTop:"1px solid rgba(255,255,255,.06)",padding:"18px 5%",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
