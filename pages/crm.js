@@ -651,7 +651,7 @@ Return ONLY the message text, no preamble.`
             {genLoading ? <div style={{color:"rgba(245,245,240,.5)",fontSize:13,textAlign:"center",padding:"10px 0"}}>Generating script…</div>
               : <p style={{fontSize:13,color:"rgba(245,245,240,.85)",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{genScript}</p>}
           </div>
-          {!genLoading && <div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,.08)",display:"flex",gap:8"}}>
+          {!genLoading && <div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,.08)",display:"flex",gap:8}}>
             <button onClick={()=>{navigator.clipboard.writeText(genScript);showToast("Copied!")}} className="btn btn-amber" style={{flex:1,justifyContent:"center",fontSize:12}}>
               <i className="ti ti-copy" aria-hidden="true"/>Copy script
             </button>
