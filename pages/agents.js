@@ -1,5 +1,26 @@
 import { useState, useRef, useEffect } from "react"
 
+// ── Load CRM contacts from localStorage (shared with /crm page) ──────────────
+const CRM_KEY = "sixxab_crm_contacts"
+function loadCRMContacts() {
+  if (typeof window === "undefined") return []
+  try { return JSON.parse(localStorage.getItem(CRM_KEY) || "[]") } catch { return [] }
+}
+function saveCRMContacts(list) {
+  try { localStorage.setItem(CRM_KEY, JSON.stringify(list)) } catch {}
+}
+function crmToLead(c) {
+  return {
+    id: c.id, name: c.name, role: c.role||"", email: c.email||"",
+    phone: c.phone||"", linkedin: c.linkedin||"", company: c.company||"",
+    status: c.score>=80?"hot":c.score>=60?"warm":c.score>=40?"demo":"cold",
+    score: c.score||50, source: c.source||"LinkedIn",
+    lastTouch: c.lastTouch||"—", value: c.value||"Starter",
+    stage: c.stage||"Prospect", notes: c.notes||"", tags: c.tags||[],
+    assignedAgent: c.assignedAgent||"marketing",
+  }
+}
+
 // ── CXO definitions ─────────────────────────────────────────────────────────
 const CXOS = [
   {
@@ -85,22 +106,23 @@ const AGENTS = {
   tech: { label:"Tech Agent", icon:"ti-code", color:"#378ADD", desc:"Architecture decisions, code review, deployment and API integrations" },
 }
 
-// ── Lead statuses and sample leads ───────────────────────────────────────────
-const LEADS = [
-  { id:1, name:"Sarah Chen",     role:"Freelance designer",    email:"sarah@example.com", phone:"+1-214-555-0101", status:"hot",   score:92, source:"LinkedIn",   lastTouch:"2h ago", value:"Pro" },
-  { id:2, name:"Mike Rodriguez", role:"HVAC contractor owner",  email:"mike@example.com",  phone:"+1-972-555-0202", status:"warm",  score:74, source:"Instagram",  lastTouch:"1d ago", value:"Starter" },
-  { id:3, name:"Priya Nair",     role:"Business consultant",    email:"priya@example.com", phone:"+1-469-555-0303", status:"hot",   score:88, source:"Referral",   lastTouch:"4h ago", value:"Agency" },
-  { id:4, name:"Tom Walsh",      role:"Real estate agent",      email:"tom@example.com",   phone:"+1-817-555-0404", status:"cold",  score:31, source:"X / Twitter", lastTouch:"5d ago", value:"Starter" },
-  { id:5, name:"Angela Brooks",  role:"Marketing freelancer",   email:"angela@example.com",phone:"+1-214-555-0505", status:"warm",  score:67, source:"Email",      lastTouch:"6h ago", value:"Pro" },
-  { id:6, name:"James Park",     role:"E-commerce seller",      email:"james@example.com", phone:"+1-972-555-0606", status:"demo",  score:81, source:"LinkedIn",   lastTouch:"1h ago", value:"Pro" },
+// ── SAMPLE leads shown when CRM is empty ─────────────────────────────────────
+const SAMPLE_LEADS = [
+  { id:"s1", name:"Sarah Chen",     role:"Freelance designer",    email:"sarah@example.com", phone:"+1-214-555-0101", status:"hot",   score:92, source:"LinkedIn",    lastTouch:"2h ago",  value:"Pro",     stage:"Closed ✓",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
+  { id:"s2", name:"Mike Rodriguez", role:"HVAC contractor owner",  email:"mike@example.com",  phone:"+1-972-555-0202", status:"warm",  score:74, source:"Instagram",   lastTouch:"1d ago",  value:"Starter", stage:"Outreach",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
+  { id:"s3", name:"Priya Nair",     role:"Business consultant",    email:"priya@example.com", phone:"+1-469-555-0303", status:"hot",   score:88, source:"Referral",    lastTouch:"4h ago",  value:"Agency",  stage:"Proposal",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"sales" },
+  { id:"s4", name:"Tom Walsh",      role:"Real estate agent",      email:"tom@example.com",   phone:"+1-817-555-0404", status:"cold",  score:31, source:"X / Twitter", lastTouch:"5d ago",  value:"Starter", stage:"Prospect",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
+  { id:"s5", name:"Angela Brooks",  role:"Marketing freelancer",   email:"angela@example.com",phone:"+1-214-555-0505", status:"warm",  score:67, source:"Email",       lastTouch:"6h ago",  value:"Pro",     stage:"Outreach",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
+  { id:"s6", name:"James Park",     role:"E-commerce seller",      email:"james@example.com", phone:"+1-972-555-0606", status:"demo",  score:81, source:"LinkedIn",    lastTouch:"1h ago",  value:"Pro",     stage:"Demo",      linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"sales" },
 ]
 
 const PIPELINE = [
-  {stage:"Prospect",color:"#F1EFE8",txt:"#5F5E5A",leads:[4]},
-  {stage:"Outreach",color:"#FAEEDA",txt:"#633806",leads:[2,5]},
-  {stage:"Demo",color:"#E6F1FB",txt:"#0C447C",leads:[6]},
-  {stage:"Proposal",color:"#F5F3FF",txt:"#4C1D95",leads:[3]},
-  {stage:"Closed",color:"#E1F5EE",txt:"#085041",leads:[1]},
+  {stage:"Prospect",  color:"#F1EFE8",txt:"#5F5E5A"},
+  {stage:"Outreach",  color:"#FAEEDA",txt:"#633806"},
+  {stage:"Replied",   color:"#EFF6FF",txt:"#1E40AF"},
+  {stage:"Demo",      color:"#E6F1FB",txt:"#0C447C"},
+  {stage:"Proposal",  color:"#F5F3FF",txt:"#4C1D95"},
+  {stage:"Closed ✓",  color:"#E1F5EE",txt:"#085041"},
 ]
 
 const HR_JOBS = [
@@ -356,7 +378,48 @@ export default function AgentHub() {
                 </div>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                    <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em"}}>Leads ({selectedLeads.length} selected)</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:0}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em"}}>Contacts ({selectedLeads.length} selected)</div>
+                      <div style={{display:"flex",gap:6}}>
+                        <a href="/crm" style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:10.5,fontWeight:500,color:"#1D4ED8",textDecoration:"none"}}>
+                          <i className="ti ti-address-book" style={{fontSize:11}} aria-hidden="true"/>Manage CRM
+                        </a>
+                        <button onClick={()=>setShowCrmPicker(!showCrmPicker)} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:"#FFFBF2",border:"1px solid rgba(239,159,39,.4)",fontSize:10.5,fontWeight:500,color:"#633806",cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
+                          <i className="ti ti-brand-linkedin" style={{fontSize:11,color:"#0A66C2"}} aria-hidden="true"/>Add from CRM
+                        </button>
+                      </div>
+                    </div>
+                    {showCrmPicker && (
+                      <div style={{border:"1px solid #E2E8F0",borderRadius:10,background:"#fff",marginTop:6,overflow:"hidden",maxHeight:220,display:"flex",flexDirection:"column"}}>
+                        <div style={{padding:"8px 10px",borderBottom:"1px solid #F1F5F9"}}>
+                          <input value={crmSearch} onChange={e=>setCrmSearch(e.target.value)}
+                            placeholder="Search CRM contacts…"
+                            style={{width:"100%",border:"1px solid #E2E8F0",borderRadius:7,padding:"5px 9px",fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",outline:"none"}}/>
+                        </div>
+                        <div style={{overflowY:"auto",flex:1}}>
+                          {crmContacts.length === 0 ? (
+                            <div style={{padding:"16px",textAlign:"center",fontSize:12,color:"#94A3B8"}}>
+                              No CRM contacts yet. <a href="/crm" style={{color:"#0A66C2"}}>Import from LinkedIn →</a>
+                            </div>
+                          ) : crmContacts.filter(c => !crmSearch || `${c.name} ${c.role} ${c.company}`.toLowerCase().includes(crmSearch.toLowerCase())).slice(0,10).map(c => (
+                            <div key={c.id} onClick={()=>addContactFromCRM(crmToLead(c))}
+                              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid #F8F9FA",background:selectedLeads.includes(c.id)?"#FFFBF2":"transparent"}}
+                              onMouseOver={e=>e.currentTarget.style.background="#F8F9FA"}
+                              onMouseOut={e=>e.currentTarget.style.background=selectedLeads.includes(c.id)?"#FFFBF2":"transparent"}>
+                              <div style={{width:24,height:24,borderRadius:"50%",background:"rgba(239,159,39,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:"#EF9F27",flexShrink:0}}>
+                                {c.name.split(" ").map(w=>w[0]).slice(0,2).join("")}
+                              </div>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:500,color:"#0A0E1A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.name}</div>
+                                <div style={{fontSize:10,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.role||c.company}</div>
+                              </div>
+                              {c.linkedin && <i className="ti ti-brand-linkedin" style={{fontSize:12,color:"#0A66C2",flexShrink:0}} aria-hidden="true"/>}
+                              {selectedLeads.includes(c.id) && <span style={{fontSize:10,color:"#1D9E75",fontWeight:600,flexShrink:0}}>✓</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div style={{display:"flex",gap:6}}>
                       {["all","hot","warm","cold"].map(f => (
                         <button key={f} className="chip" onClick={()=>setPipelineFilter(f)}
@@ -420,13 +483,18 @@ export default function AgentHub() {
               {/* COO / Sales agent — Pipeline */}
               {(activeCxo==="coo"&&!activeAgent)||activeAgent==="sales" ? <>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Sales pipeline — {LEADS.length} leads · ${LEADS.reduce((a,l)=>a+(l.value==="Pro"?24.5:l.value==="Agency"?34.5:14.5),0).toFixed(2)} potential MRR</div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                    <div style={{fontSize:13,fontWeight:600,color:N}}>Pipeline — {LEADS.length} contacts · ${LEADS.reduce((a,l)=>a+(l.value==="Pro"?99.50:l.value==="Agency"?175:l.value==="Enterprise"?350:49.50),0).toFixed(2)} potential MRR</div>
+                    <a href="/crm" style={{fontSize:11.5,color:"#0A66C2",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:4}}>
+                      <i className="ti ti-external-link" style={{fontSize:11}} aria-hidden="true"/>Open full CRM
+                    </a>
+                  </div>
                   <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
                     {PIPELINE.map((p,i) => (
                       <div key={i} style={{minWidth:140,flex:1,background:p.color,borderRadius:10,padding:12}}>
                         <div style={{fontSize:11,fontWeight:600,color:p.txt,textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>{p.stage}</div>
                         {p.leads.map(lid => {
-                          const l = LEADS.find(x=>x.id===lid); if (!l) return null
+                          const l = LEADS.find(x=>String(x.id)===String(lid)); if (!l) return null
                           return <div key={lid} style={{background:"rgba(255,255,255,.7)",borderRadius:7,padding:"8px 9px",marginBottom:6}}>
                             <div style={{fontSize:12,fontWeight:500,color:N}}>{l.name}</div>
                             <div style={{fontSize:10,color:"#94A3B8"}}>{l.role}</div>
