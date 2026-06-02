@@ -238,8 +238,8 @@ export default function Index() {
         <a href="/" style={{display:"flex",alignItems:"center",gap:9,textDecoration:"none"}}>
           <SXLogo size={26}/>
           <div>
-            <div style={{fontFamily:"'Bebas Neue'",fontSize:20,color:CHALK,letterSpacing:2,lineHeight:1}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-            <div style={{fontFamily:"'DM Mono'",fontSize:8,color:"#5F5E5A",letterSpacing:".14em"}}>startupsinabox.com</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:"#F5F5F0",letterSpacing:1,lineHeight:1}}>SIX<span style={{color:"#EF9F27",fontStyle:"italic"}}>X</span>AB <span style={{fontSize:9,color:"rgba(245,245,240,.4)",letterSpacing:2,fontStyle:"normal"}}>AI</span></div>
+            <div style={{fontFamily:"'DM Mono'",fontSize:8,color:"#5F5E5A",letterSpacing:".12em",fontFamily:"monospace"}}>startupsinabox.com</div>
           </div>
         </a>
         <div className="hide-m" style={{display:"flex",gap:20,alignItems:"center"}}>

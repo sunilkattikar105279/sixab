@@ -174,7 +174,7 @@ export default function RoadmapPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -190,7 +190,7 @@ export default function RoadmapPage() {
       {/* Hero */}
       <div style={{background:N,padding:"36px 5% 28px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:20,border:"1px solid rgba(239,159,39,.35)",background:"rgba(239,159,39,.1)",fontSize:12,fontWeight:500,color:AMBER,marginBottom:16}}>
-          12-month autonomous startup roadmap
+          12-month autonomous business roadmap
         </div>
         <h1 style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(32px,5vw,64px)",color:CHALK,letterSpacing:1.5,marginBottom:12,lineHeight:1}}>
           From launch to <span style={{color:AMBER}}>$1M ARR</span>

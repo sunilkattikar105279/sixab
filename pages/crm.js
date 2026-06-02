@@ -63,7 +63,7 @@ function parseLinkedInPaste(text) {
     }
     if (i+1 < lines.length && lines[i+1].includes("@")) { contact.email = lines[i+1]; i++ }
     if (i+1 < lines.length && lines[i+1].startsWith("+")) { contact.phone = lines[i+1]; i++ }
-    contact.id = Date.now() + Math.random().toString(36).slice(2)
+    contact.id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
     contact.createdAt = new Date().toISOString()
     contact.updatedAt = new Date().toISOString()
     contact.lastTouch = "Just added"
@@ -96,7 +96,7 @@ function parseCSV(text) {
       if (h.includes("note")) c.notes = vals[j] || c.notes
     })
     if (!c.name) continue
-    c.id = Date.now() + Math.random().toString(36).slice(2)
+    c.id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
     c.source = c.source || "LinkedIn"
     c.stage = c.stage || "Prospect"
     c.createdAt = new Date().toISOString()
@@ -141,19 +141,38 @@ export default function CRMPage() {
   const [genLoading,setGenLoading]= useState(false)
   const fileRef = useRef(null)
 
-  useEffect(() => { setContacts(loadContacts()) }, [])
+  useEffect(() => {
+    setContacts(loadContacts())
+    // Listen for updates from other tabs/pages
+    const onStorage = (e) => {
+      if (e.key === 'sixxab_crm_contacts') {
+        try { setContacts(JSON.parse(e.newValue || '[]')) } catch {}
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   function showToast(msg, ok=true) {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 3000)
   }
 
-  function save(list) { setContacts(list); saveContacts(list) }
+  function save(list) {
+    setContacts(list)
+    saveContacts(list)
+    // Broadcast to orchestrator and other tabs
+    try {
+      window.dispatchEvent(new CustomEvent('sixxab_crm_updated', { detail: { count: list.length, contacts: list } }))
+      // Also trigger storage event for cross-tab sync
+      localStorage.setItem('sixxab_crm_lastupdate', Date.now().toString())
+    } catch(e) {}
+  }
 
   function upsertContact(c) {
     c.score = calcScore(c)
     c.updatedAt = new Date().toISOString()
-    const idx = contacts.findIndex(x => x.id === c.id)
+    const idx = contacts.findIndex(x => String(x.id) === String(c.id))
     const next = idx >= 0 ? contacts.map(x => x.id===c.id ? c : x) : [...contacts, c]
     save(next)
     showToast(idx >= 0 ? "Contact updated" : "Contact added")
@@ -164,7 +183,7 @@ export default function CRMPage() {
 
   function deleteContact(id) {
     if (!confirm("Delete this contact?")) return
-    save(contacts.filter(x => x.id !== id))
+    save(contacts.filter(x => String(x.id) !== String(id)))
     setSelected(null)
     setView("list")
     showToast("Contact deleted", false)
@@ -172,7 +191,7 @@ export default function CRMPage() {
 
   function newContact(defaults={}) {
     const c = { ...EMPTY_CONTACT, ...defaults,
-      id: Date.now() + Math.random().toString(36).slice(2),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,  // pure string
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       lastTouch: "Just added" }
     setSelected(c)
@@ -257,7 +276,7 @@ Return ONLY the message text, no preamble.`
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}

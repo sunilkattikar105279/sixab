@@ -1,854 +1,786 @@
+// pages/agents.js — SIXXAB AI · CXO Suite & Agent Hub
+// Complete rebuild: all CXOs working, vertical agent head, real-time CRM sync
 import SixxabNav from "../components/SixxabNav"
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import Head from "next/head"
 
-// ── Load CRM contacts from localStorage (shared with /crm page) ──────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
+const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
 const CRM_KEY = "sixxab_crm_contacts"
-function loadCRMContacts() {
-  if (typeof window === "undefined") return []
+
+function loadCRM() {
   try { return JSON.parse(localStorage.getItem(CRM_KEY) || "[]") } catch { return [] }
 }
-function saveCRMContacts(list) {
-  try { localStorage.setItem(CRM_KEY, JSON.stringify(list)) } catch {}
+function saveCRM(list) {
+  try {
+    localStorage.setItem(CRM_KEY, JSON.stringify(list))
+    localStorage.setItem("sixxab_crm_lastupdate", Date.now().toString())
+    window.dispatchEvent(new CustomEvent("sixxab_crm_updated", { detail: { contacts: list } }))
+  } catch {}
 }
-function crmToLead(c) {
-  return {
-    id: c.id, name: c.name, role: c.role||"", email: c.email||"",
-    phone: c.phone||"", linkedin: c.linkedin||"", company: c.company||"",
-    status: c.score>=80?"hot":c.score>=60?"warm":c.score>=40?"demo":"cold",
-    score: c.score||50, source: c.source||"LinkedIn",
-    lastTouch: c.lastTouch||"—", value: c.value||"Starter",
-    stage: c.stage||"Prospect", notes: c.notes||"", tags: c.tags||[],
-    assignedAgent: c.assignedAgent||"marketing",
-  }
+function mkId() { return `${Date.now()}-${Math.random().toString(36).slice(2)}` }
+function crmScore(c) {
+  let s = 30
+  if (c.email)    s += 15; if (c.phone)   s += 10
+  if (c.linkedin) s += 10; if (c.company) s += 5; if (c.role) s += 5
+  if (c.notes?.length > 10) s += 10
+  const sb = { Prospect:0,Outreach:5,Replied:15,Demo:25,Proposal:35,Negotiation:45,"Closed ✓":60,Lost:0 }
+  s += sb[c.stage] || 0
+  if (c.value === "Pro") s += 5; if (c.value === "Agency" || c.value === "Enterprise") s += 10
+  return Math.min(99, s)
 }
 
-// ── CXO definitions ─────────────────────────────────────────────────────────
+// ── CXO Definitions ───────────────────────────────────────────────────────────
 const CXOS = [
-  {
-    id:"ceo", title:"CEO", name:"Chief Executive Officer",
-    color:"#EF9F27", bg:"#FAEEDA", txt:"#412402",
-    icon:"ti-crown", desc:"Vision, strategy, investors, board, culture and 48-hr revenue execution",
-    agents:["strategy","marketing","sales","content"],
-    kpis:[{l:"Goal",v:"$10k MRR"},{l:"Phase",v:"1 of 3"},{l:"Agents",v:"18"},{l:"Advisors",v:"7"}],
-    chatRole:"You are the SIXXAB CEO AI advisor. You focus on revenue growth, strategic direction, investor readiness, team culture, and 48-hour execution sprints. Be decisive, data-driven and action-oriented.",
-  },
-  {
-    id:"cso", title:"CSO", name:"Chief Sales Officer",
-    color:"#1D9E75", bg:"#E1F5EE", txt:"#04342C",
-    icon:"ti-trending-up", desc:"Sales pipeline, lead qualification, demos, proposals and revenue closing",
+  { id:"ceo",  title:"CEO",  name:"Chief Executive Officer",
+    color:"#EF9F27", icon:"ti-crown",
+    desc:"Vision, strategy, investors, 48-hr sprint execution and revenue targets",
+    agents:["strategy","pitch","financial_model"],
+    chatRole:"You are the SIXXAB CEO AI advisor. Give decisive, revenue-focused guidance. Focus on: goal validation, 48-hour sprint planning, investor readiness, and strategic direction. Always include a specific numbered action." },
+  { id:"cmo",  title:"CMO",  name:"Chief Marketing Officer",
+    color:"#D4537E", icon:"ti-speakerphone",
+    desc:"Brand, content, multi-channel campaigns, Product Hunt, AppSumo and SEO",
+    agents:["marketing","content","social","seo"],
+    chatRole:"You are the SIXXAB CMO AI advisor. Focus on: channel selection, LinkedIn and X growth, content calendar, Product Hunt strategy, AppSumo campaigns, and converting attention into trial signups." },
+  { id:"cso",  title:"CSO",  name:"Chief Sales Officer",
+    color:"#1D9E75", icon:"ti-trending-up",
+    desc:"Pipeline management, lead qualification, demos, proposals and revenue closing",
     agents:["sales","leads","partnership"],
-    kpis:[{l:"Pipeline",v:"SIXXAB AI — CRM"},{l:"Goal",v:"Close deals"},{l:"Tool",v:"Sales agent"},{l:"Track",v:"All stages"}],
-    chatRole:"You are the SIXXAB CSO AI advisor. You focus on sales pipeline management, lead qualification, demo scripts, proposal writing, objection handling, upsell strategy, and revenue closing. Be direct and deal-focused.",
-  },
-  {
-    id:"cto", title:"CTO", name:"Chief Technology Officer",
-    color:"#378ADD", bg:"#E6F1FB", txt:"#042C53",
-    icon:"ti-code", desc:"Tech stack, AI architecture, product roadmap, security and scalability",
+    chatRole:"You are the SIXXAB CSO AI advisor. Focus on: pipeline conversion, demo scripts, proposal writing, objection handling, upsell strategy, and closing. Be direct and give specific scripts when asked." },
+  { id:"cfo",  title:"CFO",  name:"Chief Financial Officer",
+    color:"#378ADD", icon:"ti-chart-line",
+    desc:"MRR, burn rate, unit economics, Stripe reconciliation and fundraising",
+    agents:["finance","pricing","compliance"],
+    chatRole:"You are the SIXXAB CFO AI advisor. Focus on: MRR tracking, LTV/CAC calculation, burn rate, Stripe revenue, fundraising readiness, pricing strategy, and financial forecasting. Use real numbers from the context." },
+  { id:"coo",  title:"COO",  name:"Chief Operating Officer",
+    color:"#7C3AED", icon:"ti-settings-automation",
+    desc:"Operations, customer support, onboarding, retention and process systems",
+    agents:["support","ops"],
+    chatRole:"You are the SIXXAB COO AI advisor. Focus on: customer onboarding sequences, support ticket systems, churn reduction tactics, process documentation, and scaling operations from solo to team." },
+  { id:"cto",  title:"CTO",  name:"Chief Technology Officer",
+    color:"#0EA5E9", icon:"ti-code",
+    desc:"Tech stack, product roadmap, deployments, security and API integrations",
     agents:["product","tech","security"],
-    kpis:[{l:"Stack",v:"Next.js"},{l:"AI",v:"Claude"},{l:"Deploy",v:"Vercel"},{l:"DB",v:"Supabase soon"}],
-    chatRole:"You are the SIXXAB CTO AI advisor. You focus on tech architecture, Claude API integration, Vercel deployment, Next.js best practices, scalability, and product engineering decisions.",
-  },
-  {
-    id:"cfo", title:"CFO", name:"Chief Financial Officer",
-    color:"#1D9E75", bg:"#E1F5EE", txt:"#04342C",
-    icon:"ti-chart-line", desc:"MRR, burn rate, Stripe reconciliation, unit economics and fundraising",
-    agents:["ops","finance"],
-    kpis:[{l:"Model",v:"SaaS"},{l:"Plans",v:"3 tiers"},{l:"CAC",v:"Organic"},{l:"Payments",v:"Stripe"}],
-    chatRole:"You are the SIXXAB CFO AI advisor. You focus on unit economics (MRR, LTV, CAC, churn), Stripe revenue, burn rate, P&L, fundraising readiness, and financial forecasting for a SaaS startup.",
-  },
-  {
-    id:"coo", title:"COO", name:"Chief Operating Officer",
-    color:"#7C3AED", bg:"#F5F3FF", txt:"#26215C",
-    icon:"ti-settings-automation", desc:"Ops systems, support, onboarding, retention and scale processes",
-    agents:["support","ops","hr"],
-    kpis:[{l:"Open tickets",v:"3"},{l:"Churn",v:"2.1%"},{l:"Onboarding",v:"100%"},{l:"Retention",v:"97.9%"}],
-    chatRole:"You are the SIXXAB COO AI advisor. You focus on operational excellence, customer onboarding, support systems, churn reduction, team processes, and scaling operations from 100 to 10,000 users.",
-  },
-  {
-    id:"ciso", title:"CISO", name:"Chief Information Security Officer",
-    color:"#DC2626", bg:"#FEF2F2", txt:"#501313",
-    icon:"ti-shield-lock", desc:"Data security, compliance, GDPR, API key management and threat monitoring",
-    agents:["security","compliance"],
-    kpis:[{l:"Vulnerabilities",v:"0"},{l:"GDPR",v:"Compliant"},{l:"API keys",v:"Rotated"},{l:"Incidents",v:"0"}],
-    chatRole:"You are the SIXXAB CISO AI advisor. You focus on data security, API key hygiene, GDPR compliance, Stripe PCI compliance, user data protection, and security best practices for a Next.js SaaS.",
-  },
-  {
-    id:"cdo", title:"CDO", name:"Chief Data Officer",
-    color:"#0EA5E9", bg:"#E0F2FE", txt:"#042C53",
-    icon:"ti-database", desc:"Analytics, user insights, funnel data, cohort analysis and growth metrics",
-    agents:["analytics","content"],
-    kpis:[{l:"Conversion",v:"8.5%"},{l:"Activation",v:"74%"},{l:"D7 retention",v:"68%"},{l:"Features used",v:"3.2 avg"}],
-    chatRole:"You are the SIXXAB CDO AI advisor. You focus on product analytics, conversion funnel optimisation, cohort analysis, user activation, feature adoption, and data-driven growth decisions.",
-  },
-  {
-    id:"chro", title:"CHRO", name:"Chief People Officer",
-    color:"#F59E0B", bg:"#FFFBEF", txt:"#633806",
-    icon:"ti-users", desc:"Hiring, team culture, onboarding, performance and people operations",
+    chatRole:"You are the SIXXAB CTO AI advisor. Focus on: Next.js architecture, Vercel deployment, Supabase integration, Stripe webhooks, Claude API usage, and product roadmap prioritisation." },
+  { id:"cdo",  title:"CDO",  name:"Chief Data Officer",
+    color:"#16A34A", icon:"ti-database",
+    desc:"Analytics, funnel data, cohort analysis, activation and growth metrics",
+    agents:["analytics","intelligence"],
+    chatRole:"You are the SIXXAB CDO AI advisor. Focus on: funnel conversion, cohort retention, activation rate optimisation, A/B test design, product analytics, and turning data into specific growth actions." },
+  { id:"chro", title:"CHRO", name:"Chief People Officer",
+    color:"#F59E0B", icon:"ti-users",
+    desc:"Hiring strategy, team culture, onboarding workflows and people operations",
     agents:["hr","hrops"],
-    kpis:[{l:"Focus",v:"Hiring"},{l:"Tool",v:"People agent"},{l:"Goal",v:"Right team"},{l:"Phase",v:"Solo → team"}],
-    chatRole:"You are the SIXXAB CHRO AI advisor. You focus on hiring strategy, job descriptions, interview scripts, onboarding checklists, team culture and performance frameworks for a fast-growing startup.",
-  },
-  {
-    id:"cmo", title:"CMO", name:"Chief Marketing Officer",
-    color:"#D4537E", bg:"#FBEAF0", txt:"#4B1528",
-    icon:"ti-speakerphone", desc:"Brand, content, multi-channel campaigns, SEO, Product Hunt and AppSumo",
-    agents:["marketing","content","social"],
-    kpis:[{l:"Reach",v:"12.4k"},{l:"DMs sent",v:"1,247"},{l:"Response",v:"18.4%"},{l:"Leads",v:"94"}],
-    chatRole:"You are the SIXXAB CMO AI advisor. You focus on brand positioning, LinkedIn/X/Instagram strategy, Product Hunt launches, AppSumo campaigns, content marketing, SEO, and turning founders into customers.",
-  },
+    chatRole:"You are the SIXXAB CHRO AI advisor. Focus on: when to hire, what roles, job description writing, interview scripts, onboarding checklists, and building team culture at an early-stage startup." },
+  { id:"ciso", title:"CISO", name:"Chief Information Security Officer",
+    color:"#DC2626", icon:"ti-shield-lock",
+    desc:"Data security, compliance, GDPR, API key hygiene and incident response",
+    agents:["security","compliance"],
+    chatRole:"You are the SIXXAB CISO AI advisor. Focus on: Next.js security best practices, Stripe PCI compliance, GDPR, API key rotation, Supabase row-level security, and data breach prevention." },
+  // Head of Verticals — new
+  { id:"hov",  title:"Verticals", name:"Head of Vertical Markets",
+    color:"#EC4899", icon:"ti-building-factory",
+    desc:"10 vertical agent packs — HVAC, Real Estate, Legal, Consulting and 6 more Texas industries",
+    agents:["hvac","realestate","legal","consulting","landscaping","plumbing","autorepair","health","roofing","it"],
+    chatRole:"You are the SIXXAB Head of Vertical Markets AI advisor. You have deep knowledge of all 10 Texas industry verticals: HVAC, Real Estate, Legal, Business Consulting, Landscaping, Plumbing/Electrical, Auto Repair, Health/Wellness, Roofing, and IT/MSP. Give industry-specific tactical advice for the founder's niche." },
 ]
 
-// ── Sub-agents ───────────────────────────────────────────────────────────────
+// ── Specialist agents ─────────────────────────────────────────────────────────
 const AGENTS = {
-  marketing: {
-    label:"Marketing Agent", icon:"ti-speakerphone", color:"#EF9F27",
-    desc:"Multi-channel DM generator — LinkedIn, Instagram, X, WhatsApp, Email, SMS",
-    channels:["LinkedIn","Instagram","X / Twitter","WhatsApp","Email","SMS"],
-    channelIcons:{"LinkedIn":"ti-brand-linkedin","Instagram":"ti-brand-instagram","X / Twitter":"ti-brand-x","WhatsApp":"ti-brand-whatsapp","Email":"ti-mail","SMS":"ti-message"},
-    channelHints:{"LinkedIn":"Professional tone · max 1,300 chars · no hashtag spam","Instagram":"Warm & visual · 150 char DM · emojis work","X / Twitter":"Sharp & punchy · 280 chars · hook first","WhatsApp":"Conversational · feels like a friend","Email":"Subject line is everything · plain text converts","SMS":"Under 160 chars · include opt-out"},
-  },
-  sales: { label:"Sales Agent", icon:"ti-trending-up", color:"#1D9E75", desc:"Lead pipeline, qualification, demos, proposals and close scripts" },
-  support: { label:"Support Agent", icon:"ti-headset", color:"#378ADD", desc:"After-sale onboarding, ticket resolution, retention and NPS" },
-  strategy: { label:"Strategy Agent", icon:"ti-brain", color:"#7C3AED", desc:"Business model, niche selection, pricing, positioning and 90-day growth" },
-  content: { label:"Content Agent", icon:"ti-writing", color:"#D4537E", desc:"Blog posts, social copy, email newsletters, SEO and video scripts" },
-  ops: { label:"Ops Agent", icon:"ti-settings-automation", color:"#5F5E5A", desc:"MRR tracking, Stripe reconciliation, burn rate and P&L" },
-  finance: { label:"Finance Agent", icon:"ti-chart-line", color:"#1D9E75", desc:"Unit economics, forecasting, fundraising readiness and cash flow" },
-  hr: { label:"HR Agent", icon:"ti-users", color:"#7C3AED", desc:"Hiring pipeline, job descriptions, culture building and team growth" },
-  hrops: { label:"HR Ops Agent", icon:"ti-user-check", color:"#D4537E", desc:"Onboarding workflows, performance reviews and retention systems" },
-  security: { label:"Security Agent", icon:"ti-shield-lock", color:"#DC2626", desc:"Vulnerability scanning, API key hygiene and compliance checks" },
-  compliance: { label:"Compliance Agent", icon:"ti-certificate", color:"#F59E0B", desc:"GDPR, CCPA, PCI-DSS and SaaS legal compliance" },
-  analytics: { label:"Analytics Agent", icon:"ti-chart-bar", color:"#0EA5E9", desc:"Funnel analysis, cohort data, activation and retention metrics" },
-  social: { label:"Social Agent", icon:"ti-share", color:"#D4537E", desc:"Social calendar, posting schedule, community management" },
-  product: { label:"Product Agent", icon:"ti-package", color:"#378ADD", desc:"Roadmap, feature prioritisation, user feedback and sprint planning" },
-  tech: { label:"Tech Agent", icon:"ti-code", color:"#378ADD", desc:"Architecture decisions, code review, deployment and API integrations" },
+  // CXO horizontal agents
+  strategy:        { label:"Strategy Agent",       icon:"ti-brain",              color:"#EF9F27", cxo:"ceo",  desc:"Business model, niche, pricing, positioning and 90-day planning" },
+  pitch:           { label:"Pitch Deck Agent",     icon:"ti-presentation",       color:"#EF9F27", cxo:"ceo",  desc:"Investor slide deck from business data — PDF and PPT" },
+  financial_model: { label:"Financial Model",      icon:"ti-calculator",         color:"#EF9F27", cxo:"ceo",  desc:"P&L, cash flow, cap table basics and scenario modelling" },
+  marketing:       { label:"Marketing Agent",      icon:"ti-speakerphone",       color:"#D4537E", cxo:"cmo",  desc:"Multi-channel DM scripts — LinkedIn, X, WhatsApp, Email, SMS" },
+  content:         { label:"Content Agent",        icon:"ti-writing",            color:"#D4537E", cxo:"cmo",  desc:"Blog posts, newsletters, social copy, SEO and video scripts" },
+  social:          { label:"Social Agent",         icon:"ti-share",              color:"#D4537E", cxo:"cmo",  desc:"Social calendar, scheduling, community management" },
+  seo:             { label:"SEO Agent",            icon:"ti-search",             color:"#D4537E", cxo:"cmo",  desc:"Keyword research, content briefs, on-page optimisation" },
+  sales:           { label:"Sales Agent",          icon:"ti-trending-up",        color:"#1D9E75", cxo:"cso",  desc:"Pipeline, demo scripts, proposals, close playbooks" },
+  leads:           { label:"Lead Gen Agent",       icon:"ti-user-search",        color:"#1D9E75", cxo:"cso",  desc:"Prospect discovery, scoring, qualification and timing" },
+  partnership:     { label:"Partnership Agent",    icon:"ti-handshake",          color:"#1D9E75", cxo:"cso",  desc:"Strategic partner outreach, referral tracking, deal pipeline" },
+  finance:         { label:"Finance Agent",        icon:"ti-chart-line",         color:"#378ADD", cxo:"cfo",  desc:"MRR, P&L, Stripe reconciliation, 90-day forecasts" },
+  pricing:         { label:"Pricing Agent",        icon:"ti-tag",                color:"#378ADD", cxo:"cfo",  desc:"Price benchmarking, upgrade triggers, revenue impact models" },
+  compliance:      { label:"Compliance Agent",     icon:"ti-certificate",        color:"#378ADD", cxo:"cfo",  desc:"GDPR, PCI, CCPA, HIPAA checklists and legal templates" },
+  support:         { label:"Support Agent",        icon:"ti-headset",            color:"#7C3AED", cxo:"coo",  desc:"Ticket drafts, onboarding emails, NPS surveys, escalation" },
+  ops:             { label:"Ops Agent",            icon:"ti-settings-automation",color:"#7C3AED", cxo:"coo",  desc:"Process automation, SOP builder, system documentation" },
+  product:         { label:"Product Agent",        icon:"ti-package",            color:"#0EA5E9", cxo:"cto",  desc:"Roadmap, feature prioritisation, user feedback sprints" },
+  tech:            { label:"Tech Agent",           icon:"ti-code",               color:"#0EA5E9", cxo:"cto",  desc:"Architecture decisions, deployments, API integrations" },
+  security:        { label:"Security Agent",       icon:"ti-shield-lock",        color:"#DC2626", cxo:"cto",  desc:"Vulnerability scanning, API key hygiene, pen test prep" },
+  analytics:       { label:"Analytics Agent",      icon:"ti-chart-bar",          color:"#16A34A", cxo:"cdo",  desc:"Funnel analysis, cohort data, activation, retention" },
+  intelligence:    { label:"Intelligence Agent",   icon:"ti-bulb",               color:"#16A34A", cxo:"cdo",  desc:"Customer insights, NPS verbatims, churn signal analysis" },
+  hr:              { label:"HR Agent",             icon:"ti-users",              color:"#F59E0B", cxo:"chro", desc:"Hiring pipeline, job descriptions, interview scripts" },
+  hrops:           { label:"HR Ops Agent",         icon:"ti-user-check",         color:"#F59E0B", cxo:"chro", desc:"Onboarding workflows, performance reviews, culture" },
+  // Vertical agents — mapped to hov
+  hvac:       { label:"HVAC Agent",       icon:"ti-air-conditioning",    color:"#0EA5E9", cxo:"hov", desc:"Seasonal campaigns, service quotes, tech scheduling, review requests" },
+  realestate: { label:"Real Estate Agent",icon:"ti-home",                color:"#1D9E75", cxo:"hov", desc:"Listing descriptions, buyer/seller outreach, CMA reports" },
+  legal:      { label:"Legal Agent",      icon:"ti-scale",               color:"#7C3AED", cxo:"hov", desc:"Client intake, retainer proposals, billing reminders, referrals" },
+  consulting: { label:"Consulting Agent", icon:"ti-briefcase",           color:"#EF9F27", cxo:"hov", desc:"Proposals, ROI calculator, case studies, LinkedIn thought leadership" },
+  landscaping:{ label:"Landscaping Agent",icon:"ti-plant",               color:"#16A34A", cxo:"hov", desc:"Seasonal upsell, HOA outreach, neighbour scripts, annual contracts" },
+  plumbing:   { label:"Plumbing Agent",   icon:"ti-tool",                color:"#DC2626", cxo:"hov", desc:"Emergency response, maintenance upsell, insurance docs, referrals" },
+  autorepair: { label:"Auto Repair Agent",icon:"ti-car",                 color:"#F59E0B", cxo:"hov", desc:"Service reminders, fleet outreach, loyalty programme, reviews" },
+  health:     { label:"Health Agent",     icon:"ti-heart-rate-monitor",  color:"#EC4899", cxo:"hov", desc:"Client onboarding, package upsell, corporate wellness, referrals" },
+  roofing:    { label:"Roofing Agent",    icon:"ti-building",            color:"#6B7280", cxo:"hov", desc:"Storm campaigns, insurance claims, estimate scripts, sub network" },
+  it:         { label:"IT/MSP Agent",     icon:"ti-server",              color:"#378ADD", cxo:"hov", desc:"Managed services proposals, QBR decks, security audits, onboarding" },
 }
 
-// ── SAMPLE leads shown when CRM is empty ─────────────────────────────────────
-const SAMPLE_LEADS = [
-  { id:"s1", name:"Sarah Chen",     role:"Freelance designer",    email:"sarah@example.com", phone:"+1-214-555-0101", status:"hot",   score:92, source:"LinkedIn",    lastTouch:"2h ago",  value:"Pro",     stage:"Closed ✓",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
-  { id:"s2", name:"Mike Rodriguez", role:"HVAC contractor owner",  email:"mike@example.com",  phone:"+1-972-555-0202", status:"warm",  score:74, source:"Instagram",   lastTouch:"1d ago",  value:"Starter", stage:"Outreach",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
-  { id:"s3", name:"Priya Nair",     role:"Business consultant",    email:"priya@example.com", phone:"+1-469-555-0303", status:"hot",   score:88, source:"Referral",    lastTouch:"4h ago",  value:"Agency",  stage:"Proposal",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"sales" },
-  { id:"s4", name:"Tom Walsh",      role:"Real estate agent",      email:"tom@example.com",   phone:"+1-817-555-0404", status:"cold",  score:31, source:"X / Twitter", lastTouch:"5d ago",  value:"Starter", stage:"Prospect",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
-  { id:"s5", name:"Angela Brooks",  role:"Marketing freelancer",   email:"angela@example.com",phone:"+1-214-555-0505", status:"warm",  score:67, source:"Email",       lastTouch:"6h ago",  value:"Pro",     stage:"Outreach",  linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"marketing" },
-  { id:"s6", name:"James Park",     role:"E-commerce seller",      email:"james@example.com", phone:"+1-972-555-0606", status:"demo",  score:81, source:"LinkedIn",    lastTouch:"1h ago",  value:"Pro",     stage:"Demo",      linkedin:"", company:"",   notes:"", tags:[], assignedAgent:"sales" },
+const PIPELINE_STAGES = [
+  {stage:"Prospect",  color:"#F1EFE8", txt:"#5F5E5A"},
+  {stage:"Outreach",  color:"#FAEEDA", txt:"#633806"},
+  {stage:"Replied",   color:"#EFF6FF", txt:"#1E40AF"},
+  {stage:"Demo",      color:"#E6F1FB", txt:"#0C447C"},
+  {stage:"Proposal",  color:"#F5F3FF", txt:"#4C1D95"},
+  {stage:"Closed ✓",  color:"#E1F5EE", txt:"#085041"},
+  {stage:"Lost",      color:"#FEF2F2", txt:"#991B1B"},
 ]
 
-const PIPELINE = [
-  {stage:"Prospect",  color:"#F1EFE8",txt:"#5F5E5A"},
-  {stage:"Outreach",  color:"#FAEEDA",txt:"#633806"},
-  {stage:"Replied",   color:"#EFF6FF",txt:"#1E40AF"},
-  {stage:"Demo",      color:"#E6F1FB",txt:"#0C447C"},
-  {stage:"Proposal",  color:"#F5F3FF",txt:"#4C1D95"},
-  {stage:"Closed ✓",  color:"#E1F5EE",txt:"#085041"},
+const HIRE_PLAN = [
+  {role:"Customer Success Manager", when:"Month 4", cost:"$3.5k/mo", why:"Support exceeds solo capacity at 100+ customers"},
+  {role:"Growth Marketer",          when:"Month 6", cost:"$4k/mo",   why:"AppSumo + LinkedIn + global all running simultaneously"},
+  {role:"Engineer",                 when:"Month 9", cost:"$6k/mo",   why:"AWS migration + Supabase + API v2"},
+  {role:"Sales Rep",                when:"Month 9", cost:"$4k+comm", why:"Enterprise and university deal closing"},
+  {role:"Head of Advisors",         when:"Month 10",cost:"$5k/mo",   why:"Managing 50+ global SIXXAB Advisors"},
 ]
-
-const HR_JOBS = [
-  {id:1,title:"AI Product Engineer",type:"Full-time",status:"Open",apps:12,posted:"3d ago"},
-  {id:2,title:"Growth Marketer",type:"Contract",status:"Open",apps:7,posted:"1w ago"},
-  {id:3,title:"Customer Success Mgr",type:"Full-time",status:"Paused",apps:24,posted:"2w ago"},
-]
-
-const N = "#0A0E1A", AMBER = "#EF9F27"
 
 export default function AgentHub() {
-  const [activeCxo, setActiveCxo] = useState("ceo")
+  const [activeCxo, setActiveCxo]     = useState("ceo")
   const [activeAgent, setActiveAgent] = useState(null)
-  const [chatMsgs, setChatMsgs] = useState({})
-  const [chatInput, setChatInput] = useState("")
-  const [sending, setSending] = useState(false)
-  const [activeChannel, setActiveChannel] = useState("LinkedIn")
+  const [activeVertical, setActiveVertical] = useState("hvac")
+  const [chatMsgs, setChatMsgs]       = useState({})
+  const [chatInput, setChatInput]     = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
+  const [scriptLoading, setScriptLoading] = useState(false)
+  const [scripts, setScripts]         = useState(null)
   const [selectedLeads, setSelectedLeads] = useState([])
-  const [offer, setOffer] = useState("Start with SIXXAB — autonomous business platform from $49.50/mo. Founding member rate locked forever.")
-  const [generating, setGenerating] = useState(false)
-  const [generated, setGenerated] = useState(null)
-  const [pipelineFilter, setPipelineFilter] = useState("all")
+  const [activeChannel, setActiveChannel] = useState("LinkedIn")
+  const [offer, setOffer]             = useState("Start with SIXXAB AI — autonomous business platform from $49.50/mo.")
+  const [showCrmPicker, setShowCrmPicker] = useState(false)
+  const [crmSearch, setCrmSearch]     = useState("")
+  const [crmContacts, setCrmContacts] = useState([])
+  const [activeTab, setActiveTab]     = useState("chat") // chat | agents | pipeline | details
   const bottomRef = useRef(null)
 
-  // ── Send email via Resend API ──────────────────────────────────────────────
-  async function sendEmail(to, subject, body, type="outreach") {
-    if (!to || !to.includes("@")) {
-      alert("This contact has no email address. Add one in CRM first.")
-      return false
+  // ── Real-time CRM sync ─────────────────────────────────────────────────────
+  useEffect(() => {
+    setCrmContacts(loadCRM())
+    // Listen for CRM updates from other tabs and from CRM page
+    const onCrmUpdate = (e) => {
+      if (e.detail?.contacts) setCrmContacts(e.detail.contacts)
     }
-    try {
-      const res = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject, body, type }),
-      })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error || "Send failed")
-      alert(`✓ Email sent to ${to}`)
-      return true
-    } catch(e) {
-      alert("Email failed: " + e.message)
-      return false
+    const onStorage = (e) => {
+      if (e.key === CRM_KEY) {
+        try { setCrmContacts(JSON.parse(e.newValue || "[]")) } catch {}
+      }
     }
+    window.addEventListener("sixxab_crm_updated", onCrmUpdate)
+    window.addEventListener("storage", onStorage)
+    return () => {
+      window.removeEventListener("sixxab_crm_updated", onCrmUpdate)
+      window.removeEventListener("storage", onStorage)
+    }
+  }, [])
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:"smooth" }) }, [chatMsgs, activeCxo])
+
+  // ── Derived state ──────────────────────────────────────────────────────────
+  const LEADS = crmContacts.length > 0
+    ? crmContacts.map(c => ({
+        id: String(c.id), name: c.name, role: c.role||"", email: c.email||"",
+        phone: c.phone||"", linkedin: c.linkedin||"", company: c.company||"",
+        stage: c.stage||"Prospect", score: c.score||50, source: c.source||"LinkedIn",
+        value: c.value||"Starter", notes: c.notes||"", tags: c.tags||[],
+        lastTouch: c.lastTouch||"—", assignedAgent: c.assignedAgent||"marketing",
+      }))
+    : []
+
+  const cxo = CXOS.find(c => c.id === activeCxo) || CXOS[0]
+  const chatKey = activeAgent || activeCxo
+  const msgs = chatMsgs[chatKey] || [{
+    role:"assistant",
+    content: activeAgent
+      ? `${AGENTS[activeAgent]?.label} ready. ${AGENTS[activeAgent]?.desc}. How can I help you today?`
+      : `${cxo.title} advisor active — ${cxo.name}. ${cxo.desc}. What's your priority today?`
+  }]
+
+  // CXO-specific CRM stats
+  const crmStats = {
+    total: crmContacts.length,
+    hot: crmContacts.filter(c => (c.score||0) >= 80).length,
+    pipeline: crmContacts.filter(c => ["Outreach","Replied","Demo","Proposal","Negotiation"].includes(c.stage)).length,
+    closed: crmContacts.filter(c => c.stage === "Closed ✓").length,
+    mrr: crmContacts.filter(c => c.stage==="Closed ✓").reduce((a,c) =>
+      a+(c.value==="Pro"?99.50:c.value==="Agency"?175:c.value==="Enterprise"?350:49.50), 0),
   }
 
-  const cxo = CXOS.find(c => c.id === activeCxo)
-  const currentAgent = activeAgent ? AGENTS[activeAgent] : null
-  const chatKey = activeAgent || activeCxo
-  const msgs = chatMsgs[chatKey] || [{role:"assistant",content:activeAgent ? `${currentAgent?.label} ready. ${currentAgent?.desc}. How can I help?` : `${cxo?.title} command center active. I'm your AI advisor for ${cxo?.name} responsibilities. What's the priority today?`}]
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({behavior:"smooth"}) }, [msgs, sending])
-
+  // ── Chat ──────────────────────────────────────────────────────────────────
   async function sendMsg() {
-    if (!chatInput.trim() || sending) return
     const text = chatInput.trim()
+    if (!text || chatLoading) return
     setChatInput("")
-    const role = activeAgent ? AGENTS[activeAgent]?.chatRole || "" : cxo?.chatRole || ""
-    const next = [...msgs, {role:"user",content:text}]
-    setChatMsgs(p => ({...p,[chatKey]:next}))
-    setSending(true)
+    setChatLoading(true)
+    const role = activeAgent ? AGENTS[activeAgent]?.chatRole||"" : cxo.chatRole||""
+    const crmContext = `\n\nCRM context: ${crmStats.total} contacts, ${crmStats.pipeline} in pipeline, ${crmStats.closed} closed, MRR potential $${crmStats.mrr.toFixed(2)}.`
+    const next = [...msgs, { role:"user", content:text }]
+    setChatMsgs(m => ({ ...m, [chatKey]: next }))
     try {
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          messages: [{role:"user",content:`[System: ${role}]\n\n${text}`}],
-        }),
+        body: JSON.stringify({ messages:[
+          { role:"user", content:`${role}${crmContext}\n\nFounder question: ${text}` }
+        ]})
       })
       const d = await res.json()
-      setChatMsgs(p => ({...p,[chatKey]:[...next,{role:"assistant",content:d.reply||"I'm here — what do you need?"}]}))
+      setChatMsgs(m => ({ ...m, [chatKey]: [...next, { role:"assistant", content: d.reply||"Unable to respond — check API connection." }] }))
     } catch {
-      setChatMsgs(p => ({...p,[chatKey]:[...next,{role:"assistant",content:"Network error — please retry."}]}))
+      setChatMsgs(m => ({ ...m, [chatKey]: [...next, { role:"assistant", content:"Network error — check connection." }] }))
     }
-    setSending(false)
+    setChatLoading(false)
   }
 
+  // ── Generate outreach scripts ─────────────────────────────────────────────
   async function generateScripts() {
-    setGenerating(true); setGenerated(null)
-    const leads = LEADS.filter(l => selectedLeads.map(String).includes(String(l.id)))
+    const leads = LEADS.filter(l => selectedLeads.includes(String(l.id)))
+    if (!leads.length) { alert("Select at least one contact first."); return }
+    setScriptLoading(true); setScripts(null)
+    const crmContext = leads.map(l => `Name: ${l.name}, Role: ${l.role||"—"}, Company: ${l.company||"—"}, Stage: ${l.stage}, Notes: ${l.notes||"—"}`).join("\n")
     try {
-      const res = await fetch("/api/marketing-agent", {
+      const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ contacts: leads.map(l => ({name:l.name,role:l.role,platform:activeChannel,context:`Lead score: ${l.score}. Status: ${l.status}. Source: ${l.source}. Offer: ${offer}`})) }),
+        body: JSON.stringify({ messages:[{ role:"user", content:
+          `You are the SIXXAB Marketing Agent.\n\nGenerate personalised ${activeChannel} outreach scripts for these contacts:\n${crmContext}\n\nOffer: ${offer}\nChannel: ${activeChannel}\nChannel rules: ${AGENTS.marketing?.channelHints?.[activeChannel]||""}\n\nWrite one personalised script per contact. Format:\n[Contact name]\n[Script text]\n---\n\nReturn only the scripts, no preamble.`
+        }]})
       })
       const d = await res.json()
-      setGenerated(d.messages || leads.map(l => ({
-        name:l.name, platform:activeChannel,
-        message:`Hi ${l.name.split(" ")[0]}, I saw you're in ${l.role}. I built something that gives you a complete AI business system for $24.50/mo — strategy, launch, and marketing in one box.\n\nFounding member rate (50% off) expires at public launch. Worth 10 mins of your time?\n\nstartupsinabox.com`,
-        followUp:`Hey ${l.name.split(" ")[0]}, just following up — did you get a chance to look at SIXXAB? Happy to do a quick 15-min demo.`,
-        bestTime: activeChannel==="LinkedIn"?"Tue–Thu 8–10am":"Weekday mornings",
-      })))
-    } catch { setGenerated([]) }
-    setGenerating(false)
+      setScripts(d.reply || "Unable to generate — check API connection.")
+    } catch { setScripts("Network error — check your connection.") }
+    setScriptLoading(false)
   }
 
-  function copyText(t) { navigator.clipboard.writeText(t) }
+  // ── Update contact stage from pipeline ───────────────────────────────────
+  function updateStage(contactId, newStage) {
+    const updated = crmContacts.map(c =>
+      String(c.id) === String(contactId)
+        ? { ...c, stage: newStage, updatedAt: new Date().toISOString(), lastTouch: "Stage updated" }
+        : c
+    )
+    saveCRM(updated)
+    setCrmContacts(updated)
+  }
 
-  const statusColor = {hot:"#E1F5EE",warm:"#FAEEDA",cold:"#F1F5F9",demo:"#EEF2FF"}
-  const statusTxt = {hot:"#085041",warm:"#633806",cold:"#64748B",demo:"#3D52A0"}
+  const verticalAgent = AGENTS[activeVertical]
 
   return (
     <>
+      <Head><title>SIXXAB AI — CXO Suite & Agent Hub</title></Head>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html,body{height:100%}
-        body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;overflow:hidden}
-        ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:2px}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh;overflow-x:hidden}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-        .fadeIn{animation:fadeIn .25s ease both}
-        .pulse{animation:pulse 2s infinite}
-        textarea,input,select{font-family:inherit}
-        .sbtn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:opacity .15s}
-        .sbtn:hover{opacity:.88}
-        .sbtn:disabled{opacity:.5;cursor:not-allowed}
-        .gbtn{padding:7px 13px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:1px solid #E2E8F0;color:#64748B;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s}
-        .gbtn:hover{background:#F8F9FA;border-color:#CBD5E1}
-        .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .15s}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+        .fu{animation:fadeUp .3s ease both}
+        input,select,textarea{font-family:inherit;outline:none}
+        .card{background:#fff;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden}
+        .tab-btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;fontFamily:inherit;background:transparent;color:#64748B;transition:all .15s}
+        .tab-btn.on{background:#fff;color:${N};box-shadow:0 1px 4px rgba(0,0,0,.08)}
+        .chat-bubble-user{background:rgba(239,159,39,.15);border:1px solid rgba(239,159,39,.2);border-radius:13px 13px 3px 13px;padding:10px 13px;font-size:13px;color:${N};line-height:1.65;max-width:85%;margin-left:auto}
+        .chat-bubble-ai{background:#fff;border:1px solid #E8ECF4;border-radius:13px 13px 13px 3px;padding:10px 13px;font-size:13px;color:${N};line-height:1.75;white-space:pre-wrap;max-width:92%}
+        .cxo-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border-radius:10px;border:1.5px solid #E2E8F0;background:#fff;cursor:pointer;transition:all .15s;font-family:inherit;min-width:60px}
+        .cxo-btn:hover{border-color:#CBD5E1;background:#F8F9FA}
+        .agent-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;border:1px solid #E2E8F0;background:#F8F9FA;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+        .agent-pill:hover{border-color:#CBD5E1}
+        .agent-pill.on{border-color:var(--ac);background:var(--abg)}
+        .inp{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:13px;color:${N};background:#fff;transition:border .15s}
+        .inp:focus{border-color:${AMBER}}
+        .scrollbar-hide::-webkit-scrollbar{display:none}
       `}</style>
 
-      <div style={{display:"flex",height:"100vh",overflow:"hidden"}}>
+      <SixxabNav active="/agents"/>
 
-        {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
-        <aside style={{width:230,background:N,display:"flex",flexDirection:"column",flexShrink:0}}>
-          {/* Logo */}
-          <div style={{padding:"16px 14px 12px",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <svg width="26" height="26" viewBox="0 0 72 72">
-                <rect x="1.5" y="1.5" width="69" height="69" rx="12" fill="none" stroke={AMBER} strokeWidth="2.5"/>
-                <text x="7" y="54" fontFamily="Georgia" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text>
-                <text x="35" y="54" fontFamily="Georgia" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text>
-              </svg>
-              <div>
-                <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:"#F5F5F0",letterSpacing:2,lineHeight:1}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-                <div style={{fontFamily:"'DM Mono'",fontSize:8,color:"#444",letterSpacing:".1em"}}>CXO command center</div>
-              </div>
+      {/* Page header */}
+      <div style={{background:N,padding:"16px 4% 14px",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+          <div>
+            <div style={{fontFamily:"'DM Mono'",fontSize:10,color:AMBER,letterSpacing:".1em",marginBottom:4}}>SIXXAB AI — CXO SUITE & AGENT HUB</div>
+            <div style={{fontFamily:"'Bebas Neue'",fontSize:22,color:CHALK,letterSpacing:1.5}}>
+              {cxo.title} — {cxo.name}
             </div>
           </div>
-
-          {/* CXO nav */}
-          <nav style={{flex:1,padding:"8px 8px",overflowY:"auto"}}>
-            <div style={{fontSize:9,fontWeight:600,color:"#5F5E5A",letterSpacing:".1em",textTransform:"uppercase",padding:"6px 8px 5px"}}>CXO suite</div>
-            {CXOS.map(c => (
-              <button key={c.id} onClick={()=>{setActiveCxo(c.id);setActiveAgent(null)}}
-                style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"8px 8px",borderRadius:8,border:"none",background:activeCxo===c.id&&!activeAgent?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",marginBottom:1,transition:"background .15s"}}>
-                <div style={{width:28,height:28,borderRadius:7,background:activeCxo===c.id&&!activeAgent?c.color:"rgba(255,255,255,.06)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .15s"}}>
-                  <i className={`ti ${c.icon}`} style={{fontSize:13,color:activeCxo===c.id&&!activeAgent?N:"rgba(255,255,255,.4)"}} aria-hidden="true"/>
-                </div>
-                <div style={{flex:1,textAlign:"left",minWidth:0}}>
-                  <div style={{fontSize:11,fontWeight:600,color:activeCxo===c.id&&!activeAgent?c.color:"rgba(255,255,255,.7)",letterSpacing:.3}}>{c.title}</div>
-                  <div style={{fontSize:9,color:"rgba(255,255,255,.3)",lineHeight:1.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.name.replace("Chief ","").replace(" Officer","")}</div>
-                </div>
-              </button>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            {/* Real-time CRM stats */}
+            {[["Contacts",crmStats.total,"#94A3B8"],["Pipeline",crmStats.pipeline,AMBER],["Closed",crmStats.closed,"#1D9E75"]].map(([l,v,c])=>(
+              <div key={l} style={{textAlign:"center",padding:"5px 12px",borderRadius:8,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)"}}>
+                <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:c,letterSpacing:.5}}>{v}</div>
+                <div style={{fontSize:9.5,color:"rgba(245,245,240,.4)",textTransform:"uppercase",letterSpacing:".07em"}}>{l}</div>
+              </div>
             ))}
+            <a href="/crm" style={{padding:"6px 14px",borderRadius:8,background:"rgba(29,158,117,.2)",border:"1px solid rgba(29,158,117,.4)",fontSize:12,fontWeight:500,color:"#6EE7B7",textDecoration:"none",display:"flex",alignItems:"center",gap:5}}>
+              <i className="ti ti-address-book" style={{fontSize:12}} aria-hidden="true"/>SIXXAB CRM
+            </a>
+          </div>
+        </div>
+      </div>
 
-            {/* Sub-agents under active CXO */}
-            {cxo?.agents?.length > 0 && <>
-              <div style={{fontSize:9,fontWeight:600,color:"#5F5E5A",letterSpacing:".1em",textTransform:"uppercase",padding:"10px 8px 5px"}}>Agents under {cxo.title}</div>
+      <div style={{display:"grid",gridTemplateColumns:"68px 1fr",height:"calc(100vh - 114px)"}}>
+
+        {/* ── CXO sidebar ── */}
+        <div style={{background:N,borderRight:"1px solid rgba(255,255,255,.07)",padding:"12px 4px",display:"flex",flexDirection:"column",gap:4,overflowY:"auto"}} className="scrollbar-hide">
+          {CXOS.map(c => (
+            <button key={c.id} className="cxo-btn" onClick={()=>{setActiveCxo(c.id);setActiveAgent(null);setActiveTab("chat")}}
+              style={{borderColor:activeCxo===c.id?c.color:"rgba(255,255,255,.08)",background:activeCxo===c.id?`${c.color}18`:"rgba(255,255,255,.04)",color:activeCxo===c.id?c.color:"rgba(245,245,240,.4)"}}>
+              <i className={`ti ${c.icon}`} style={{fontSize:18,color:activeCxo===c.id?c.color:"rgba(245,245,240,.3)"}} aria-hidden="true"/>
+              <span style={{fontSize:9,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase"}}>{c.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Main content ── */}
+        <div style={{display:"flex",flexDirection:"column",overflow:"hidden"}}>
+
+          {/* Sub-nav: agents + tabs */}
+          <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"8px 16px",display:"flex",alignItems:"center",gap:8,overflowX:"auto",flexShrink:0}} className="scrollbar-hide">
+            {/* Agent pills for this CXO */}
+            <div style={{display:"flex",gap:5,flex:1,overflowX:"auto"}} className="scrollbar-hide">
+              <button className={`agent-pill${!activeAgent?" on":""}`}
+                style={{"--ac":cxo.color,"--abg":`${cxo.color}18`}}
+                onClick={()=>setActiveAgent(null)}>
+                <i className={`ti ${cxo.icon}`} style={{fontSize:11,color:cxo.color}} aria-hidden="true"/>
+                All {cxo.title}
+              </button>
               {cxo.agents.map(aid => {
                 const a = AGENTS[aid]; if (!a) return null
+                const isOn = activeAgent === aid
                 return (
-                  <button key={aid} onClick={()=>setActiveAgent(aid)}
-                    style={{width:"100%",display:"flex",alignItems:"center",gap:7,padding:"6px 8px 6px 16px",borderRadius:7,border:"none",background:activeAgent===aid?"rgba(255,255,255,.08)":"transparent",cursor:"pointer",marginBottom:1,transition:"background .15s"}}>
-                    <div style={{width:6,height:6,borderRadius:"50%",background:activeAgent===aid?a.color:"rgba(255,255,255,.2)",flexShrink:0}}/>
-                    <div style={{fontSize:11,color:activeAgent===aid?a.color:"rgba(255,255,255,.5)"}}>{a.label}</div>
+                  <button key={aid} className={`agent-pill${isOn?" on":""}`}
+                    style={{"--ac":a.color,"--abg":`${a.color}15`,color:isOn?a.color:"#64748B"}}
+                    onClick={()=>{setActiveAgent(isOn?null:aid);setActiveTab("chat")}}>
+                    <i className={`ti ${a.icon}`} style={{fontSize:11,color:a.color}} aria-hidden="true"/>
+                    {a.label.replace(" Agent","")}
                   </button>
                 )
               })}
-            </>}
-          </nav>
-
-          <div style={{padding:"10px 14px",borderTop:"1px solid rgba(255,255,255,.07)"}}>
-            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"rgba(255,255,255,.35)"}}>
-              <div style={{width:5,height:5,borderRadius:"50%",background:"#1D9E75"}} className="pulse"/>
-              All systems online
             </div>
-            <div style={{display:"flex",gap:8,marginTop:6}}>
-              <a href="/" style={{fontSize:10,color:"rgba(255,255,255,.25)",textDecoration:"none"}}>Home</a>
-              <a href="/coach" style={{fontSize:10,color:"rgba(255,255,255,.25)",textDecoration:"none"}}>Coach</a>
+            {/* View tabs */}
+            <div style={{display:"flex",gap:2,background:"#F1F5F9",borderRadius:9,padding:3,flexShrink:0}}>
+              {(activeCxo==="hov"
+                ? [["chat","Chat"],["agents","Agents"],["details","Dashboard"]]
+                : [["chat","Chat"],["agents","Agents"],["pipeline","Pipeline"],["details","Details"]]
+              ).map(([t,l])=>(
+                <button key={t} className={`tab-btn${activeTab===t?" on":""}`} onClick={()=>setActiveTab(t)}>{l}</button>
+              ))}
             </div>
           </div>
-        </aside>
 
-        {/* ── MAIN ────────────────────────────────────────────────────────── */}
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* ── Content area ── */}
+          <div style={{flex:1,overflow:"auto",padding:"14px 16px"}} className="scrollbar-hide">
 
-          {/* Header */}
-          <header style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"0 20px",height:54,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:32,height:32,borderRadius:8,background:currentAgent?currentAgent.color:cxo?.color,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <i className={`ti ${currentAgent?currentAgent.icon:cxo?.icon}`} style={{fontSize:15,color:currentAgent||cxo?.id==="ciso"?"#fff":N}} aria-hidden="true"/>
-              </div>
-              <div>
-                <div style={{fontSize:14,fontWeight:600,color:N}}>{currentAgent?currentAgent.label:`${cxo?.title} — ${cxo?.name}`}</div>
-                <div style={{fontSize:11,color:"#94A3B8"}}>{currentAgent?currentAgent.desc:cxo?.desc}</div>
-              </div>
-            </div>
-            <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              {activeAgent && <button className="gbtn" style={{fontSize:11}} onClick={()=>setActiveAgent(null)}>← Back to {cxo?.title}</button>}
-              <span style={{fontSize:11,fontWeight:500,padding:"3px 10px",borderRadius:10,background:currentAgent?currentAgent.color+"22":cxo?.bg,color:currentAgent?currentAgent.color:cxo?.txt,display:"flex",alignItems:"center",gap:5}}>
-                <div style={{width:5,height:5,borderRadius:"50%",background:currentAgent?.color||cxo?.color}} className="pulse"/>
-                Active
-              </span>
-            </div>
-          </header>
-
-          {/* KPI strip */}
-          <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"10px 20px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,flexShrink:0}}>
-            {(cxo?.kpis||[]).map((k,i) => (
-              <div key={i} style={{background:"#F8F9FA",borderRadius:9,padding:"9px 12px"}}>
-                <div style={{fontSize:10.5,color:"#94A3B8",marginBottom:2}}>{k.l}</div>
-                <div style={{fontSize:19,fontWeight:600,color:N}}>{k.v}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Body */}
-          <div style={{flex:1,overflow:"auto",padding:16,display:"grid",gridTemplateColumns:"1fr 360px",gap:14}}>
-
-            {/* LEFT panel */}
-            <div style={{display:"flex",flexDirection:"column",gap:12,minWidth:0}}>
-
-              {/* CEO — Strategy overview */}
-              {activeCxo==="ceo" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>Active growth initiatives</div>
-                  {[
-                    {t:"DFW warm outreach — 20 founders",prog:65,c:AMBER,s:"Running"},
-                    {t:"AppSumo marketplace application",prog:30,c:"#7C3AED",s:"Planning"},
-                    {t:"Product Hunt launch — Day 7",prog:80,c:"#1D9E75",s:"Ready"},
-                    {t:"LinkedIn content flywheel",prog:55,c:"#D4537E",s:"Running"},
-                  ].map((x,i) => <div key={i} style={{marginBottom:12}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                      <span style={{fontSize:13,fontWeight:500,color:N}}>{x.t}</span>
-                      <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:6,background:x.s==="Running"?"#E1F5EE":x.s==="Ready"?"#EEF2FF":"#FAEEDA",color:x.s==="Running"?"#085041":x.s==="Ready"?"#3D52A0":"#633806"}}>{x.s}</span>
+            {/* ══ CHAT TAB ══ */}
+            {activeTab==="chat" && (
+              <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+                <div style={{flex:1,overflow:"auto",display:"flex",flexDirection:"column",gap:10,marginBottom:10}} className="scrollbar-hide">
+                  {msgs.map((m,i) => (
+                    <div key={i} style={{display:"flex",gap:8,justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                      {m.role==="assistant" && (
+                        <div style={{width:30,height:30,borderRadius:8,background:cxo.color,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <i className={`ti ${activeAgent?AGENTS[activeAgent]?.icon||cxo.icon:cxo.icon}`} style={{fontSize:14,color:"#fff"}} aria-hidden="true"/>
+                        </div>
+                      )}
+                      <div className={m.role==="user"?"chat-bubble-user":"chat-bubble-ai"}>{m.content}</div>
                     </div>
-                    <div style={{height:5,background:"#F1F5F9",borderRadius:3}}><div style={{height:"100%",width:`${x.prog}%`,background:x.c,borderRadius:3}}/></div>
-                  </div>)}
-                </div>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>90-day revenue forecast</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-                    {[{l:"Month 1",v:"$1,470",s:"31 subs"},{l:"Month 2",v:"$3,430",s:"70 subs"},{l:"Month 3",v:"$6,860",s:"140 subs"}].map((r,i) => (
-                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:"12px 10px",textAlign:"center"}}>
-                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{r.l}</div>
-                        <div style={{fontSize:20,fontWeight:700,color:AMBER}}>{r.v}</div>
-                        <div style={{fontSize:11,color:"#94A3B8"}}>{r.s}</div>
+                  ))}
+                  {chatLoading && (
+                    <div style={{display:"flex",gap:8}}>
+                      <div style={{width:30,height:30,borderRadius:8,background:cxo.color,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{width:14,height:14,border:`2px solid rgba(255,255,255,.3)`,borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </>}
-
-              {/* CMO / Marketing agent */}
-              {(activeCxo==="cmo"&&!activeAgent)||activeAgent==="marketing" ? <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>Select channel</div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
-                    {Object.entries(AGENTS.marketing.channelIcons).map(([ch,ic]) => (
-                      <button key={ch} className="chip" onClick={()=>setActiveChannel(ch)}
-                        style={{background:activeChannel===ch?(ch==="LinkedIn"?"#0A66C2":ch==="Instagram"?"#E1306C":ch==="X / Twitter"?"#000":ch==="WhatsApp"?"#25D366":ch==="Email"?AMBER:"#8B5CF6"):"#F8F9FA",
-                               color:activeChannel===ch?"#fff":"#64748B",border:`1px solid ${activeChannel===ch?"transparent":"#E2E8F0"}`}}>
-                        <i className={`ti ${ic}`} style={{fontSize:12}} aria-hidden="true"/>{ch}
-                      </button>
-                    ))}
-                  </div>
-                  {AGENTS.marketing.channelHints[activeChannel] && (
-                    <div style={{fontSize:11.5,color:"#64748B",background:"#F8F9FA",borderRadius:7,padding:"7px 10px",display:"flex",gap:5}}>
-                      <i className="ti ti-info-circle" style={{fontSize:13,flexShrink:0,marginTop:1}} aria-hidden="true"/>
-                      {AGENTS.marketing.channelHints[activeChannel]}
+                      <div className="chat-bubble-ai" style={{color:"#94A3B8"}}>Thinking…</div>
                     </div>
                   )}
+                  <div ref={bottomRef}/>
                 </div>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{marginBottom:10}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em"}}>Contacts ({selectedLeads.length} selected)</div>
-                      <div style={{display:"flex",gap:6}}>
-                        <a href="/crm" style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:10.5,fontWeight:500,color:"#1D4ED8",textDecoration:"none"}}>
-                          <i className="ti ti-address-book" style={{fontSize:11}} aria-hidden="true"/>SIXXAB AI — CRM
-                        </a>
-                        <button onClick={()=>setShowCrmPicker(!showCrmPicker)} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:"#FFFBF2",border:"1px solid rgba(239,159,39,.4)",fontSize:10.5,fontWeight:500,color:"#633806",cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
-                          <i className="ti ti-brand-linkedin" style={{fontSize:11,color:"#0A66C2"}} aria-hidden="true"/>Add from CRM
-                        </button>
-                      </div>
+                {/* Input */}
+                <div style={{display:"flex",gap:8,borderTop:"1px solid #E8ECF4",paddingTop:10}}>
+                  <input className="inp" value={chatInput} onChange={e=>setChatInput(e.target.value)}
+                    placeholder={`Ask your ${activeAgent?AGENTS[activeAgent]?.label||"agent":cxo.title+" advisor"}…`}
+                    onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendMsg()}
+                    style={{flex:1}}/>
+                  <button onClick={sendMsg} disabled={chatLoading||!chatInput.trim()}
+                    style={{padding:"9px 18px",borderRadius:8,background:chatLoading||!chatInput.trim()?"#F1F5F9":cxo.color,color:chatLoading||!chatInput.trim()?"#94A3B8":cxo.color===AMBER?N:"#fff",border:"none",cursor:chatLoading||!chatInput.trim()?"not-allowed":"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,transition:"all .15s"}}>
+                    Send
+                  </button>
+                </div>
+                {/* Quick prompts */}
+                <div style={{display:"flex",gap:5,marginTop:6,flexWrap:"wrap"}}>
+                  {(activeCxo==="ceo"?["What is my #1 priority this week?","How do I reach $10k MRR?","Validate my goal for today"]:
+                    activeCxo==="cmo"?["Best channel for my niche?","Write me a LinkedIn post","Plan my content this week"]:
+                    activeCxo==="cso"?["Write a demo script","Handle my top objection","Who should I upsell?"]:
+                    activeCxo==="cfo"?["Calculate my unit economics","What is my break-even?","Model my 90-day MRR"]:
+                    activeCxo==="coo"?["Write my onboarding sequence","Reduce my churn — what do I do?","What process should I document first?"]:
+                    activeCxo==="cto"?["What tech should I build next?","Review my Vercel setup","Supabase migration plan"]:
+                    activeCxo==="cdo"?["What is my activation bottleneck?","Analyse my funnel","What metric should I focus on?"]:
+                    activeCxo==="chro"?["When should I hire?","Write a job description","Interview questions for a growth marketer"]:
+                    activeCxo==="ciso"?["Check my security posture","GDPR checklist","API key rotation plan"]:
+                    activeCxo==="hov"?["Best niche in Dallas for HVAC?","HVAC seasonal campaign script","Real estate listing description"]:
+                    ["Help me with this","Give me a plan","What should I do today?"]
+                  ).map((q,i)=>(
+                    <button key={i} onClick={()=>{setChatInput(q);}} style={{padding:"4px 11px",borderRadius:20,border:`1px solid ${cxo.color}44`,background:`${cxo.color}08`,fontSize:11,color:cxo.color,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>{q}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ══ AGENTS TAB ══ */}
+            {activeTab==="agents" && (
+              <div>
+                {/* Vertical agents dashboard */}
+                {activeCxo==="hov" ? (
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:12}}>
+                      Head of Verticals — 10 Industry Agent Packs · Dallas & Texas
                     </div>
-                    {showCrmPicker && (
-                      <div style={{border:"1px solid #E2E8F0",borderRadius:10,background:"#fff",marginTop:6,overflow:"hidden",maxHeight:220,display:"flex",flexDirection:"column"}}>
-                        <div style={{padding:"8px 10px",borderBottom:"1px solid #F1F5F9"}}>
-                          <input value={crmSearch} onChange={e=>setCrmSearch(e.target.value)}
-                            placeholder="Search CRM contacts…"
-                            style={{width:"100%",border:"1px solid #E2E8F0",borderRadius:7,padding:"5px 9px",fontSize:12,fontFamily:"'Plus Jakarta Sans',sans-serif",outline:"none"}}/>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:16}}>
+                      {cxo.agents.map(aid => {
+                        const a = AGENTS[aid]; if (!a) return null
+                        const isActive = activeVertical === aid
+                        const vContacts = crmContacts.filter(c =>
+                          c.tags?.includes(aid) ||
+                          c.role?.toLowerCase().includes(a.label.split(" ")[0].toLowerCase()) ||
+                          c.notes?.toLowerCase().includes(aid)
+                        )
+                        return (
+                          <div key={aid} onClick={()=>{setActiveVertical(aid);setActiveAgent(aid)}}
+                            style={{padding:12,borderRadius:11,border:`1.5px solid ${isActive?a.color:a.color+"33"}`,background:isActive?`${a.color}15`:`${a.color}06`,cursor:"pointer",transition:"all .15s",textAlign:"center"}}>
+                            <i className={`ti ${a.icon}`} style={{fontSize:22,color:a.color,display:"block",marginBottom:6}} aria-hidden="true"/>
+                            <div style={{fontSize:11,fontWeight:600,color:N,lineHeight:1.3,marginBottom:4}}>{a.label.replace(" Agent","")}</div>
+                            <div style={{fontSize:9.5,color:"#94A3B8",marginBottom:6,lineHeight:1.3}}>{a.desc.split(",")[0]}</div>
+                            <div style={{fontSize:10,fontWeight:600,color:a.color}}>{vContacts.length} CRM contacts</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {/* Active vertical detail */}
+                    {(() => {
+                      const va = AGENTS[activeVertical]; if (!va) return null
+                      const vContacts = crmContacts.filter(c =>
+                        c.tags?.includes(activeVertical) ||
+                        c.role?.toLowerCase().includes(va.label.split(" ")[0].toLowerCase())
+                      )
+                      return (
+                        <div className="card">
+                          <div style={{padding:"12px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",gap:10}}>
+                            <i className={`ti ${va.icon}`} style={{fontSize:18,color:va.color}} aria-hidden="true"/>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:13,fontWeight:600,color:N}}>{va.label}</div>
+                              <div style={{fontSize:11.5,color:"#64748B"}}>{va.desc}</div>
+                            </div>
+                            <a href="/verticals" style={{fontSize:11,color:"#378ADD",textDecoration:"none",fontWeight:500}}>Full dashboard →</a>
+                          </div>
+                          <div style={{padding:"12px 16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>CRM contacts in this vertical</div>
+                              {vContacts.length===0?(
+                                <div style={{fontSize:12.5,color:"#94A3B8",padding:"10px 0"}}>No contacts tagged for this vertical yet. <a href="/crm" style={{color:"#378ADD"}}>Add in CRM →</a></div>
+                              ):vContacts.slice(0,5).map(c=>(
+                                <div key={String(c.id)} style={{display:"flex",gap:8,alignItems:"center",padding:"6px 0",borderBottom:"1px solid #F1F5F9"}}>
+                                  <div style={{width:24,height:24,borderRadius:"50%",background:`${va.color}20`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:va.color}}>
+                                    {c.name.split(" ").map(w=>w[0]).slice(0,2).join("")}
+                                  </div>
+                                  <div style={{flex:1,fontSize:12,color:N}}>{c.name}</div>
+                                  <span style={{fontSize:10,padding:"1px 6px",borderRadius:6,background:`${va.color}15`,color:va.color}}>{c.stage}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div>
+                              <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>Quick actions</div>
+                              {[`Generate ${va.label.split(" ")[0]} outreach script`,`${va.label.split(" ")[0]} seasonal campaign`,`Validate this niche with SIXXAB`].map((q,i)=>(
+                                <button key={i} onClick={()=>{setChatInput(q);setActiveTab("chat")}}
+                                  style={{display:"block",width:"100%",marginBottom:6,padding:"8px 11px",borderRadius:8,border:`1px solid ${va.color}33`,background:`${va.color}08`,fontSize:12,color:va.color,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}}>
+                                  → {q}
+                                </button>
+                              ))}
+                              <a href="/niche-validator" style={{display:"block",padding:"8px 11px",borderRadius:8,background:va.color,color:va.color===AMBER?N:"#fff",fontSize:12,fontWeight:600,textDecoration:"none",textAlign:"center",marginTop:4}}>
+                                🎯 Validate this niche →
+                              </a>
+                            </div>
+                          </div>
                         </div>
-                        <div style={{overflowY:"auto",flex:1}}>
-                          {crmContacts.length === 0 ? (
-                            <div style={{padding:"16px",textAlign:"center",fontSize:12,color:"#94A3B8"}}>
-                              No CRM contacts yet. <a href="/crm" style={{color:"#0A66C2"}}>Import from LinkedIn →</a>
-                            </div>
-                          ) : crmContacts.filter(c => !crmSearch || `${c.name} ${c.role} ${c.company}`.toLowerCase().includes(crmSearch.toLowerCase())).slice(0,10).map(c => (
-                            <div key={c.id} onClick={()=>addContactFromCRM(crmToLead(c))}
-                              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid #F8F9FA",background:selectedLeads.map(String).includes(String(c.id))?"#FFFBF2":"transparent"}}
-                              onMouseOver={e=>e.currentTarget.style.background="#F8F9FA"}
-                              onMouseOut={e=>e.currentTarget.style.background=selectedLeads.map(String).includes(String(c.id))?"#FFFBF2":"transparent"}>
-                              <div style={{width:24,height:24,borderRadius:"50%",background:"rgba(239,159,39,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:"#EF9F27",flexShrink:0}}>
-                                {c.name.split(" ").map(w=>w[0]).slice(0,2).join("")}
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  /* Horizontal CXO agents */
+                  <div>
+                    <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:12}}>
+                      {cxo.title} — {cxo.name} · Specialist Agents
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                      {cxo.agents.map(aid => {
+                        const a = AGENTS[aid]; if (!a) return null
+                        return (
+                          <div key={aid} className="card" style={{border:`1px solid ${a.color}33`,cursor:"pointer",transition:"all .15s"}}
+                            onClick={()=>{setActiveAgent(aid);setActiveTab("chat")}}
+                            onMouseOver={e=>e.currentTarget.style.borderColor=a.color}
+                            onMouseOut={e=>e.currentTarget.style.borderColor=`${a.color}33`}>
+                            <div style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                              <div style={{width:36,height:36,borderRadius:9,background:`${a.color}18`,border:`1px solid ${a.color}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                <i className={`ti ${a.icon}`} style={{fontSize:16,color:a.color}} aria-hidden="true"/>
                               </div>
-                              <div style={{flex:1,minWidth:0}}>
-                                <div style={{fontSize:12,fontWeight:500,color:"#0A0E1A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.name}</div>
-                                <div style={{fontSize:10,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.role||c.company}</div>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:13,fontWeight:500,color:N,marginBottom:3}}>{a.label}</div>
+                                <div style={{fontSize:11.5,color:"#64748B",lineHeight:1.5}}>{a.desc}</div>
                               </div>
-                              {c.linkedin && <i className="ti ti-brand-linkedin" style={{fontSize:12,color:"#0A66C2",flexShrink:0}} aria-hidden="true"/>}
-                              {selectedLeads.map(String).includes(String(c.id)) && <span style={{fontSize:10,color:"#1D9E75",fontWeight:600,flexShrink:0}}>✓</span>}
                             </div>
-                          ))}
+                            <div style={{padding:"8px 14px",borderTop:`1px solid ${a.color}22`,background:`${a.color}05`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                              <span style={{fontSize:11,color:a.color,fontWeight:500}}>Open agent →</span>
+                              <span style={{fontSize:10,color:"#94A3B8"}}>via CXO chat</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {/* Marketing agent — script generator */}
+                    {(activeCxo==="cmo"||activeCxo==="cso") && (
+                      <div className="card">
+                        <div style={{padding:"11px 14px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                          <div style={{fontSize:13,fontWeight:500,color:N}}>Outreach script generator</div>
+                          <div style={{display:"flex",gap:6}}>
+                            <a href="/crm" style={{fontSize:11,color:"#1D9E75",textDecoration:"none",fontWeight:500,display:"flex",alignItems:"center",gap:4}}>
+                              <i className="ti ti-address-book" style={{fontSize:11}} aria-hidden="true"/>SIXXAB CRM ({crmContacts.length})
+                            </a>
+                            <button onClick={()=>setShowCrmPicker(!showCrmPicker)} style={{fontSize:11,color:AMBER,fontWeight:500,background:"#FFFBF2",border:`1px solid ${AMBER}44`,borderRadius:6,padding:"3px 9px",cursor:"pointer",fontFamily:"inherit"}}>
+                              + Add from CRM
+                            </button>
+                          </div>
+                        </div>
+                        {showCrmPicker && (
+                          <div style={{padding:10,borderBottom:"1px solid #E8ECF4",background:"#FAFAFA"}}>
+                            <input className="inp" style={{marginBottom:7}} placeholder="Search CRM contacts…" value={crmSearch} onChange={e=>setCrmSearch(e.target.value)}/>
+                            <div style={{maxHeight:160,overflowY:"auto"}}>
+                              {crmContacts.length===0?(
+                                <div style={{fontSize:12,color:"#94A3B8",padding:"8px",textAlign:"center"}}>No CRM contacts. <a href="/crm" style={{color:"#378ADD"}}>Import from LinkedIn →</a></div>
+                              ):crmContacts.filter(c=>!crmSearch||`${c.name} ${c.role} ${c.company}`.toLowerCase().includes(crmSearch.toLowerCase())).slice(0,8).map(c=>{
+                                const sel = selectedLeads.includes(String(c.id))
+                                return (
+                                  <div key={String(c.id)} onClick={()=>setSelectedLeads(sel?selectedLeads.filter(x=>x!==String(c.id)):[...selectedLeads,String(c.id)])}
+                                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 8px",cursor:"pointer",borderRadius:7,background:sel?"#FFFBF2":"transparent",marginBottom:2}}>
+                                    <div style={{width:20,height:20,borderRadius:"50%",background:sel?`${AMBER}30`:"#F1F5F9",border:`1.5px solid ${sel?AMBER:"#E2E8F0"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,color:sel?AMBER:"#94A3B8",flexShrink:0}}>
+                                      {sel?"✓":c.name.split(" ").map(w=>w[0]).slice(0,2).join("")}
+                                    </div>
+                                    <div style={{flex:1,minWidth:0}}>
+                                      <div style={{fontSize:12.5,fontWeight:500,color:N,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.name}</div>
+                                      <div style={{fontSize:10.5,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.role||c.company||"—"}</div>
+                                    </div>
+                                    <span style={{fontSize:9.5,padding:"1px 6px",borderRadius:6,background:"#F1F5F9",color:"#64748B",flexShrink:0}}>{c.stage}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        <div style={{padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}}>
+                          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                            {["LinkedIn","Email","WhatsApp","X / Twitter","SMS"].map(ch=>(
+                              <button key={ch} onClick={()=>setActiveChannel(ch)}
+                                style={{padding:"5px 12px",borderRadius:20,border:`1.5px solid ${activeChannel===ch?AMBER:"#E2E8F0"}`,background:activeChannel===ch?"#FFFBF2":"#F8F9FA",fontSize:12,fontWeight:500,color:activeChannel===ch?N:"#64748B",cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+                                {ch}
+                              </button>
+                            ))}
+                          </div>
+                          <textarea className="inp" rows={2} value={offer} onChange={e=>setOffer(e.target.value)}
+                            placeholder="What are you offering? (platform name, price, value prop)" style={{resize:"none",lineHeight:1.5}}/>
+                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                            <span style={{fontSize:12,color:"#64748B"}}>{selectedLeads.length} contact{selectedLeads.length!==1?"s":""} selected</span>
+                            <button onClick={generateScripts} disabled={scriptLoading||!selectedLeads.length}
+                              style={{flex:1,padding:10,borderRadius:9,background:scriptLoading||!selectedLeads.length?"#F1F5F9":AMBER,color:scriptLoading||!selectedLeads.length?"#94A3B8":N,border:"none",cursor:scriptLoading||!selectedLeads.length?"not-allowed":"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600,transition:"all .15s"}}>
+                              {scriptLoading?<><span style={{display:"inline-block",width:12,height:12,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .8s linear infinite",marginRight:6,verticalAlign:"middle"}}/>Generating…</>:"✦ Generate scripts →"}
+                            </button>
+                          </div>
+                          {scripts && (
+                            <div style={{background:N,borderRadius:10,padding:"12px 14px",position:"relative"}}>
+                              <div style={{fontFamily:"'DM Mono'",fontSize:9.5,color:AMBER,letterSpacing:".08em",marginBottom:8}}>GENERATED SCRIPTS</div>
+                              <div style={{fontSize:12.5,color:"rgba(245,245,240,.85)",lineHeight:1.75,whiteSpace:"pre-wrap"}}>{scripts}</div>
+                              <button onClick={()=>navigator.clipboard.writeText(scripts||"")}
+                                style={{marginTop:10,padding:"7px 14px",borderRadius:7,background:AMBER,color:N,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600}}>
+                                Copy all
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
-                    <div style={{display:"flex",gap:6}}>
-                      {["all","hot","warm","cold"].map(f => (
-                        <button key={f} className="chip" onClick={()=>setPipelineFilter(f)}
-                          style={{background:pipelineFilter===f?"#0A0E1A":"#F8F9FA",color:pipelineFilter===f?"#fff":"#64748B",border:"1px solid #E2E8F0",fontSize:10}}>
-                          {f}
-                        </button>
-                      ))}
-                    </div>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {LEADS.filter(l=>pipelineFilter==="all"||l.stage===pipelineFilter||l.status===pipelineFilter).map(l => {
-                      const sel = selectedLeads.map(String).includes(String(l.id))
-                      return (
-                        <div key={l.id} onClick={()=>setSelectedLeads(sel?selectedLeads.filter(x=>String(x)!==String(l.id)):[...selectedLeads,l.id])}
-                          style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",borderRadius:9,border:`1px solid ${sel?AMBER:"#E8ECF4"}`,background:sel?"#FFFBF2":"#F8F9FA",cursor:"pointer",transition:"all .15s"}}>
-                          <div style={{width:30,height:30,borderRadius:"50%",background:sel?AMBER:N,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{l.name.split(" ").map(w=>w[0]).join("")}</div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:12.5,fontWeight:500,color:N}}>{l.name}</div>
-                            <div style={{fontSize:11,color:"#94A3B8"}}>{l.role} · {l.source}</div>
-                          </div>
-                          <div style={{display:"flex",alignItems:"center",gap:6}}>
-                            <div style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:20,background:statusColor[l.status]||"#F1F5F9",color:statusTxt[l.status]||"#64748B"}}>{l.status}</div>
-                            <div style={{fontSize:10,fontWeight:600,color:l.score>=80?"#1D9E75":l.score>=60?"#F59E0B":"#EF4444"}}>{l.score}</div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:7}}>Offer to embed</div>
-                  <textarea value={offer} onChange={e=>setOffer(e.target.value)} rows={2}
-                    style={{width:"100%",border:"1px solid #E2E8F0",borderRadius:8,padding:"9px 11px",fontSize:13,background:"#F8F9FA",color:N,resize:"none",lineHeight:1.5}}/>
-                </div>
-                <button className="sbtn" onClick={generateScripts} disabled={generating||selectedLeads.length===0}
-                  style={{background:AMBER,color:N,padding:13,borderRadius:10,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  {generating?<><div style={{width:16,height:16,border:"2px solid rgba(10,14,26,.3)",borderTopColor:N,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Generating {selectedLeads.length} scripts…</>
-                    :<><i className="ti ti-sparkles" aria-hidden="true"/>Generate {selectedLeads.length} {activeChannel} scripts →</>}
-                </button>
-                {generated?.map((m,i) => (
-                  <div key={i} className="fadeIn" style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",overflow:"hidden"}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 13px",background:"#F8F9FA",borderBottom:"1px solid #E8ECF4"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:7}}>
-                        <div style={{width:26,height:26,borderRadius:"50%",background:N,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff"}}>
-                          {m.name?.split(" ").map(w=>w[0]).join("")}
-                        </div>
-                        <div><div style={{fontSize:12.5,fontWeight:500,color:N}}>{m.name}</div><div style={{fontSize:10,color:"#94A3B8"}}>via {m.platform} · {m.bestTime}</div></div>
-                      </div>
-                      <button className="gbtn" style={{fontSize:11}} onClick={()=>copyText(m.message)}><i className="ti ti-copy" style={{fontSize:11}} aria-hidden="true"/> Copy</button>
-                    </div>
-                    <div style={{padding:12}}>
-                      <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",marginBottom:4}}>Message</div>
-                      <div style={{fontSize:12.5,color:N,lineHeight:1.7,whiteSpace:"pre-wrap",background:"#F8F9FA",borderRadius:7,padding:"9px 11px",marginBottom:8}}>{m.message}</div>
-                      <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",marginBottom:4}}>Follow-up (3 days)</div>
-                      <div style={{fontSize:12,color:"#64748B",lineHeight:1.65,whiteSpace:"pre-wrap",background:"#FFFBF2",borderRadius:7,padding:"8px 11px",border:"1px solid rgba(239,159,39,.2)"}}>{m.followUp}</div>
-                    </div>
-                  </div>
-                ))}
-              </> : null}
+                )}
+              </div>
+            )}
 
-              {/* CSO — Chief Sales Officer overview */}
-              {activeCxo==="cso" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16,marginBottom:12}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:10}}>Sales command center</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
-                    {[{l:"Contacts in CRM",v:String(LEADS.length),c:"#1D9E75"},{l:"In pipeline",v:String(LEADS.filter(l=>["Outreach","Replied","Demo","Proposal"].includes(l.stage)).length),c:"#EF9F27"},{l:"Closed",v:String(LEADS.filter(l=>l.stage==="Closed ✓").length),c:"#1D9E75"}].map((m,i) => (
-                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12,textAlign:"center"}}>
-                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
-                        <div style={{fontSize:22,fontWeight:700,color:m.c}}>{m.v}</div>
-                      </div>
-                    ))}
+            {/* ══ PIPELINE TAB ══ */}
+            {activeTab==="pipeline" && (
+              <div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:N}}>Sales pipeline — {crmContacts.length} contacts</div>
+                    <div style={{fontSize:11.5,color:"#64748B",marginTop:2}}>
+                      Pipeline value: ${crmContacts.filter(c=>["Outreach","Replied","Demo","Proposal","Negotiation"].includes(c.stage)).reduce((a,c)=>a+(c.value==="Pro"?99.50:c.value==="Agency"?175:c.value==="Enterprise"?350:49.50),0).toFixed(2)}/mo potential
+                    </div>
                   </div>
-                  <div style={{display:"flex",gap:8}}>
-                    <a href="/crm" style={{flex:1,padding:"9px",borderRadius:8,background:"#1D9E75",color:"#fff",fontSize:12,fontWeight:600,textDecoration:"none",textAlign:"center"}}>Open SIXXAB AI — CRM →</a>
-                    <button onClick={()=>setActiveAgent("sales")} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:12,fontWeight:500,color:N,cursor:"pointer",fontFamily:"inherit"}}>View pipeline</button>
-                  </div>
+                  <a href="/crm" style={{fontSize:12,color:"#1D9E75",textDecoration:"none",fontWeight:500,display:"flex",alignItems:"center",gap:4}}>
+                    <i className="ti ti-external-link" style={{fontSize:12}} aria-hidden="true"/>Full SIXXAB CRM
+                  </a>
                 </div>
-              </>}
-
-              {/* CSO / Sales agent — Pipeline */}
-              {(activeCxo==="cso"&&!activeAgent)||activeAgent==="sales" ? <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                    <div style={{fontSize:13,fontWeight:600,color:N}}>Pipeline — {LEADS.length} contacts · ${LEADS.reduce((a,l)=>a+(l.value==="Pro"?99.50:l.value==="Agency"?175:l.value==="Enterprise"?350:49.50),0).toFixed(2)} potential MRR</div>
-                    <a href="/crm" style={{fontSize:11.5,color:"#0A66C2",textDecoration:"none",display:"inline-flex",alignItems:"center",gap:4}}>
-                      <i className="ti ti-external-link" style={{fontSize:11}} aria-hidden="true"/>Open full CRM
-                    </a>
-                  </div>
-                  <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-                    {PIPELINE.map((p,i) => {
-                      const stageLeads = LEADS.filter(l => l.stage === p.stage)
-                      return (
-                        <div key={i} style={{minWidth:140,flex:1,background:p.color,borderRadius:10,padding:12}}>
-                          <div style={{fontSize:11,fontWeight:600,color:p.txt,textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>
-                            {p.stage} ({stageLeads.length})
-                          </div>
-                          {stageLeads.length === 0 && (
-                            <div style={{fontSize:10,color:p.txt,opacity:.5,padding:"6px 0"}}>No contacts</div>
-                          )}
-                          {stageLeads.map(l => (
-                            <div key={l.id} style={{background:"rgba(255,255,255,.7)",borderRadius:7,padding:"8px 9px",marginBottom:6}}>
-                              <div style={{fontSize:12,fontWeight:500,color:N}}>{l.name}</div>
-                              <div style={{fontSize:10,color:"#94A3B8"}}>{l.role}</div>
-                              <div style={{fontSize:10,fontWeight:600,color:"#1D9E75",marginTop:3}}>{l.value}</div>
+                <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8}}>
+                  {PIPELINE_STAGES.map((p,i) => {
+                    const stageLeads = crmContacts.filter(l => l.stage === p.stage)
+                    return (
+                      <div key={i} style={{minWidth:150,flex:1}}>
+                        <div style={{background:p.color,borderRadius:"9px 9px 0 0",padding:"8px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <span style={{fontSize:10.5,fontWeight:700,color:p.txt,textTransform:"uppercase",letterSpacing:".06em"}}>{p.stage}</span>
+                          <span style={{width:18,height:18,borderRadius:"50%",background:p.txt,color:p.color,fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",opacity:.8}}>{stageLeads.length}</span>
+                        </div>
+                        <div style={{background:"#F8F9FA",borderRadius:"0 0 9px 9px",border:`1px solid ${p.color}`,borderTop:"none",minHeight:60,padding:"6px"}}>
+                          {stageLeads.length===0 && <div style={{fontSize:10,color:"#CBD5E1",textAlign:"center",padding:"10px 0"}}>Empty</div>}
+                          {stageLeads.map(l=>(
+                            <div key={String(l.id)} style={{background:"#fff",borderRadius:7,padding:"8px 9px",marginBottom:5,border:"1px solid #E8ECF4",cursor:"pointer"}}
+                              onClick={()=>window.open("/crm","_blank")}>
+                              <div style={{fontSize:12,fontWeight:500,color:N,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.name}</div>
+                              <div style={{fontSize:10,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{l.role||l.company||"—"}</div>
+                              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                                <span style={{fontSize:9.5,color:"#64748B"}}>{l.source||"—"}</span>
+                                <span style={{fontSize:9.5,fontWeight:600,color:"#1D9E75"}}>{l.value||"Starter"}</span>
+                              </div>
                             </div>
                           ))}
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:10}}>Hot leads — act today</div>
-                  {LEADS.filter(l=>l.status==="hot"||l.status==="demo"||l.score>=80).map(l => (
-                    <div key={l.id} style={{display:"flex",alignItems:"center",gap:9,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:34,height:34,borderRadius:"50%",background:"#E1F5EE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#085041"}}>{l.name.split(" ").map(w=>w[0]).join("")}</div>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:500,color:N}}>{l.name}</div>
-                        <div style={{fontSize:11,color:"#94A3B8"}}>{l.role} · {l.email}</div>
                       </div>
-                      <div style={{display:"flex",gap:6}}>
-                        <button className="gbtn" style={{fontSize:11,padding:"5px 10px"}}>Demo</button>
-                        <button className="sbtn" style={{background:"#1D9E75",color:"#fff",padding:"5px 11px",fontSize:11}}>Propose</button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
-              </> : null}
+              </div>
+            )}
 
-              {/* COO overview */}
-              {activeCxo==="coo" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16,marginBottom:12}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Operations overview</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-                    {[{l:"Open tickets",v:"3",c:"#F59E0B"},{l:"Churn target",c:"#1D9E75",v:"< 3%"},{l:"Onboarding",v:"Active",c:"#7C3AED"},{l:"NPS system",v:"Day 30",c:"#378ADD"}].map((m,i) => (
-                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12}}>
-                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
-                        <div style={{fontSize:18,fontWeight:700,color:m.c}}>{m.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={()=>setActiveAgent("support")} style={{flex:1,padding:"9px",borderRadius:8,background:"#7C3AED",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit"}}>Support tickets</button>
-                    <button onClick={()=>setActiveAgent("ops")} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Ops & systems</button>
-                    <button onClick={()=>setActiveAgent("hr")} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>HR & hiring</button>
-                  </div>
-                </div>
-              </>}
-
-              {/* COO / Support agent */}
-              {activeAgent==="support" && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                    <div style={{fontSize:13,fontWeight:600,color:N}}>Support tickets</div>
-                    <span style={{fontSize:11,padding:"3px 9px",borderRadius:10,background:"#FEF3C7",color:"#92400E",fontWeight:600}}>3 open</span>
-                  </div>
-                  {[{id:"#T-001",name:"Sarah Chen",issue:"Can't access coach page",status:"open",priority:"high",time:"2h ago"},
-                    {id:"#T-002",name:"Mike R.",issue:"Stripe receipt question",status:"resolved",priority:"low",time:"1d ago"},
-                    {id:"#T-003",name:"Priya N.",issue:"How to use /agents page",status:"open",priority:"medium",time:"4h ago"},
-                  ].map((t,i) => (
-                    <div key={i} style={{border:`1px solid ${t.status==="open"?"#FECACA":"#D1FAE5"}`,borderRadius:10,padding:12,marginBottom:8,background:t.status==="open"?"#FEF2F2":"#F0FDF4"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                        <div style={{display:"flex",gap:7,alignItems:"center"}}>
-                          <span style={{fontFamily:"'DM Mono'",fontSize:11,color:"#94A3B8"}}>{t.id}</span>
-                          <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:6,background:t.priority==="high"?"#FEE2E2":t.priority==="medium"?"#FEF3C7":"#F1F5F9",color:t.priority==="high"?"#991B1B":t.priority==="medium"?"#92400E":"#64748B"}}>{t.priority}</span>
+            {/* ══ DETAILS TAB ══ */}
+            {activeTab==="details" && (
+              <div>
+                {/* CEO details */}
+                {activeCxo==="ceo" && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <div className="card" style={{padding:16}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>3-phase business targets</div>
+                      {[["Phase 1","Months 1–3","$10k MRR · 100 customers","#EF9F27"],
+                        ["Phase 2","Months 4–8","$100k ARR · 1,000 customers","#1D9E75"],
+                        ["Phase 3","Months 9–12","$1M ARR · 5,000 customers","#7C3AED"]].map(([p,m,t,c])=>(
+                        <div key={p} style={{padding:"10px 0",borderBottom:"1px solid #F1F5F9",display:"flex",gap:10}}>
+                          <div style={{width:8,height:8,borderRadius:"50%",background:c,marginTop:5,flexShrink:0}}/>
+                          <div>
+                            <div style={{fontSize:12.5,fontWeight:500,color:N}}>{p} — {m}</div>
+                            <div style={{fontSize:12,color:"#64748B"}}>{t}</div>
+                          </div>
                         </div>
-                        <span style={{fontSize:11,color:"#94A3B8"}}>{t.time}</span>
-                      </div>
-                      <div style={{fontSize:13,fontWeight:500,color:N,marginBottom:3}}>{t.name}</div>
-                      <div style={{fontSize:12,color:"#64748B",marginBottom:t.status==="open"?8:0}}>{t.issue}</div>
-                      {t.status==="open" && <div style={{display:"flex",gap:6}}>
-                        <button className="gbtn" style={{fontSize:11}}>View</button>
-                        <button className="sbtn" style={{background:"#378ADD",color:"#fff",padding:"5px 11px",fontSize:11}}>
-                          <i className="ti ti-sparkles" style={{fontSize:11}} aria-hidden="true"/> AI reply
-                        </button>
-                      </div>}
+                      ))}
+                      <a href="/roadmap" style={{display:"block",marginTop:12,padding:"9px",borderRadius:9,background:AMBER,color:N,fontSize:12,fontWeight:600,textDecoration:"none",textAlign:"center"}}>View full roadmap →</a>
                     </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* COO / HR agent */}
-              {(activeAgent==="hr"||activeAgent==="hrops") && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>{activeAgent==="hr"?"Open positions":"Onboarding pipeline"}</div>
-                  {activeAgent==="hr" ? HR_JOBS.map((j,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:36,height:36,borderRadius:8,background:"#F5F3FF",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <i className="ti ti-user-plus" style={{fontSize:16,color:"#7C3AED"}} aria-hidden="true"/>
-                      </div>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:500,color:N}}>{j.title}</div>
-                        <div style={{fontSize:11,color:"#94A3B8"}}>{j.type} · {j.apps} applicants · Posted {j.posted}</div>
-                      </div>
-                      <span style={{fontSize:10,fontWeight:600,padding:"3px 9px",borderRadius:8,background:j.status==="Open"?"#E1F5EE":"#FEF3C7",color:j.status==="Open"?"#085041":"#92400E"}}>{j.status}</span>
-                      <button className="gbtn" style={{fontSize:11}}>Review</button>
+                    <div className="card" style={{padding:16}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>Live CRM snapshot</div>
+                      {[["Total contacts",crmStats.total,"#64748B"],["In pipeline",crmStats.pipeline,AMBER],["Closed customers",crmStats.closed,"#1D9E75"],["Hot leads (80+)",crmStats.hot,"#DC2626"]].map(([l,v,c])=>(
+                        <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #F1F5F9"}}>
+                          <span style={{fontSize:12.5,color:"#64748B"}}>{l}</span>
+                          <span style={{fontSize:13,fontWeight:700,color:c}}>{v}</span>
+                        </div>
+                      ))}
                     </div>
-                  )) : ["Alex Kim — Onboarding week 1","Jordan Lee — Onboarding week 2","Sam Patel — 30-day review due"].map((p,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:36,height:36,borderRadius:"50%",background:"#EEF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:"#3D52A0"}}>{p.split(" ")[0][0]+p.split(" ")[1][0]}</div>
-                      <div style={{flex:1,fontSize:13,fontWeight:500,color:N}}>{p}</div>
-                      <button className="sbtn" style={{background:"#7C3AED",color:"#fff",padding:"5px 12px",fontSize:11}}>AI checklist</button>
+                  </div>
+                )}
+                {/* CFO details */}
+                {activeCxo==="cfo" && (
+                  <div className="card" style={{padding:16}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>Financial model — SIXXAB AI pricing</div>
+                    {[["Starter","$99/mo","$49.50 founding","$594 annual LTV"],["Pro","$199/mo","$99.50 founding","$1,194 annual LTV"],["Agency","$350/mo","$175 founding","$2,100 annual LTV"]].map(([n,f,p,l])=>(
+                      <div key={n} style={{padding:"10px 0",borderBottom:"1px solid #F1F5F9",display:"grid",gridTemplateColumns:"80px 1fr 1fr 1fr",gap:8,alignItems:"center"}}>
+                        <span style={{fontSize:12.5,fontWeight:600,color:N}}>{n}</span>
+                        <span style={{fontSize:12,color:"#94A3B8",textDecoration:"line-through"}}>{f}</span>
+                        <span style={{fontSize:13,fontWeight:700,color:AMBER}}>{p}</span>
+                        <span style={{fontSize:12,color:"#1D9E75"}}>{l}</span>
+                      </div>
+                    ))}
+                    <div style={{marginTop:12,padding:"10px 12px",background:"#F0FDF4",borderRadius:9,border:"1px solid #BBF7D0",fontSize:12.5,color:"#065F46"}}>
+                      Current CRM MRR potential: <strong>${crmStats.mrr.toFixed(2)}/mo</strong> from {crmStats.closed} closed customers
                     </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* CFO / Finance */}
-              {activeCxo==="cfo" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Unit economics</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-                    {[{l:"MRR",v:"$1,470",c:"#1D9E75"},{l:"ARR",v:"$17,640",c:"#1D9E75"},{l:"CAC",v:"$0",c:"#7C3AED"},{l:"LTV",v:"$294",c:"#EF9F27"},{l:"LTV:CAC",v:"∞",c:"#1D9E75"},{l:"Payback period",v:"Immediate",c:"#1D9E75"}].map((m,i) => (
-                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12}}>
-                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
-                        <div style={{fontSize:20,fontWeight:700,color:m.c}}>{m.v}</div>
+                  </div>
+                )}
+                {/* CHRO details */}
+                {activeCxo==="chro" && (
+                  <div className="card" style={{padding:16}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>12-month hiring plan</div>
+                    {HIRE_PLAN.map((h,i)=>(
+                      <div key={i} style={{display:"flex",gap:12,padding:"11px 0",borderBottom:i<HIRE_PLAN.length-1?"1px solid #F1F5F9":"none",alignItems:"flex-start"}}>
+                        <div style={{width:36,height:36,borderRadius:9,background:"#F5F3FF",border:"1px solid #C4B5FD",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <i className="ti ti-user-plus" style={{fontSize:16,color:"#7C3AED"}} aria-hidden="true"/>
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",justifyContent:"space-between"}}>
+                            <span style={{fontSize:13,fontWeight:500,color:N}}>{h.role}</span>
+                            <span style={{fontSize:11,fontWeight:600,color:"#7C3AED"}}>{h.when} · {h.cost}</span>
+                          </div>
+                          <div style={{fontSize:11.5,color:"#64748B",marginTop:3}}>{h.why}</div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>Recent transactions</div>
-                  {[{n:"Angela Brooks",p:"Pro",a:"$24.50",t:"2h ago"},{n:"Marcus T.",p:"Starter",a:"$14.50",t:"Yesterday"},{n:"Priya Nair",p:"Agency",a:"$34.50",t:"2d ago"}].map((t,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:30,height:30,borderRadius:"50%",background:"#E1F5EE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#085041"}}>{t.n.split(" ").map(w=>w[0]).join("")}</div>
-                      <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500,color:N}}>{t.n}</div><div style={{fontSize:11,color:"#94A3B8"}}>{t.p} · {t.t}</div></div>
-                      <div style={{fontSize:14,fontWeight:700,color:"#1D9E75"}}>{t.a}</div>
+                )}
+                {/* COO details */}
+                {activeCxo==="coo" && (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <div className="card" style={{padding:16}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>Customer onboarding sequence</div>
+                      {[["Day 1","Welcome email + platform walkthrough","#7C3AED"],["Day 3","First check-in — did they run the orchestrator?","#EF9F27"],["Day 7","Goal review — are they on track?","#EF9F27"],["Day 14","Churn risk assessment — low usage triggers","#DC2626"],["Day 30","NPS survey + upgrade offer","#1D9E75"]].map(([d,t,c])=>(
+                        <div key={d} style={{display:"flex",gap:9,padding:"8px 0",borderBottom:"1px solid #F1F5F9"}}>
+                          <div style={{width:24,height:24,borderRadius:"50%",background:`${c}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:c,flexShrink:0}}>{d.split(" ")[1]}</div>
+                          <div style={{fontSize:12.5,color:N,lineHeight:1.5}}>{t}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* CTO */}
-              {activeCxo==="cto" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Tech stack health</div>
-                  {[{n:"Next.js 14 on Vercel",s:"Healthy",v:"14.2.29",c:"#E1F5EE",t:"#085041"},{n:"Claude API (Anthropic)",s:"Healthy",v:"claude-sonnet-4-6",c:"#E1F5EE",t:"#085041"},{n:"Stripe Payments",s:"Healthy",v:"API v2",c:"#E1F5EE",t:"#085041"},{n:"Resend Email",s:"Check domain",v:"RESEND_DOMAIN_VERIFIED",c:"#FEF3C7",t:"#92400E"},{n:"Auth System",s:"In-memory",v:"Upgrade to Supabase",c:"#FEF3C7",t:"#92400E"}].map((x,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:8,height:8,borderRadius:"50%",background:x.c==="#E1F5EE"?"#1D9E75":"#F59E0B",flexShrink:0}}/>
-                      <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500,color:N}}>{x.n}</div><div style={{fontFamily:"'DM Mono'",fontSize:10,color:"#94A3B8"}}>{x.v}</div></div>
-                      <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:6,background:x.c,color:x.t}}>{x.s}</span>
-                    </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* CISO */}
-              {activeCxo==="ciso" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Security checklist</div>
-                  {[{t:"STRIPE_SECRET_KEY in Vercel env (not committed)",done:true},{t:"RESEND_API_KEY in Vercel env (not committed)",done:true},{t:"ANTHROPIC_API_KEY in Vercel env",done:true},{t:"HTTPS enforced on startupsinabox.com",done:true},{t:"GDPR privacy policy live at /privacy",done:false},{t:"Terms of service at /terms",done:false},{t:"Auth upgraded from in-memory to Supabase",done:false},{t:"Rate limiting on /api/auth and /api/chat",done:false}].map((x,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <i className={`ti ${x.done?"ti-circle-check":"ti-circle-x"}`} style={{fontSize:17,color:x.done?"#1D9E75":"#EF4444",flexShrink:0}} aria-hidden="true"/>
-                      <span style={{fontSize:13,color:x.done?N:"#64748B"}}>{x.t}</span>
-                    </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* CDO */}
-              {activeCxo==="cdo" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Funnel analytics</div>
-                  {[{s:"Visitors → Signups",pct:0,label:"Track with Vercel Analytics"},{s:"Signups → Activation",pct:0,label:"Track with first action"},{s:"Activation → Paid",pct:0,label:"Track with Stripe webhooks"},{s:"Paid → 30-day active",pct:0,label:"Track with NPS surveys"}].map((f,i) => (
-                    <div key={i} style={{marginBottom:12}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontSize:13,fontWeight:500,color:N}}>{f.s}</span>
-                        <span style={{fontSize:12,fontWeight:500,color:"#94A3B8"}}>{f.label}</span>
-                      </div>
-                      <div style={{height:6,background:"#F1F5F9",borderRadius:3}}>
-                        <div style={{height:"100%",width:`${f.pct}%`,background:"#0EA5E9",borderRadius:3}}/>
+                    <div className="card" style={{padding:16}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>Support queue</div>
+                      <div style={{padding:"20px",textAlign:"center",color:"#94A3B8",fontSize:12.5}}>
+                        Connect your support system via Orchestrator.<br/>Set goal: "Resolve all open support tickets" and the Support Agent will draft replies.
+                        <a href="/orchestrator" style={{display:"block",marginTop:12,padding:"9px",borderRadius:9,background:"#7C3AED",color:"#fff",fontSize:12,fontWeight:600,textDecoration:"none"}}>Run Orchestrator →</a>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* CHRO */}
-              {activeCxo==="chro" && !activeAgent && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>People & hiring overview</div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-                    {[{l:"Open roles",v:"Build your team",c:"#7C3AED"},{l:"Hire next",v:"Month 4",c:"#EF9F27"},{l:"Budget",v:"Track burn",c:"#1D9E75"},{l:"Culture",v:"Founder-first",c:"#378ADD"}].map((m,i) => (
-                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12}}>
-                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
-                        <div style={{fontSize:16,fontWeight:700,color:m.c}}>{m.v}</div>
-                      </div>
-                    ))}
                   </div>
-                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>Hiring roadmap</div>
-                  {[{role:"Customer Success Manager",when:"Month 4",cost:"$3.5k/mo",reason:"Support volume exceeds solo capacity"},
-                    {role:"Growth Marketer",when:"Month 6",cost:"$4k/mo",reason:"AppSumo + LinkedIn + global expansion all running"},
-                    {role:"Engineer",when:"Month 9",cost:"$6k/mo",reason:"Supabase migration + AWS + API v2"},
-                    {role:"Sales Rep",when:"Month 9",cost:"$4k + comm",reason:"Enterprise and university deal closing"},
-                  ].map((h,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:36,height:36,borderRadius:8,background:"#F5F3FF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        <i className="ti ti-user-plus" style={{fontSize:16,color:"#7C3AED"}} aria-hidden="true"/>
-                      </div>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:500,color:N}}>{h.role}</div>
-                        <div style={{fontSize:11,color:"#94A3B8"}}>{h.when} · {h.cost}</div>
-                        <div style={{fontSize:11.5,color:"#64748B",marginTop:2}}>{h.reason}</div>
-                      </div>
+                )}
+                {/* HOV — Verticals dashboard summary */}
+                {activeCxo==="hov" && (
+                  <div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:14}}>
+                      {cxo.agents.map(aid=>{
+                        const a=AGENTS[aid]; if(!a) return null
+                        const cnt=crmContacts.filter(c=>c.tags?.includes(aid)||c.role?.toLowerCase().includes(a.label.split(" ")[0].toLowerCase())).length
+                        return (
+                          <div key={aid} style={{background:"#fff",border:`1px solid ${a.color}33`,borderRadius:10,padding:"12px 10px",textAlign:"center"}}>
+                            <i className={`ti ${a.icon}`} style={{fontSize:20,color:a.color,display:"block",marginBottom:5}} aria-hidden="true"/>
+                            <div style={{fontSize:11,fontWeight:500,color:N,marginBottom:3}}>{a.label.replace(" Agent","")}</div>
+                            <div style={{fontSize:12,fontWeight:700,color:a.color}}>{cnt} contacts</div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  ))}
-                </div>
-              </>}
-
-              {/* Default — content calendar for CMO sub-agents */}
-              {activeCxo==="cmo" && (activeAgent==="content"||activeAgent==="social") && <>
-                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Content calendar — this week</div>
-                  {[{d:"Mon",p:"LinkedIn",t:"Launch post — SIXXAB is live",s:"Published"},{d:"Tue",p:"X / Twitter",t:"48-hour framework thread",s:"Scheduled"},{d:"Wed",p:"LinkedIn",t:"First Stripe payment screenshot",s:"Draft"},{d:"Thu",p:"Instagram",t:"Behind the scenes",s:"Draft"},{d:"Fri",p:"Email",t:"Weekly founder digest",s:"Draft"},{d:"Sat",p:"LinkedIn",t:"Founding member offer expires soon",s:"Queued"}].map((c,i) => (
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 0",borderBottom:"1px solid #F1F5F9"}}>
-                      <div style={{width:28,fontFamily:"'DM Mono'",fontSize:11,color:"#94A3B8",flexShrink:0}}>{c.d}</div>
-                      <div style={{width:8,height:8,borderRadius:"50%",background:c.p==="LinkedIn"?"#0A66C2":c.p.includes("Twitter")?"#000":c.p==="Instagram"?"#E1306C":c.p==="Email"?AMBER:"#8B5CF6",flexShrink:0}}/>
-                      <div style={{flex:1}}><div style={{fontSize:12.5,fontWeight:500,color:N}}>{c.t}</div><div style={{fontSize:11,color:"#94A3B8"}}>{c.p}</div></div>
-                      <span style={{fontSize:10,fontWeight:600,padding:"2px 7px",borderRadius:6,background:c.s==="Published"?"#E1F5EE":c.s==="Scheduled"?"#EEF2FF":c.s==="Queued"?"#FAEEDA":"#F1F5F9",color:c.s==="Published"?"#085041":c.s==="Scheduled"?"#3D52A0":c.s==="Queued"?"#633806":"#64748B"}}>{c.s}</span>
-                      {c.s!=="Published"&&<button className="gbtn" style={{fontSize:11}}>Generate</button>}
-                    </div>
-                  ))}
-                </div>
-              </>}
-
-            </div>
-
-            {/* RIGHT: AI Chat ─────────────────────────────────────────────── */}
-            <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-              <div style={{padding:"11px 13px",borderBottom:"1px solid #E8ECF4",display:"flex",alignItems:"center",gap:9,flexShrink:0}}>
-                <svg width="24" height="24" viewBox="0 0 72 72">
-                  <rect x="1.5" y="1.5" width="69" height="69" rx="12" fill="none" stroke={AMBER} strokeWidth="2.5"/>
-                  <text x="7" y="54" fontFamily="Georgia" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text>
-                  <text x="35" y="54" fontFamily="Georgia" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text>
-                </svg>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:12.5,fontWeight:600,color:N,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                    {currentAgent?`${currentAgent.label}`:`${cxo?.title} AI Advisor`}
+                    <a href="/verticals" style={{display:"block",padding:"13px",borderRadius:11,background:N,color:CHALK,fontSize:14,fontWeight:700,textDecoration:"none",textAlign:"center"}}>
+                      Open full Vertical Agents dashboard →
+                    </a>
                   </div>
-                  <div style={{fontSize:10,color:"#94A3B8",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                    {currentAgent?currentAgent.desc:cxo?.desc}
+                )}
+                {/* Default for unhandled CXOs */}
+                {!["ceo","cfo","chro","coo","hov"].includes(activeCxo) && (
+                  <div className="card" style={{padding:24,textAlign:"center"}}>
+                    <div style={{fontSize:24,marginBottom:10}}><i className={`ti ${cxo.icon}`} style={{color:cxo.color}} aria-hidden="true"/></div>
+                    <div style={{fontSize:14,fontWeight:600,color:N,marginBottom:6}}>{cxo.title} — {cxo.name}</div>
+                    <div style={{fontSize:13,color:"#64748B",lineHeight:1.7,maxWidth:360,margin:"0 auto 16px"}}>{cxo.desc}</div>
+                    <button onClick={()=>setActiveTab("chat")} style={{padding:"10px 24px",borderRadius:9,background:cxo.color,color:cxo.color===AMBER?N:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>
+                      Open {cxo.title} advisor chat →
+                    </button>
                   </div>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"#94A3B8"}}>
-                  <div style={{width:5,height:5,borderRadius:"50%",background:"#1D9E75"}} className="pulse"/>
-                </div>
+                )}
               </div>
-
-              <div style={{flex:1,overflowY:"auto",padding:"12px 12px 6px",display:"flex",flexDirection:"column",gap:10}}>
-                {msgs.map((m,i) => (
-                  <div key={i} style={{display:"flex",gap:7,alignItems:"flex-start",flexDirection:m.role==="user"?"row-reverse":"row"}} className="fadeIn">
-                    <div style={{width:24,height:24,borderRadius:m.role==="assistant"?6:"50%",flexShrink:0,background:m.role==="assistant"?AMBER:"#F1F5F9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:m.role==="assistant"?N:"#64748B"}}>
-                      {m.role==="assistant"?"SX":"You"}
-                    </div>
-                    <div style={{maxWidth:"82%",padding:"8px 11px",borderRadius:m.role==="user"?"11px 11px 3px 11px":"11px 11px 11px 3px",fontSize:12.5,lineHeight:1.7,whiteSpace:"pre-wrap",wordBreak:"break-word",background:m.role==="user"?"#FFFBF2":"#F8F9FA",border:`1px solid ${m.role==="user"?"rgba(239,159,39,.2)":"#E8ECF4"}`,color:N}}>
-                      {m.content}
-                    </div>
-                  </div>
-                ))}
-                {sending && <div style={{display:"flex",gap:7}}>
-                  <div style={{width:24,height:24,borderRadius:6,background:AMBER,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:N}}>SX</div>
-                  <div style={{padding:"9px 13px",borderRadius:"11px 11px 11px 3px",background:"#F8F9FA",border:"1px solid #E8ECF4",display:"flex",gap:4}}>
-                    {[0,1,2].map(i=><div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#94A3B8",animation:`pulse 1.3s ${i*.2}s infinite`}}/>)}
-                  </div>
-                </div>}
-                <div ref={bottomRef}/>
-              </div>
-
-              {/* Quick prompts */}
-              <div style={{padding:"6px 10px",borderTop:"1px solid #E8ECF4",display:"flex",gap:5,flexWrap:"wrap"}}>
-                {(activeCxo==="ceo"?["What should I do today for revenue?","Give me my 48-hr sprint plan","How do I close my next 5 customers?"]
-                  :activeCxo==="cto"?["Review my tech stack","How do I add Supabase auth?","Best practices for Claude API"]
-                  :activeCxo==="cfo"?["What is my LTV:CAC ratio?","How do I reach $10k MRR?","Build me a P&L forecast"]
-                  :activeCxo==="coo"?["Reduce churn rate","Build onboarding checklist","Handle a support escalation"]
-                  :activeCxo==="ciso"?["GDPR compliance checklist","Secure my API keys","Add rate limiting"]
-                  :activeCxo==="cdo"?["Improve activation rate","Analyze my funnel","Which feature drives retention?"]
-                  :["Write my launch post","Best time to post on LinkedIn","Plan my content week"]
-                ).map((q,i) => (
-                  <button key={i} onClick={()=>setChatInput(q)}
-                    style={{fontSize:10.5,padding:"4px 9px",borderRadius:20,border:"1px solid #E2E8F0",background:"#F8F9FA",color:"#64748B",cursor:"pointer",fontFamily:"'Plus Jakarta Sans'",whiteSpace:"nowrap"}}>{q}</button>
-                ))}
-              </div>
-
-              <div style={{padding:"9px 11px",borderTop:"1px solid #E8ECF4",display:"flex",gap:7,alignItems:"flex-end",flexShrink:0}}>
-                <textarea value={chatInput} onChange={e=>setChatInput(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg()}}}
-                  placeholder={`Ask your ${currentAgent?currentAgent.label:cxo?.title+" advisor"}…`} rows={1}
-                  style={{flex:1,resize:"none",border:"1px solid #E2E8F0",borderRadius:8,padding:"8px 11px",fontSize:12.5,background:"#F8F9FA",color:N,lineHeight:1.5,minHeight:36,maxHeight:90,fontFamily:"'Plus Jakarta Sans'"}}/>
-                <button onClick={sendMsg} disabled={!chatInput.trim()||sending}
-                  style={{width:34,height:34,borderRadius:8,border:"none",background:AMBER,color:N,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",opacity:!chatInput.trim()||sending?.5:1,flexShrink:0}}>↑</button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
