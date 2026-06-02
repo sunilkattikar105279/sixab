@@ -87,7 +87,7 @@ const FRAMEWORK = [
     desc:"The CRM manages every contact across every agent. The marketing agent generates personalised outreach at scale. The sales pipeline tracks every deal. The finance agent models your path to $100k ARR and tells you exactly when to hire.",
     tool:"CRM + Agents",
     href:"/crm",
-    outcomes:["Full contact management","Automated outreach at scale","Revenue to $100k ARR","Hire timing model"],
+    outcomes:["SIXXAB CRM — full contact management","Automated outreach at scale","Revenue path to $100k ARR","Finance agent models exact hire timing"],
   },
   {
     n:"05", icon:"🏢", title:"Global",
@@ -96,7 +96,7 @@ const FRAMEWORK = [
     desc:"The platform runs with less than 2 hours of founder input per day. Vertical Agent Packs handle industry-specific operations. The Advisor franchise model lets you deploy SIXXAB in new markets through trained local operators.",
     tool:"Vertical Packs",
     href:"/agents",
-    outcomes:["<2 hrs/day founder time","Vertical agent packs","Advisor franchise model","20+ country reach"],
+    outcomes:["<2 hrs/day founder time — platform runs itself","10 Vertical Agent Packs — HVAC, RE, Legal and more","Advisor franchise model","20+ country reach"],
   },
 ]
 
@@ -578,7 +578,7 @@ export default function Index() {
           </div>
         </div>
         <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.22)"}}>© 2025 SIXXAB · Startups In eXponential A Box · Dallas, TX · Phase 1 of 3</span>
+          <span style={{fontSize:12,color:"rgba(255,255,255,.22)"}}>© 2025 SIXXAB · SIXXAB AI — Autonomous Business Platform · Dallas, TX · Phase 1 of 3</span>
           <span style={{fontSize:12,color:"rgba(255,255,255,.18)"}}>Validate · Launch · Optimise · Scale · Global</span>
         </div>
       </footer>

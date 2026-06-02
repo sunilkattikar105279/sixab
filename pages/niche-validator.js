@@ -89,7 +89,7 @@ export default function NicheValidator() {
   return (
     <>
       <Head>
-        <title>Niche Validator — SIXXAB</title>
+        <title>SIXXAB AI — Niche Selector</title>
         <meta name="description" content="Validate your business niche before you build. Get viability score, TAM, pricing benchmark and revenue projections in 60 seconds."/>
       </Head>
       <style>{`

@@ -1,3 +1,4 @@
+import SixxabNav from "../components/SixxabNav"
 import { useState, useRef, useEffect } from "react"
 
 // ── Load CRM contacts from localStorage (shared with /crm page) ──────────────
@@ -30,6 +31,14 @@ const CXOS = [
     agents:["strategy","marketing","sales","content"],
     kpis:[{l:"Goal",v:"$10k MRR"},{l:"Phase",v:"1 of 3"},{l:"Agents",v:"18"},{l:"Advisors",v:"7"}],
     chatRole:"You are the SIXXAB CEO AI advisor. You focus on revenue growth, strategic direction, investor readiness, team culture, and 48-hour execution sprints. Be decisive, data-driven and action-oriented.",
+  },
+  {
+    id:"cso", title:"CSO", name:"Chief Sales Officer",
+    color:"#1D9E75", bg:"#E1F5EE", txt:"#04342C",
+    icon:"ti-trending-up", desc:"Sales pipeline, lead qualification, demos, proposals and revenue closing",
+    agents:["sales","leads","partnership"],
+    kpis:[{l:"Pipeline",v:"SIXXAB AI — CRM"},{l:"Goal",v:"Close deals"},{l:"Tool",v:"Sales agent"},{l:"Track",v:"All stages"}],
+    chatRole:"You are the SIXXAB CSO AI advisor. You focus on sales pipeline management, lead qualification, demo scripts, proposal writing, objection handling, upsell strategy, and revenue closing. Be direct and deal-focused.",
   },
   {
     id:"cto", title:"CTO", name:"Chief Technology Officer",
@@ -70,6 +79,14 @@ const CXOS = [
     agents:["analytics","content"],
     kpis:[{l:"Conversion",v:"8.5%"},{l:"Activation",v:"74%"},{l:"D7 retention",v:"68%"},{l:"Features used",v:"3.2 avg"}],
     chatRole:"You are the SIXXAB CDO AI advisor. You focus on product analytics, conversion funnel optimisation, cohort analysis, user activation, feature adoption, and data-driven growth decisions.",
+  },
+  {
+    id:"chro", title:"CHRO", name:"Chief People Officer",
+    color:"#F59E0B", bg:"#FFFBEF", txt:"#633806",
+    icon:"ti-users", desc:"Hiring, team culture, onboarding, performance and people operations",
+    agents:["hr","hrops"],
+    kpis:[{l:"Focus",v:"Hiring"},{l:"Tool",v:"People agent"},{l:"Goal",v:"Right team"},{l:"Phase",v:"Solo → team"}],
+    chatRole:"You are the SIXXAB CHRO AI advisor. You focus on hiring strategy, job descriptions, interview scripts, onboarding checklists, team culture and performance frameworks for a fast-growing startup.",
   },
   {
     id:"cmo", title:"CMO", name:"Chief Marketing Officer",
@@ -141,7 +158,7 @@ export default function AgentHub() {
   const [sending, setSending] = useState(false)
   const [activeChannel, setActiveChannel] = useState("LinkedIn")
   const [selectedLeads, setSelectedLeads] = useState([])
-  const [offer, setOffer] = useState("Start with SIXXAB — autonomous startup platform from $49.50/mo. Founding member rate locked forever.")
+  const [offer, setOffer] = useState("Start with SIXXAB — autonomous business platform from $49.50/mo. Founding member rate locked forever.")
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated] = useState(null)
   const [pipelineFilter, setPipelineFilter] = useState("all")
@@ -399,12 +416,12 @@ export default function AgentHub() {
                   )}
                 </div>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:0}}>
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
                       <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em"}}>Contacts ({selectedLeads.length} selected)</div>
                       <div style={{display:"flex",gap:6}}>
                         <a href="/crm" style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:10.5,fontWeight:500,color:"#1D4ED8",textDecoration:"none"}}>
-                          <i className="ti ti-address-book" style={{fontSize:11}} aria-hidden="true"/>Manage CRM
+                          <i className="ti ti-address-book" style={{fontSize:11}} aria-hidden="true"/>SIXXAB AI — CRM
                         </a>
                         <button onClick={()=>setShowCrmPicker(!showCrmPicker)} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:6,background:"#FFFBF2",border:"1px solid rgba(239,159,39,.4)",fontSize:10.5,fontWeight:500,color:"#633806",cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
                           <i className="ti ti-brand-linkedin" style={{fontSize:11,color:"#0A66C2"}} aria-hidden="true"/>Add from CRM
@@ -502,8 +519,27 @@ export default function AgentHub() {
                 ))}
               </> : null}
 
-              {/* COO / Sales agent — Pipeline */}
-              {(activeCxo==="coo"&&!activeAgent)||activeAgent==="sales" ? <>
+              {/* CSO — Chief Sales Officer overview */}
+              {activeCxo==="cso" && !activeAgent && <>
+                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16,marginBottom:12}}>
+                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:10}}>Sales command center</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+                    {[{l:"Contacts in CRM",v:String(LEADS.length),c:"#1D9E75"},{l:"In pipeline",v:String(LEADS.filter(l=>["Outreach","Replied","Demo","Proposal"].includes(l.stage)).length),c:"#EF9F27"},{l:"Closed",v:String(LEADS.filter(l=>l.stage==="Closed ✓").length),c:"#1D9E75"}].map((m,i) => (
+                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12,textAlign:"center"}}>
+                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
+                        <div style={{fontSize:22,fontWeight:700,color:m.c}}>{m.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <a href="/crm" style={{flex:1,padding:"9px",borderRadius:8,background:"#1D9E75",color:"#fff",fontSize:12,fontWeight:600,textDecoration:"none",textAlign:"center"}}>Open SIXXAB AI — CRM →</a>
+                    <button onClick={()=>setActiveAgent("sales")} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:12,fontWeight:500,color:N,cursor:"pointer",fontFamily:"inherit"}}>View pipeline</button>
+                  </div>
+                </div>
+              </>}
+
+              {/* CSO / Sales agent — Pipeline */}}
+              {(activeCxo==="cso"&&!activeAgent)||activeAgent==="sales" ? <>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                     <div style={{fontSize:13,fontWeight:600,color:N}}>Pipeline — {LEADS.length} contacts · ${LEADS.reduce((a,l)=>a+(l.value==="Pro"?99.50:l.value==="Agency"?175:l.value==="Enterprise"?350:49.50),0).toFixed(2)} potential MRR</div>
@@ -551,6 +587,26 @@ export default function AgentHub() {
                   ))}
                 </div>
               </> : null}
+
+              {/* COO overview */}
+              {activeCxo==="coo" && !activeAgent && <>
+                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16,marginBottom:12}}>
+                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Operations overview</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                    {[{l:"Open tickets",v:"3",c:"#F59E0B"},{l:"Churn target",c:"#1D9E75",v:"< 3%"},{l:"Onboarding",v:"Active",c:"#7C3AED"},{l:"NPS system",v:"Day 30",c:"#378ADD"}].map((m,i) => (
+                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12}}>
+                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
+                        <div style={{fontSize:18,fontWeight:700,color:m.c}}>{m.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={()=>setActiveAgent("support")} style={{flex:1,padding:"9px",borderRadius:8,background:"#7C3AED",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",border:"none",fontFamily:"inherit"}}>Support tickets</button>
+                    <button onClick={()=>setActiveAgent("ops")} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Ops & systems</button>
+                    <button onClick={()=>setActiveAgent("hr")} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>HR & hiring</button>
+                  </div>
+                </div>
+              </>}
 
               {/* COO / Support agent */}
               {activeAgent==="support" && <>
@@ -664,14 +720,46 @@ export default function AgentHub() {
               {activeCxo==="cdo" && !activeAgent && <>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
                   <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Funnel analytics</div>
-                  {[{s:"Visitors",n:1240,pct:100},{s:"Signups",n:247,pct:19.9},{s:"Activated (used coach)",n:183,pct:74.1},{s:"Converted to paid",n:31,pct:8.5},{s:"Still active after 30d",n:30,pct:96.8}].map((f,i) => (
+                  {[{s:"Visitors → Signups",pct:0,label:"Track with Vercel Analytics"},{s:"Signups → Activation",pct:0,label:"Track with first action"},{s:"Activation → Paid",pct:0,label:"Track with Stripe webhooks"},{s:"Paid → 30-day active",pct:0,label:"Track with NPS surveys"}].map((f,i) => (
                     <div key={i} style={{marginBottom:12}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                         <span style={{fontSize:13,fontWeight:500,color:N}}>{f.s}</span>
-                        <span style={{fontSize:12,fontWeight:600,color:"#0EA5E9"}}>{f.n.toLocaleString()} ({f.pct}%)</span>
+                        <span style={{fontSize:12,fontWeight:500,color:"#94A3B8"}}>{f.label}</span>
                       </div>
                       <div style={{height:6,background:"#F1F5F9",borderRadius:3}}>
                         <div style={{height:"100%",width:`${f.pct}%`,background:"#0EA5E9",borderRadius:3}}/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>}
+
+              {/* CHRO */}
+              {activeCxo==="chro" && !activeAgent && <>
+                <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
+                  <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>People & hiring overview</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                    {[{l:"Open roles",v:"Build your team",c:"#7C3AED"},{l:"Hire next",v:"Month 4",c:"#EF9F27"},{l:"Budget",v:"Track burn",c:"#1D9E75"},{l:"Culture",v:"Founder-first",c:"#378ADD"}].map((m,i) => (
+                      <div key={i} style={{background:"#F8F9FA",borderRadius:10,padding:12}}>
+                        <div style={{fontSize:11,color:"#94A3B8",marginBottom:4}}>{m.l}</div>
+                        <div style={{fontSize:16,fontWeight:700,color:m.c}}>{m.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>Hiring roadmap</div>
+                  {[{role:"Customer Success Manager",when:"Month 4",cost:"$3.5k/mo",reason:"Support volume exceeds solo capacity"},
+                    {role:"Growth Marketer",when:"Month 6",cost:"$4k/mo",reason:"AppSumo + LinkedIn + global expansion all running"},
+                    {role:"Engineer",when:"Month 9",cost:"$6k/mo",reason:"Supabase migration + AWS + API v2"},
+                    {role:"Sales Rep",when:"Month 9",cost:"$4k + comm",reason:"Enterprise and university deal closing"},
+                  ].map((h,i) => (
+                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
+                      <div style={{width:36,height:36,borderRadius:8,background:"#F5F3FF",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <i className="ti ti-user-plus" style={{fontSize:16,color:"#7C3AED"}} aria-hidden="true"/>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:500,color:N}}>{h.role}</div>
+                        <div style={{fontSize:11,color:"#94A3B8"}}>{h.when} · {h.cost}</div>
+                        <div style={{fontSize:11.5,color:"#64748B",marginTop:2}}>{h.reason}</div>
                       </div>
                     </div>
                   ))}

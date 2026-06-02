@@ -1,5 +1,6 @@
 // pages/crm.js
-// SIXXAB CRM — Complete contact management, LinkedIn import, pipeline, agent integration
+// SIXXAB AI — CRM — Complete contact management, LinkedIn import, pipeline, agent integration
+import SixxabNav from "../components/SixxabNav"
 import { useState, useEffect, useRef } from "react"
 
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
@@ -211,7 +212,7 @@ Role: ${contact.role || "Unknown"}
 Company: ${contact.company || "Unknown"}
 Stage: ${contact.stage}
 Notes: ${contact.notes || "None"}
-Offer: SIXXAB platform — autonomous startup system, $49.50–$175/mo
+Offer: SIXXAB platform — autonomous business system, $49.50–$175/mo
 
 Write a concise, personalised LinkedIn DM (under 300 chars) that:
 1. References something specific about their role or company
