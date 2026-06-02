@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import SixxabNav, { SixxabMark, SixxabWordmark } from "../components/SixxabNav"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SIXXAB — Autonomous Business Platform
@@ -140,15 +141,7 @@ const TESTI = [
    quote:"Validated my niche in 90 seconds. Launched in 48 hours. The framework is genuinely different from anything else out there."},
 ]
 
-function SXLogo({ size=28 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 72 72">
-      <rect x="1.5" y="1.5" width="69" height="69" rx="14" fill="none" stroke={AMBER} strokeWidth="3"/>
-      <text x="7" y="54" fontFamily="Georgia,serif" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text>
-      <text x="35" y="54" fontFamily="Georgia,serif" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text>
-    </svg>
-  )
-}
+
 
 export default function Index() {
   const [scrolled, setScrolled] = useState(false)
@@ -207,7 +200,6 @@ export default function Index() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         body{font-family:'Plus Jakarta Sans',sans-serif;color:${N};overflow-x:hidden;background:#fff}
@@ -236,7 +228,7 @@ export default function Index() {
       {/* ── NAV ── */}
       <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:200,height:60,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 5%",background:scrolled?"rgba(10,14,26,.96)":N,backdropFilter:"blur(18px)",transition:"all .3s",borderBottom:scrolled?"1px solid rgba(255,255,255,.07)":"1px solid rgba(255,255,255,.04)"}}>
         <a href="/" style={{display:"flex",alignItems:"center",gap:9,textDecoration:"none"}}>
-          <SXLogo size={26}/>
+          <SixxabMark size={26}/>
           <div>
             <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:"#F5F5F0",letterSpacing:1,lineHeight:1}}>SIX<span style={{color:"#EF9F27",fontStyle:"italic"}}>X</span>AB <span style={{fontSize:9,color:"rgba(245,245,240,.4)",letterSpacing:2,fontStyle:"normal"}}>AI</span></div>
             <div style={{fontFamily:"'DM Mono'",fontSize:8,color:"#5F5E5A",letterSpacing:".12em",fontFamily:"monospace"}}>startupsinabox.com</div>
@@ -266,8 +258,7 @@ export default function Index() {
         </div>
 
         <h1 className="fu d2" style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(48px,9vw,108px)",color:CHALK,letterSpacing:1.5,lineHeight:.96,marginBottom:24,maxWidth:980}}>
-          Optimise your business<br/>
-          <span style={{color:AMBER}}>with autonomous AI.</span>
+          Your business<br/><span style={{color:AMBER}}>runs itself.</span>
         </h1>
 
         <p className="fu d3" style={{fontSize:"clamp(15px,2.2vw,19px)",color:"rgba(245,245,240,.62)",maxWidth:600,lineHeight:1.75,marginBottom:36}}>
@@ -564,13 +555,10 @@ export default function Index() {
       {/* ── FOOTER ── */}
       <footer style={{background:"#111520",padding:"28px 5%"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16,marginBottom:20}}>
-          <div style={{display:"flex",alignItems:"center",gap:9}}>
-            <SXLogo size={22}/>
-            <div>
-              <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:CHALK,letterSpacing:2,lineHeight:1}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-              <div style={{fontFamily:"'DM Mono'",fontSize:8,color:"#444",letterSpacing:".12em"}}>startupsinabox.com</div>
-            </div>
-          </div>
+          <a href="/" style={{display:"flex",alignItems:"center",gap:9,textDecoration:"none"}}>
+            <SixxabMark size={22}/>
+            <SixxabWordmark size="sm"/>
+          </a>
           <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
             {[["Framework","/#framework"],["Verticals","/verticals"],["Pricing","/#pricing"],["Niche Selector","/niche-validator"],["Runbook","/runbook"],["Orchestrator","/orchestrator"],["CRM","/crm"],["Agents","/agents"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
               <a key={l} href={h} style={{fontSize:12,color:"rgba(255,255,255,.32)",textDecoration:"none"}}>{l}</a>
@@ -578,8 +566,8 @@ export default function Index() {
           </div>
         </div>
         <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.22)"}}>© 2025 SIXXAB · SIXXAB AI — Autonomous Business Platform · Dallas, TX · Phase 1 of 3</span>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.18)"}}>Validate · Launch · Optimise · Scale · Global</span>
+          <span style={{fontSize:12,color:"rgba(255,255,255,.22)"}}>© 2025 SIXXAB AI · Autonomous Business Platform · Dallas, TX</span>
+          <span style={{fontSize:12,color:"rgba(255,255,255,.18)"}}>startupsinabox.com · Validate · Launch · Optimise · Scale · Global</span>
         </div>
       </footer>
     </>

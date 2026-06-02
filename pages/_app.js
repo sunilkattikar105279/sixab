@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react"
-import { useRouter } from "next/router"
+import { useRouter }           from "next/router"
+import Script                  from "next/script"
 
-// Protected — require login
 const PROTECTED = [
   "/coach", "/agents", "/agent", "/success",
   "/orchestrator", "/roadmap", "/crm",
   "/niche-validator", "/verticals",
 ]
 
-// Public — no login needed (runbook, landing, discovery, contact, login)
-// /runbook is intentionally public — it's in the landing page tab
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ""
 
 export default function App({ Component, pageProps }) {
-  const router = useRouter()
-  const [checked, setChecked] = useState(false)
+  const router  = useRouter()
+  const [ready, setReady]   = useState(false)
   const [allowed, setAllowed] = useState(false)
 
+  /* ── Auth guard ─────────────────────────────────────────────────────────── */
   useEffect(() => {
     const path = router.pathname
     const isProtected = PROTECTED.some(p => path === p || path.startsWith(p + "/"))
@@ -26,7 +26,7 @@ export default function App({ Component, pageProps }) {
           router.replace(`/login?redirect=${encodeURIComponent(router.asPath)}`)
           return
         }
-        JSON.parse(stored)
+        JSON.parse(stored)  // validate JSON
         setAllowed(true)
       } catch {
         sessionStorage.removeItem("sixxab_user")
@@ -36,20 +36,55 @@ export default function App({ Component, pageProps }) {
     } else {
       setAllowed(true)
     }
-    setChecked(true)
+    setReady(true)
   }, [router.pathname])
 
-  if (!checked || !allowed) {
+  /* ── GA pageview on route change ─────────────────────────────────────────── */
+  useEffect(() => {
+    if (!GA_ID) return
+    const handleRoute = (url) => {
+      if (typeof window.gtag === "function") {
+        window.gtag("config", GA_ID, { page_path: url })
+      }
+    }
+    router.events.on("routeChangeComplete", handleRoute)
+    return () => router.events.off("routeChangeComplete", handleRoute)
+  }, [router.events])
+
+  if (!ready || !allowed) {
     return (
-      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#0A0E1A" }}>
+      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center",
+                    justifyContent:"center", background:"#0A0E1A" }}>
         <div style={{ textAlign:"center" }}>
-          <div style={{ width:30, height:30, border:"2px solid rgba(239,159,39,.3)", borderTopColor:"#EF9F27", borderRadius:"50%", margin:"0 auto 10px", animation:"spin .8s linear infinite" }}/>
-          <div style={{ color:"rgba(245,245,240,.35)", fontSize:12, fontFamily:"sans-serif" }}>Loading SIXXAB AI…</div>
+          <div style={{ width:28, height:28, border:"2px solid rgba(239,159,39,.25)",
+                        borderTopColor:"#EF9F27", borderRadius:"50%",
+                        margin:"0 auto 10px", animation:"spin .7s linear infinite" }}/>
+          <div style={{ color:"rgba(245,245,240,.3)", fontSize:11,
+                        fontFamily:"monospace", letterSpacing:".1em" }}>
+            LOADING SIXXAB AI…
+          </div>
         </div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     )
   }
 
-  return <Component {...pageProps} />
+  return (
+    <>
+      {/* Google Analytics — only loads when GA_ID env var is set */}
+      {GA_ID && (
+        <>
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+                  strategy="afterInteractive"/>
+          <Script id="ga-init" strategy="afterInteractive">{`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}', { page_path: window.location.pathname });
+          `}</Script>
+        </>
+      )}
+      <Component {...pageProps}/>
+    </>
+  )
 }

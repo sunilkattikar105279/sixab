@@ -1,0 +1,12 @@
+{
+  "name": "SIXXAB AI — Autonomous Business Platform",
+  "short_name": "SIXXAB AI",
+  "description": "Your business runs itself. Validate, launch, optimise, scale.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0E1A",
+  "theme_color": "#EF9F27",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
