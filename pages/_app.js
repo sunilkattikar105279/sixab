@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 
-const PROTECTED = ["/coach", "/agents", "/agent", "/success", "/orchestrator", "/roadmap", "/crm"]
+const PROTECTED = ["/coach", "/agents", "/agent", "/success", "/orchestrator", "/roadmap", "/crm", "/niche-validator"]
 
 export default function App({ Component, pageProps }) {
   const router = useRouter()

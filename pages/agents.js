@@ -147,6 +147,28 @@ export default function AgentHub() {
   const [pipelineFilter, setPipelineFilter] = useState("all")
   const bottomRef = useRef(null)
 
+  // ── Send email via Resend API ──────────────────────────────────────────────
+  async function sendEmail(to, subject, body, type="outreach") {
+    if (!to || !to.includes("@")) {
+      alert("This contact has no email address. Add one in CRM first.")
+      return false
+    }
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to, subject, body, type }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Send failed")
+      alert(`✓ Email sent to ${to}`)
+      return true
+    } catch(e) {
+      alert("Email failed: " + e.message)
+      return false
+    }
+  }
+
   const cxo = CXOS.find(c => c.id === activeCxo)
   const currentAgent = activeAgent ? AGENTS[activeAgent] : null
   const chatKey = activeAgent || activeCxo
@@ -490,24 +512,31 @@ export default function AgentHub() {
                     </a>
                   </div>
                   <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-                    {PIPELINE.map((p,i) => (
-                      <div key={i} style={{minWidth:140,flex:1,background:p.color,borderRadius:10,padding:12}}>
-                        <div style={{fontSize:11,fontWeight:600,color:p.txt,textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>{p.stage}</div>
-                        {p.leads.map(lid => {
-                          const l = LEADS.find(x=>String(x.id)===String(lid)); if (!l) return null
-                          return <div key={lid} style={{background:"rgba(255,255,255,.7)",borderRadius:7,padding:"8px 9px",marginBottom:6}}>
-                            <div style={{fontSize:12,fontWeight:500,color:N}}>{l.name}</div>
-                            <div style={{fontSize:10,color:"#94A3B8"}}>{l.role}</div>
-                            <div style={{fontSize:10,fontWeight:600,color:"#1D9E75",marginTop:3}}>{l.value} · {l.score}/100</div>
+                    {PIPELINE.map((p,i) => {
+                      const stageLeads = LEADS.filter(l => l.stage === p.stage)
+                      return (
+                        <div key={i} style={{minWidth:140,flex:1,background:p.color,borderRadius:10,padding:12}}>
+                          <div style={{fontSize:11,fontWeight:600,color:p.txt,textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>
+                            {p.stage} ({stageLeads.length})
                           </div>
-                        })}
-                      </div>
-                    ))}
+                          {stageLeads.length === 0 && (
+                            <div style={{fontSize:10,color:p.txt,opacity:.5,padding:"6px 0"}}>No contacts</div>
+                          )}
+                          {stageLeads.map(l => (
+                            <div key={l.id} style={{background:"rgba(255,255,255,.7)",borderRadius:7,padding:"8px 9px",marginBottom:6}}>
+                              <div style={{fontSize:12,fontWeight:500,color:N}}>{l.name}</div>
+                              <div style={{fontSize:10,color:"#94A3B8"}}>{l.role}</div>
+                              <div style={{fontSize:10,fontWeight:600,color:"#1D9E75",marginTop:3}}>{l.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
                   <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:10}}>Hot leads — act today</div>
-                  {LEADS.filter(l=>l.status==="hot"||l.status==="demo").map(l => (
+                  {LEADS.filter(l=>l.status==="hot"||l.status==="demo"||l.score>=80).map(l => (
                     <div key={l.id} style={{display:"flex",alignItems:"center",gap:9,padding:"10px 0",borderBottom:"1px solid #F1F5F9"}}>
                       <div style={{width:34,height:34,borderRadius:"50%",background:"#E1F5EE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#085041"}}>{l.name.split(" ").map(w=>w[0]).join("")}</div>
                       <div style={{flex:1}}>

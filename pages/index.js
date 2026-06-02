@@ -85,14 +85,28 @@ const GOALS = [
 
 // ── PLATFORM CAPABILITIES ─────────────────────────────────────────────────────
 const CAPS = [
-  {icon:"👑", title:"Enterprise Orchestrator", desc:"Set one goal. All 16 agents run in parallel. One unified action plan returned.", tag:"New"},
-  {icon:"🧠", title:"AI Strategy Advisor", desc:"24/7 McKinsey-level advisor. Numbered action plan, not vague advice, in 60 seconds.", tag:"Core"},
-  {icon:"📣", title:"Multi-Channel Marketing", desc:"LinkedIn, Instagram, X, WhatsApp, Email, SMS — personalised DMs for each contact.", tag:"Marketing"},
-  {icon:"📈", title:"Sales Pipeline", desc:"Lead scoring, hot alerts, demo scripts, proposal templates, close playbooks.", tag:"Sales"},
-  {icon:"💰", title:"Finance & Analytics", desc:"Live MRR, Stripe reconciliation, LTV/CAC, 90-day revenue forecasts, burn rate.", tag:"Finance"},
-  {icon:"⚙️", title:"Operations Suite", desc:"Support tickets, onboarding sequences, NPS, process automation, SOP builder.", tag:"Ops"},
-  {icon:"👥", title:"HR & People Ops", desc:"Hiring pipeline, job descriptions, onboarding checklists, performance frameworks.", tag:"People"},
-  {icon:"🔐", title:"Security & Compliance", desc:"API key hygiene, GDPR, PCI-DSS checklists, vulnerability scanning.", tag:"Security"},
+  {icon:"👑", title:"Enterprise Orchestrator", desc:"Set one goal. All 18 agents run in parallel. One unified action plan returned in seconds.", tag:"New"},
+  {icon:"🎯", title:"Niche Validator", desc:"Input your industry and location. Get viability score, TAM, pricing benchmark and revenue projection before you build.", tag:"New"},
+  {icon:"🧠", title:"AI Strategy Advisor", desc:"24/7 advisor. Numbered action plan — not vague advice. Tailored to your exact business and market.", tag:"Core"},
+  {icon:"📣", title:"Multi-Channel Marketing", desc:"LinkedIn, Instagram, X, WhatsApp, Email, SMS — personalised DM scripts for each contact.", tag:"Marketing"},
+  {icon:"📈", title:"Sales Pipeline & CRM", desc:"Full contact management, lead scoring, pipeline tracking, demo scripts and proposal templates.", tag:"Sales"},
+  {icon:"💰", title:"Finance & Analytics", desc:"MRR tracking, LTV/CAC analysis, 90-day revenue forecasts, Stripe reconciliation, burn rate.", tag:"Finance"},
+  {icon:"⚙️", title:"Operations Suite", desc:"Support tickets, onboarding sequences, NPS surveys, process automation, SOP builder.", tag:"Ops"},
+  {icon:"🏭", title:"Vertical Agent Packs", desc:"Industry-specific agents for HVAC, Real Estate, Legal, Consulting and 6 more — pre-built for Texas.", tag:"Vertical"},
+]
+
+// ── Top 10 vertical agent packs — Dallas & Texas market focus ─────────────────
+const VERTICALS = [
+  {icon:"❄️", name:"HVAC & Air Conditioning", desc:"Seasonal campaign scripts, service quote generator, technician scheduling, maintenance reminder sequences. Built for DFW's extreme summers.", market:"47,000+ HVAC businesses in Texas", color:"#0EA5E9"},
+  {icon:"🏠", name:"Real Estate & Property", desc:"Listing description writer, buyer/seller outreach scripts, CMA report builder, open house follow-up sequences.", market:"150,000+ RE agents in Texas", color:"#1D9E75"},
+  {icon:"⚖️", name:"Legal Services", desc:"Client intake forms, retainer proposal generator, billing reminder scripts, practice area content calendar.", market:"$8.2B Texas legal market", color:"#7C3AED"},
+  {icon:"📊", name:"Business Consulting", desc:"Proposal writer, discovery call script, ROI calculator, case study builder, LinkedIn thought leadership calendar.", market:"Growing 12% YoY in DFW", color:"#EF9F27"},
+  {icon:"🌿", name:"Landscaping & Lawn Care", desc:"Seasonal service upsell scripts, route optimisation prompts, HOA contract templates, Google review request sequences.", market:"$1.4B Texas landscaping market", color:"#16A34A"},
+  {icon:"🔧", name:"Plumbing & Electrical", desc:"Emergency response scripts, maintenance plan upsell, insurance documentation templates, referral programme builder.", market:"35,000+ licensed contractors in TX", color:"#DC2626"},
+  {icon:"🚗", name:"Auto Repair & Detailing", desc:"Service reminder sequences, loyalty programme scripts, review request automation, fleet account outreach.", market:"$4.1B Texas auto service market", color:"#F59E0B"},
+  {icon:"💊", name:"Health & Wellness", desc:"New client onboarding scripts, package upsell sequences, referral programme, corporate wellness proposal generator.", market:"$2.8B Texas fitness market", color:"#EC4899"},
+  {icon:"🏗️", name:"Roofing & Construction", desc:"Storm season campaign scripts, insurance claim guidance templates, subcontractor outreach, project proposal generator.", market:"Texas #1 roofing market in US", color:"#6B7280"},
+  {icon:"💼", name:"IT Support & MSP", desc:"Monthly retainer proposal, security audit template, onboarding checklist, quarterly business review deck generator.", market:"$12.4B Texas IT services market", color:"#378ADD"},
 ]
 
 // ── PHASES ────────────────────────────────────────────────────────────────────
@@ -131,7 +145,7 @@ const PHASES = [
 
 // ── TESTIMONIALS ──────────────────────────────────────────────────────────────
 const TESTI = [
-  {name:"Marcus T.", role:"Solo founder · Dallas", avatar:"MT", quote:"Closed my first $2,400 client on Day 3. The orchestrator told me exactly which agent to use and what to say."},
+  {name:"Marcus T.", role:"Solo founder · Dallas", avatar:"MT", quote:"The orchestrator broke my goal into a numbered plan I could actually execute. I stopped overthinking and started shipping."},
   {name:"Priya S.", role:"Consultant · Mumbai", avatar:"PS", quote:"Idea to first revenue in 48 hours. I set one goal, 16 agents ran, I got a numbered plan. I just executed."},
   {name:"Jason K.", role:"SaaS founder · London", avatar:"JK", quote:"Hit $5k MRR in 6 weeks. The orchestrator decomposed my scaling goal into tasks I could actually finish in a day."},
   {name:"Angela B.", role:"Agency owner · Dallas", avatar:"AB", quote:"Signed 3 new clients the first week using the outreach scripts. ROI was immediate. We're on Agency plan now."},
@@ -513,7 +527,38 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
+
+      {/* ── VERTICAL AGENT PACKS ── */}
+      <section style={{padding:"80px 5%",background:N}}>
+        <div style={{textAlign:"center",marginBottom:44}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>Built for Dallas & Texas markets</div>
+          <h2 style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(30px,5vw,60px)",color:CHALK,letterSpacing:1.5,marginBottom:12}}>
+            10 Vertical Agent Packs
+          </h2>
+          <p style={{fontSize:15,color:"rgba(245,245,240,.55)",maxWidth:500,margin:"0 auto",lineHeight:1.7}}>
+            Industry-specific AI agents pre-built for the businesses that power Dallas and Texas. Every script, template and workflow tuned for your exact trade.
+          </p>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,maxWidth:1100,margin:"0 auto 24px"}}>
+          {VERTICALS.map((v,i)=>(
+            <div key={i} style={{background:"rgba(255,255,255,.04)",border:`1px solid ${v.color}33`,borderRadius:14,padding:18,transition:"all .2s",cursor:"default"}}
+              onMouseOver={e=>{e.currentTarget.style.background=`${v.color}10`;e.currentTarget.style.borderColor=`${v.color}66`}}
+              onMouseOut={e=>{e.currentTarget.style.background="rgba(255,255,255,.04)";e.currentTarget.style.borderColor=`${v.color}33`}}>
+              <div style={{fontSize:26,marginBottom:10}}>{v.icon}</div>
+              <div style={{fontSize:13,fontWeight:600,color:CHALK,marginBottom:6,lineHeight:1.3}}>{v.name}</div>
+              <div style={{fontSize:11.5,color:"rgba(245,245,240,.5)",lineHeight:1.55,marginBottom:10}}>{v.desc}</div>
+              <div style={{fontSize:10,fontWeight:600,color:v.color,padding:"3px 8px",background:`${v.color}15`,borderRadius:8,display:"inline-block"}}>{v.market}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{textAlign:"center"}}>
+          <a href="/niche-validator" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 28px",borderRadius:10,background:AMBER,color:N,fontSize:14,fontWeight:700,textDecoration:"none"}}>
+            🎯 Validate your niche for free →
+          </a>
+        </div>
+      </section>
+
+            {/* ── PRICING ── */}
       <section ref={pricingRef} style={{padding:"90px 5%",background:"#fff"}}>
         <div style={{textAlign:"center",marginBottom:48}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>Pricing</div>
@@ -652,7 +697,7 @@ export default function Index() {
             </div>
           </div>
           <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            {[["Orchestrator","/orchestrator"],["Roadmap","/roadmap"],["Agents","/agents"],["Coach","/coach"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
+            {[["Orchestrator","/orchestrator"],["Roadmap","/roadmap"],["Agents","/agents"],["CRM","/crm"],["Niche Validator","/niche-validator"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
               <a key={l} href={h} style={{fontSize:12,color:"rgba(255,255,255,.32)",textDecoration:"none"}}>{l}</a>
             ))}
           </div>
