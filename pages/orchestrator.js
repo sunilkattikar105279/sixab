@@ -1,6 +1,7 @@
 // pages/orchestrator.js
 // Phase 1: Founder Enterprise Orchestrator
 // The top-level brain — set one goal, all agents run in parallel
+import SixxabNav from "../components/SixxabNav"
 import { useState, useEffect, useRef } from "react"
 
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
@@ -198,20 +199,7 @@ export default function OrchestratorPage() {
         .section{padding:0 5%;margin-bottom:24px}
       `}</style>
 
-      {/* Nav */}
-      <nav style={{position:"sticky",top:0,zIndex:100,height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 5%",background:scrolled?"rgba(10,14,26,.96)":N,backdropFilter:"blur(16px)",borderBottom:"1px solid rgba(255,255,255,.07)",transition:"background .3s"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <svg width="24" height="24" viewBox="0 0 72 72"><rect x="1.5" y="1.5" width="69" height="69" rx="14" fill="none" stroke={AMBER} strokeWidth="3"/><text x="7" y="54" fontFamily="Georgia" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text><text x="35" y="54" fontFamily="Georgia" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text></svg>
-          <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:CHALK,letterSpacing:2}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-          <div style={{width:"1px",height:16,background:"rgba(255,255,255,.15)",margin:"0 4px"}}/>
-          <div style={{fontFamily:"'DM Mono'",fontSize:10,color:AMBER,letterSpacing:".08em"}}>orchestrator</div>
-        </div>
-        <div style={{display:"flex",gap:12,alignItems:"center"}}>
-          <a href="/agents" style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none"}}>Agents</a>
-          <a href="/coach" style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none"}}>Coach</a>
-          <a href="/" style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none"}}>Home</a>
-        </div>
-      </nav>
+      <SixxabNav active="/orchestrator"/>
 
       {/* Hero */}
       <div style={{background:N,padding:"40px 5% 32px",position:"relative",overflow:"hidden"}}>

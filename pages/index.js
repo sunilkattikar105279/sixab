@@ -249,6 +249,7 @@ export default function Index() {
           <a className="nav-a" href="/niche-validator">Niche Check</a>
           <a className="nav-a" href="/orchestrator">Orchestrator</a>
           <a className="nav-a" href="/crm">CRM</a>
+          <a className="nav-a" href="/runbook">Runbook</a>
           <a className="nav-a" href="/discovery">Book a call</a>
           <button className="btn-a" style={{padding:"8px 18px",fontSize:13}} onClick={()=>scrollTo(pricingRef)}>Get 50% off →</button>
         </div>
@@ -287,6 +288,7 @@ export default function Index() {
           <button className="btn-a" onClick={()=>scrollTo(pricingRef)}>Start for $49.50/mo →</button>
           <a className="btn-g" href="/niche-validator">🎯 Validate your niche free</a>
           <a className="btn-g" href="/discovery" style={{borderColor:"rgba(239,159,39,.35)",color:AMBER}}>📅 Free strategy call</a>
+          <a className="btn-g" href="/runbook" style={{borderColor:"rgba(255,255,255,.15)",fontSize:14}}>📖 How it works</a>
         </div>
 
         {/* Honest value props */}
@@ -570,7 +572,7 @@ export default function Index() {
             </div>
           </div>
           <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            {[["Framework","/#framework"],["Verticals","/#verticals"],["Pricing","/#pricing"],["Niche Validator","/niche-validator"],["Orchestrator","/orchestrator"],["CRM","/crm"],["Agents","/agents"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
+            {[["Framework","/#framework"],["Verticals","/verticals"],["Pricing","/#pricing"],["Niche Selector","/niche-validator"],["Runbook","/runbook"],["Orchestrator","/orchestrator"],["CRM","/crm"],["Agents","/agents"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
               <a key={l} href={h} style={{fontSize:12,color:"rgba(255,255,255,.32)",textDecoration:"none"}}>{l}</a>
             ))}
           </div>

@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 
-const PROTECTED = ["/coach", "/agents", "/agent", "/success", "/orchestrator", "/roadmap", "/crm", "/niche-validator"]
+// Protected — require login
+const PROTECTED = [
+  "/coach", "/agents", "/agent", "/success",
+  "/orchestrator", "/roadmap", "/crm",
+  "/niche-validator", "/verticals",
+]
+
+// Public — no login needed (runbook, landing, discovery, contact, login)
+// /runbook is intentionally public — it's in the landing page tab
 
 export default function App({ Component, pageProps }) {
   const router = useRouter()
@@ -10,7 +18,7 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     const path = router.pathname
-    const isProtected = PROTECTED.some(p => path.startsWith(p))
+    const isProtected = PROTECTED.some(p => path === p || path.startsWith(p + "/"))
     if (isProtected) {
       try {
         const stored = sessionStorage.getItem("sixxab_user")
@@ -29,14 +37,14 @@ export default function App({ Component, pageProps }) {
       setAllowed(true)
     }
     setChecked(true)
-  }, [router.pathname, router.asPath, router])
+  }, [router.pathname])
 
   if (!checked || !allowed) {
     return (
-      <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0A0E1A"}}>
-        <div style={{textAlign:"center"}}>
-          <div style={{width:32,height:32,border:"2px solid rgba(239,159,39,.3)",borderTopColor:"#EF9F27",borderRadius:"50%",margin:"0 auto 12px",animation:"spin .8s linear infinite"}}/>
-          <div style={{color:"rgba(245,245,240,.4)",fontSize:13,fontFamily:"sans-serif"}}>Loading SIXXAB…</div>
+      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#0A0E1A" }}>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ width:30, height:30, border:"2px solid rgba(239,159,39,.3)", borderTopColor:"#EF9F27", borderRadius:"50%", margin:"0 auto 10px", animation:"spin .8s linear infinite" }}/>
+          <div style={{ color:"rgba(245,245,240,.35)", fontSize:12, fontFamily:"sans-serif" }}>Loading SIXXAB AI…</div>
         </div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>

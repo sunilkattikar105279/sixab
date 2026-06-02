@@ -1,5 +1,6 @@
 // pages/niche-validator.js
 // SIXXAB Niche Validator — Input: industry + location → Output: viability score, TAM, pricing benchmark
+import SixxabNav from "../components/SixxabNav"
 import { useState } from "react"
 import Head from "next/head"
 
@@ -105,19 +106,7 @@ export default function NicheValidator() {
         .section-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#94A3B8;margin-bottom:8px}
       `}</style>
 
-      {/* Nav */}
-      <nav style={{background:N,padding:"0 5%",height:54,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
-        <a href="/" style={{display:"flex",alignItems:"center",gap:9,textDecoration:"none"}}>
-          <Logo/>
-          <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:CHALK,letterSpacing:2}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-          <span style={{fontFamily:"'DM Mono'",fontSize:10,color:AMBER,marginLeft:4,letterSpacing:".08em"}}>niche validator</span>
-        </a>
-        <div style={{display:"flex",gap:14,alignItems:"center"}}>
-          {[["/agents","Agents"],["/orchestrator","Orchestrator"],["/crm","CRM"]].map(([h,l])=>(
-            <a key={l} href={h} style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none"}}>{l}</a>
-          ))}
-        </div>
-      </nav>
+      <SixxabNav active="/niche-validator"/>
 
       {/* Hero */}
       <div style={{background:N,padding:"36px 5% 32px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,.07)"}}>

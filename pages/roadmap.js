@@ -1,6 +1,7 @@
 // pages/roadmap.js
 // SIXXAB 12-Month Autonomous Startup Roadmap
 // Phase 1: Launch (months 1-3) · Phase 2: Scale (months 4-8) · Phase 3: Global (months 9-12)
+import SixxabNav from "../components/SixxabNav"
 import { useState } from "react"
 
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
@@ -184,19 +185,7 @@ export default function RoadmapPage() {
         .check-row:hover{opacity:.85}
       `}</style>
 
-      {/* Nav */}
-      <nav style={{background:N,padding:"0 5%",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <svg width="22" height="22" viewBox="0 0 72 72"><rect x="1.5" y="1.5" width="69" height="69" rx="14" fill="none" stroke={AMBER} strokeWidth="3"/><text x="7" y="54" fontFamily="Georgia" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text><text x="35" y="54" fontFamily="Georgia" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text></svg>
-          <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:CHALK,letterSpacing:2}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-          <span style={{fontFamily:"'DM Mono'",fontSize:10,color:AMBER,letterSpacing:".08em",marginLeft:4}}>roadmap</span>
-        </div>
-        <div style={{display:"flex",gap:14,alignItems:"center"}}>
-          {[["/orchestrator","Orchestrator"],["/agents","Agents"],["/","Home"]].map(([h,l]) => (
-            <a key={l} href={h} style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none"}}>{l}</a>
-          ))}
-        </div>
-      </nav>
+      <SixxabNav active="/roadmap"/>
 
       {/* Hero */}
       <div style={{background:N,padding:"36px 5% 28px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
