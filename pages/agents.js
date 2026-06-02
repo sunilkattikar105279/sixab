@@ -538,7 +538,7 @@ export default function AgentHub() {
                 </div>
               </>}
 
-              {/* CSO / Sales agent — Pipeline */}}
+              {/* CSO / Sales agent — Pipeline */}
               {(activeCxo==="cso"&&!activeAgent)||activeAgent==="sales" ? <>
                 <div style={{background:"#fff",borderRadius:12,border:"1px solid #E8ECF4",padding:16}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
