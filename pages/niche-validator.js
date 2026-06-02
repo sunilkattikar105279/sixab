@@ -55,70 +55,29 @@ export default function NicheValidator() {
 
     setLoading(true); setResult(null)
 
-    const prompt = `You are the SIXXAB Niche Validator — an expert business analyst specialising in evaluating startup opportunities for founders in specific markets.
-
-A founder wants to validate this niche:
-- Industry: ${industry}
-- Location: ${location}
-- Team size: ${form.teamSize}
-- Years of experience: ${form.experience || "Not specified"}
-- Monthly marketing budget: ${form.budget || "Not specified"}
-- Target customer: ${form.targetCustomer || "Not specified"}
-- Problem they solve: ${form.problem || "Not specified"}
-
-Analyse this niche and return a JSON object with this exact structure:
-{
-  "viabilityScore": <number 1-100>,
-  "verdict": "<one sentence verdict on whether to pursue this niche>",
-  "marketSize": {
-    "tam": "<Total Addressable Market in dollars, specific to their region>",
-    "sam": "<Serviceable Addressable Market — realistic portion they can reach>",
-    "som": "<Serviceable Obtainable Market — what they can capture in year 1>",
-    "localBusinessCount": "<estimated number of businesses in this niche in their location>"
-  },
-  "pricingBenchmark": {
-    "lowEnd": "<lowest price competitors charge>",
-    "midMarket": "<typical market rate>",
-    "premium": "<what the best charge>",
-    "recommended": "<what this founder should charge and why>",
-    "monthlyRecurring": "<what a retainer or subscription model could look like>"
-  },
-  "competition": {
-    "level": "<Low / Medium / High / Very High>",
-    "topCompetitors": ["<competitor type 1>", "<competitor type 2>", "<competitor type 3>"],
-    "differentiator": "<how to stand out in this specific market>"
-  },
-  "customerProfile": {
-    "primaryBuyer": "<who actually pays the money>",
-    "painPoints": ["<pain 1>", "<pain 2>", "<pain 3>"],
-    "wherToFindThem": "<specific channels to reach them in ${location}>"
-  },
-  "revenueProjection": {
-    "month3": "<realistic MRR at 3 months with focused execution>",
-    "month6": "<realistic MRR at 6 months>",
-    "month12": "<realistic MRR at 12 months>",
-    "firstSaleTimeline": "<how many days to first paying customer if they start today>"
-  },
-  "topRisks": ["<risk 1>", "<risk 2>", "<risk 3>"],
-  "immediateActions": ["<action to take today>", "<action this week>", "<action this month>"],
-  "sixxabRecommendation": "<which SIXXAB plan and which agents would most help this founder specifically>"
-}
-
-Use REAL market data for ${location}. Be specific with numbers — avoid ranges like '$10k-$100k'. Pick a specific number. Return ONLY valid JSON, no markdown, no preamble.`
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/niche-validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role:"user", content: prompt }] })
+        body: JSON.stringify({
+          industry, location,
+          teamSize: form.teamSize,
+          experience: form.experience,
+          budget: form.budget,
+          targetCustomer: form.targetCustomer,
+          problem: form.problem,
+        })
       })
       const data = await res.json()
-      const raw = data.reply || ""
-      const clean = raw.replace(/```json\n?|\n?```/g,"").trim()
-      const parsed = JSON.parse(clean)
-      setResult({ ...parsed, industry, location })
+      if (!res.ok || data.error) {
+        setError(data.error || "Analysis failed — please try again.")
+        setLoading(false)
+        return
+      }
+      setResult(data.result)
     } catch(e) {
-      setError("Analysis failed — check your internet connection and try again.")
+      setError("Network error — check your internet connection and try again.")
     }
     setLoading(false)
   }

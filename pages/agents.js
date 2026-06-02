@@ -28,7 +28,7 @@ const CXOS = [
     color:"#EF9F27", bg:"#FAEEDA", txt:"#412402",
     icon:"ti-crown", desc:"Vision, strategy, investors, board, culture and 48-hr revenue execution",
     agents:["strategy","marketing","sales","content"],
-    kpis:[{l:"MRR",v:"$1,470"},{l:"Founders",v:"247"},{l:"NPS",v:"72"},{l:"Days to revenue",v:"2.3"}],
+    kpis:[{l:"Goal",v:"$10k MRR"},{l:"Phase",v:"1 of 3"},{l:"Agents",v:"18"},{l:"Advisors",v:"7"}],
     chatRole:"You are the SIXXAB CEO AI advisor. You focus on revenue growth, strategic direction, investor readiness, team culture, and 48-hour execution sprints. Be decisive, data-driven and action-oriented.",
   },
   {
@@ -36,7 +36,7 @@ const CXOS = [
     color:"#378ADD", bg:"#E6F1FB", txt:"#042C53",
     icon:"ti-code", desc:"Tech stack, AI architecture, product roadmap, security and scalability",
     agents:["product","tech","security"],
-    kpis:[{l:"Uptime",v:"99.9%"},{l:"Deploy time",v:"62s"},{l:"API latency",v:"340ms"},{l:"Open bugs",v:"0"}],
+    kpis:[{l:"Stack",v:"Next.js"},{l:"AI",v:"Claude"},{l:"Deploy",v:"Vercel"},{l:"DB",v:"Supabase soon"}],
     chatRole:"You are the SIXXAB CTO AI advisor. You focus on tech architecture, Claude API integration, Vercel deployment, Next.js best practices, scalability, and product engineering decisions.",
   },
   {
@@ -44,7 +44,7 @@ const CXOS = [
     color:"#1D9E75", bg:"#E1F5EE", txt:"#04342C",
     icon:"ti-chart-line", desc:"MRR, burn rate, Stripe reconciliation, unit economics and fundraising",
     agents:["ops","finance"],
-    kpis:[{l:"MRR",v:"$1,470"},{l:"Burn rate",v:"$38/mo"},{l:"CAC",v:"$0"},{l:"LTV",v:"$294"}],
+    kpis:[{l:"Model",v:"SaaS"},{l:"Plans",v:"3 tiers"},{l:"CAC",v:"Organic"},{l:"Payments",v:"Stripe"}],
     chatRole:"You are the SIXXAB CFO AI advisor. You focus on unit economics (MRR, LTV, CAC, churn), Stripe revenue, burn rate, P&L, fundraising readiness, and financial forecasting for a SaaS startup.",
   },
   {
@@ -140,8 +140,8 @@ export default function AgentHub() {
   const [chatInput, setChatInput] = useState("")
   const [sending, setSending] = useState(false)
   const [activeChannel, setActiveChannel] = useState("LinkedIn")
-  const [selectedLeads, setSelectedLeads] = useState([1,3,6])
-  const [offer, setOffer] = useState("50% off SIXXAB founding membership — $24.50/mo Pro · expires at public launch")
+  const [selectedLeads, setSelectedLeads] = useState([])
+  const [offer, setOffer] = useState("Start with SIXXAB — autonomous startup platform from $49.50/mo. Founding member rate locked forever.")
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated] = useState(null)
   const [pipelineFilter, setPipelineFilter] = useState("all")
@@ -201,7 +201,7 @@ export default function AgentHub() {
 
   async function generateScripts() {
     setGenerating(true); setGenerated(null)
-    const leads = LEADS.filter(l => selectedLeads.includes(l.id))
+    const leads = LEADS.filter(l => selectedLeads.map(String).includes(String(l.id)))
     try {
       const res = await fetch("/api/marketing-agent", {
         method:"POST", headers:{"Content-Type":"application/json"},
@@ -425,9 +425,9 @@ export default function AgentHub() {
                             </div>
                           ) : crmContacts.filter(c => !crmSearch || `${c.name} ${c.role} ${c.company}`.toLowerCase().includes(crmSearch.toLowerCase())).slice(0,10).map(c => (
                             <div key={c.id} onClick={()=>addContactFromCRM(crmToLead(c))}
-                              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid #F8F9FA",background:selectedLeads.includes(c.id)?"#FFFBF2":"transparent"}}
+                              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid #F8F9FA",background:selectedLeads.map(String).includes(String(c.id))?"#FFFBF2":"transparent"}}
                               onMouseOver={e=>e.currentTarget.style.background="#F8F9FA"}
-                              onMouseOut={e=>e.currentTarget.style.background=selectedLeads.includes(c.id)?"#FFFBF2":"transparent"}>
+                              onMouseOut={e=>e.currentTarget.style.background=selectedLeads.map(String).includes(String(c.id))?"#FFFBF2":"transparent"}>
                               <div style={{width:24,height:24,borderRadius:"50%",background:"rgba(239,159,39,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600,color:"#EF9F27",flexShrink:0}}>
                                 {c.name.split(" ").map(w=>w[0]).slice(0,2).join("")}
                               </div>
@@ -436,7 +436,7 @@ export default function AgentHub() {
                                 <div style={{fontSize:10,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.role||c.company}</div>
                               </div>
                               {c.linkedin && <i className="ti ti-brand-linkedin" style={{fontSize:12,color:"#0A66C2",flexShrink:0}} aria-hidden="true"/>}
-                              {selectedLeads.includes(c.id) && <span style={{fontSize:10,color:"#1D9E75",fontWeight:600,flexShrink:0}}>✓</span>}
+                              {selectedLeads.map(String).includes(String(c.id)) && <span style={{fontSize:10,color:"#1D9E75",fontWeight:600,flexShrink:0}}>✓</span>}
                             </div>
                           ))}
                         </div>
@@ -452,10 +452,10 @@ export default function AgentHub() {
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {LEADS.filter(l=>pipelineFilter==="all"||l.status===pipelineFilter).map(l => {
-                      const sel = selectedLeads.includes(l.id)
+                    {LEADS.filter(l=>pipelineFilter==="all"||l.stage===pipelineFilter||l.status===pipelineFilter).map(l => {
+                      const sel = selectedLeads.map(String).includes(String(l.id))
                       return (
-                        <div key={l.id} onClick={()=>setSelectedLeads(sel?selectedLeads.filter(x=>x!==l.id):[...selectedLeads,l.id])}
+                        <div key={l.id} onClick={()=>setSelectedLeads(sel?selectedLeads.filter(x=>String(x)!==String(l.id)):[...selectedLeads,l.id])}
                           style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",borderRadius:9,border:`1px solid ${sel?AMBER:"#E8ECF4"}`,background:sel?"#FFFBF2":"#F8F9FA",cursor:"pointer",transition:"all .15s"}}>
                           <div style={{width:30,height:30,borderRadius:"50%",background:sel?AMBER:N,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}}>{l.name.split(" ").map(w=>w[0]).join("")}</div>
                           <div style={{flex:1,minWidth:0}}>
