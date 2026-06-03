@@ -32,11 +32,32 @@ const TAGS    = ["Hot lead","Decision maker","Founder","Agency","Freelancer","En
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 const STORE_KEY = "sixxab_crm_contacts"
+const BACKUP_KEY = "sixxab_crm_contacts_backup"
+
 function loadContacts() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]") } catch { return [] }
+  try {
+    const raw = localStorage.getItem(STORE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    // Ensure every contact has a string ID
+    return parsed.map(c => ({ ...c, id: String(c.id || Date.now() + Math.random().toString(36).slice(2)) }))
+  } catch {
+    // Try backup
+    try {
+      const backup = localStorage.getItem(BACKUP_KEY)
+      if (backup) return JSON.parse(backup)
+    } catch {}
+    return []
+  }
 }
 function saveContacts(list) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(list)) } catch {}
+  try {
+    const json = JSON.stringify(list)
+    localStorage.setItem(STORE_KEY, json)
+    // Write backup on every save so data is never lost
+    localStorage.setItem(BACKUP_KEY, json)
+  } catch {}
 }
 
 // ── Parse LinkedIn paste ──────────────────────────────────────────────────────
@@ -143,15 +164,32 @@ export default function CRMPage() {
   const fileRef = useRef(null)
 
   useEffect(() => {
-    setContacts(loadContacts())
+    const loaded = loadContacts()
+    setContacts(loaded)
+
+    // Check if backup has more contacts than primary (recovery scenario)
+    try {
+      const primary = JSON.parse(localStorage.getItem(STORE_KEY) || "[]")
+      const backup  = JSON.parse(localStorage.getItem("sixxab_crm_contacts_backup") || "[]")
+      if (backup.length > primary.length && primary.length === 0) {
+        // Auto-restore from backup silently
+        saveContacts(backup)
+        setContacts(backup)
+        showToast(`Restored ${backup.length} contacts from backup`)
+      }
+    } catch {}
+
     // Listen for updates from other tabs/pages
     const onStorage = (e) => {
-      if (e.key === 'sixxab_crm_contacts') {
-        try { setContacts(JSON.parse(e.newValue || '[]')) } catch {}
+      if (e.key === "sixxab_crm_contacts") {
+        try {
+          const next = JSON.parse(e.newValue || "[]")
+          if (Array.isArray(next)) setContacts(next)
+        } catch {}
       }
     }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+    window.addEventListener("storage", onStorage)
+    return () => window.removeEventListener("storage", onStorage)
   }, [])
 
   function showToast(msg, ok=true) {
@@ -359,6 +397,50 @@ Return ONLY the message text, no preamble.`
               <div style={{fontSize:11,color:"#94A3B8",marginTop:2}}>{s.l}</div>
             </div>
           ))}
+        </div>
+
+        {/* Data safety — export + restore row */}
+        <div style={{display:"flex",gap:8,marginBottom:10,padding:"8px 12px",background:"#F8F9FA",borderRadius:10,border:"1px solid #E8ECF4",alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{fontSize:11.5,color:"#64748B",flex:1}}>
+            <strong style={{color:N}}>{contacts.length}</strong> contacts in SIXXAB CRM
+            {contacts.length === 0 && " — if you had contacts before, click Restore below"}
+          </span>
+          <button onClick={()=>{
+            // Export all contacts as JSON file
+            const blob = new Blob([JSON.stringify(contacts, null, 2)], {type:"application/json"})
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob)
+            a.download = `sixxab-crm-backup-${new Date().toISOString().slice(0,10)}.json`
+            a.click()
+          }} style={{fontSize:11.5,color:"#64748B",background:"#fff",border:"1px solid #E2E8F0",borderRadius:7,padding:"4px 11px",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4}}>
+            <i className="ti ti-download" style={{fontSize:11}} aria-hidden="true"/>Export backup
+          </button>
+          <button onClick={()=>{
+            // Restore from backup key
+            try {
+              const backup = JSON.parse(localStorage.getItem("sixxab_crm_contacts_backup") || "[]")
+              if (backup.length > 0) { saveContacts(backup); setContacts(backup); showToast(`Restored ${backup.length} contacts`) }
+              else { showToast("No backup found — use Export to save contacts regularly", false) }
+            } catch { showToast("Restore failed", false) }
+          }} style={{fontSize:11.5,color:"#1D9E75",background:"#E1F5EE",border:"1px solid #6EE7B7",borderRadius:7,padding:"4px 11px",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:4}}>
+            <i className="ti ti-restore" style={{fontSize:11}} aria-hidden="true"/>Restore backup
+          </button>
+          <label style={{fontSize:11.5,color:"#378ADD",background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:7,padding:"4px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <i className="ti ti-upload" style={{fontSize:11}} aria-hidden="true"/>Import JSON
+            <input type="file" accept=".json" style={{display:"none"}} onChange={(e)=>{
+              const file = e.target.files[0]; if (!file) return
+              const reader = new FileReader()
+              reader.onload = (ev) => {
+                try {
+                  const imported = JSON.parse(ev.target.result)
+                  if (!Array.isArray(imported)) { showToast("Invalid file — must be a SIXXAB CRM JSON export", false); return }
+                  const merged = [...contacts, ...imported.filter(imp => !contacts.find(c => String(c.id)===String(imp.id)))]
+                  saveContacts(merged); setContacts(merged)
+                  showToast(`Imported ${imported.length} contacts (${merged.length - contacts.length} new)`)
+                } catch { showToast("Could not read file", false) }
+              }
+              reader.readAsText(file)
+            }}/>
+          </label>
         </div>
 
         {/* View tabs */}
