@@ -2,19 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // www → non-www canonical redirect + HTTPS enforcement
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.startupsinabox.com" }],
-        destination: "https://startupsinabox.com/:path*",
-        permanent: true,
-      },
-    ]
-  },
-
-  // Security headers — professional standard
+  // Security headers on all routes
   async headers() {
     return [
       {
@@ -30,6 +18,10 @@ const nextConfig = {
       },
     ]
   },
+
+  // NOTE: www redirect is handled by Vercel domain settings directly.
+  // Do NOT add a redirect here — Vercel's domain panel already handles
+  // www ↔ non-www, and a Next.js redirect on top creates a redirect loop.
 }
 
 module.exports = nextConfig
