@@ -1,5 +1,6 @@
 // pages/crm.js
 // SIXXAB AI — CRM — Complete contact management, LinkedIn import, pipeline, agent integration
+import Head from "next/head"
 import SixxabNav from "../components/SixxabNav"
 import { useState, useEffect, useRef } from "react"
 
@@ -276,7 +277,6 @@ Return ONLY the message text, no preamble.`
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -301,22 +301,8 @@ Return ONLY the message text, no preamble.`
         .spin{animation:spin .8s linear infinite}
       `}</style>
 
-      {/* Nav */}
-      <nav style={{background:N,padding:"0 5%",height:54,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(255,255,255,.07)",position:"sticky",top:0,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <a href="/" style={{display:"flex",alignItems:"center",gap:8,textDecoration:"none"}}>
-            <svg width="22" height="22" viewBox="0 0 72 72"><rect x="1.5" y="1.5" width="69" height="69" rx="14" fill="none" stroke={AMBER} strokeWidth="3"/><text x="7" y="54" fontFamily="Georgia" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text><text x="35" y="54" fontFamily="Georgia" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text></svg>
-            <div style={{fontFamily:"'Bebas Neue'",fontSize:18,color:CHALK,letterSpacing:2}}>SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB</div>
-          </a>
-          <span style={{color:"rgba(255,255,255,.15)"}}>·</span>
-          <span style={{fontFamily:"'DM Mono'",fontSize:10,color:AMBER,letterSpacing:".08em"}}>CRM</span>
-        </div>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          {[["Agents","/agents"],["Orchestrator","/orchestrator"],["Coach","/coach"]].map(([l,h])=>(
-            <a key={l} href={h} style={{fontSize:13,color:"rgba(255,255,255,.5)",textDecoration:"none"}}>{l}</a>
-          ))}
-        </div>
-      </nav>
+      <Head><title>SIXXAB AI — SIXXAB CRM · Contact Relationships</title></Head>
+      <SixxabNav active="/crm"/>
 
       {/* Toast */}
       {toast && (
@@ -327,15 +313,35 @@ Return ONLY the message text, no preamble.`
 
       <div style={{maxWidth:1300,margin:"0 auto",padding:"20px 20px 60px"}}>
 
-        {/* Header + stats */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:20}}>
-          <div>
-            <h1 style={{fontFamily:"'Bebas Neue'",fontSize:28,color:N,letterSpacing:1.5}}>CRM — Contact Relationships</h1>
-            <p style={{fontSize:13,color:"#64748B"}}>Manage all contacts across every agent. Import from LinkedIn. Track your pipeline.</p>
-          </div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            <button className="btn btn-ghost" onClick={()=>setView("import")}><i className="ti ti-brand-linkedin" style={{color:"#0A66C2"}} aria-hidden="true"/>Import from LinkedIn</button>
-            <button className="btn btn-amber" onClick={()=>newContact()}><i className="ti ti-plus" aria-hidden="true"/>Add contact</button>
+        {/* ── SIXXAB CRM branded header ── */}
+        <div style={{background:N,borderRadius:14,padding:"18px 22px",marginBottom:20,border:"1px solid rgba(255,255,255,.06)"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:44,height:44,borderRadius:11,background:"rgba(29,158,117,.18)",border:"1.5px solid rgba(29,158,117,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <i className="ti ti-address-book" style={{fontSize:22,color:"#1D9E75"}} aria-hidden="true"/>
+              </div>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:3}}>
+                  <h1 style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:CHALK,letterSpacing:1,lineHeight:1}}>
+                    SIXXAB <span style={{color:AMBER,fontStyle:"italic"}}>CRM</span>
+                  </h1>
+                  <span style={{fontFamily:"monospace",fontSize:9,color:"rgba(245,245,240,.35)",letterSpacing:".12em"}}>AUTONOMOUS BUSINESS PLATFORM</span>
+                </div>
+                <p style={{fontSize:12,color:"rgba(245,245,240,.45)",lineHeight:1.5}}>
+                  Manage all contacts · Import from LinkedIn · Track your pipeline · Generate AI outreach scripts
+                </p>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <button className="btn btn-ghost" onClick={()=>setView("import")}
+                style={{background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.14)",color:CHALK,display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,fontSize:12.5,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>
+                <i className="ti ti-brand-linkedin" style={{color:"#0A66C2"}} aria-hidden="true"/>Import from LinkedIn
+              </button>
+              <button className="btn btn-amber" onClick={()=>newContact()}
+                style={{background:AMBER,border:"none",color:N,display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:8,fontSize:12.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                <i className="ti ti-plus" aria-hidden="true"/>Add contact
+              </button>
+            </div>
           </div>
         </div>
 
@@ -904,10 +910,21 @@ function ContactForm({ contact, isNew, onSave, onDelete, onBack, onGenScript, ge
               style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:12.5,fontWeight:500,color:"#1D4ED8",textDecoration:"none"}}>
               <i className="ti ti-brand-linkedin" aria-hidden="true"/>Open LinkedIn profile
             </a>}
-            {form.email && <a href={`mailto:${form.email}`}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,background:"#F8F9FA",border:"1px solid #E2E8F0",fontSize:12.5,fontWeight:500,color:N,textDecoration:"none"}}>
-              <i className="ti ti-mail" aria-hidden="true"/>Send email
-            </a>}
+            {form.email && <button
+              onClick={async()=>{
+                const subject = `Following up — ${offer||"SIXXAB AI"}`
+                const body = scripts
+                  ? scripts.split("---")[0].trim()
+                  : `Hi ${form.name?.split(" ")[0]||"there"},\n\nI wanted to reach out about SIXXAB AI — the autonomous business platform helping founders like you validate, launch and scale.\n\nWould you be open to a quick 15-minute call?\n\nBest,\nSunil`
+                const res = await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},
+                  body:JSON.stringify({to:form.email,subject,body,type:"outreach",fromName:"Sunil @ SIXXAB AI"})})
+                const d = await res.json()
+                if(d.success||d.simulated) showToast(`Email sent to ${form.email}`)
+                else showToast("Email failed — check RESEND_API_KEY in Vercel",false)
+              }}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,background:"#F8F9FA",border:"1px solid #E2E8F0",fontSize:12.5,fontWeight:500,color:N,cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"}}>
+              <i className="ti ti-mail" style={{color:"#378ADD"}} aria-hidden="true"/>Send email via SIXXAB AI
+            </button>}
             {form.phone && <a href={`tel:${form.phone}`}
               style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:8,background:"#F8F9FA",border:"1px solid #E2E8F0",fontSize:12.5,fontWeight:500,color:N,textDecoration:"none"}}>
               <i className="ti ti-phone" aria-hidden="true"/>Call now
@@ -923,20 +940,61 @@ function ContactForm({ contact, isNew, onSave, onDelete, onBack, onGenScript, ge
         <div className="card" style={{padding:14}}>
           <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Send to agent</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-            {[["Marketing","Generate DM","ti-speakerphone",AMBER],["Sales","Add to pipeline","ti-trending-up","#1D9E75"],
-              ["Support","Create ticket","ti-headset","#378ADD"],["Strategy","Analyse fit","ti-brain","#7C3AED"]].map(([ag,ac,ic,c])=>(
-              <button key={ag} onClick={()=>{set("assignedAgent",ag.toLowerCase());}}
-                style={{padding:"8px",borderRadius:8,border:`1px solid ${c}33`,background:`${c}08`,cursor:"pointer",fontFamily:"inherit",textAlign:"left"}}>
+            {[["Marketing","Generate DM","ti-speakerphone",AMBER,"cmo"],["Sales","Add to pipeline","ti-trending-up","#1D9E75","cso"],
+              ["Support","Create ticket","ti-headset","#378ADD","coo"],["Strategy","Analyse fit","ti-brain","#7C3AED","ceo"]].map(([ag,ac,ic,c,cxo])=>(
+              <button key={ag} onClick={()=>{
+                // 1. Save assignedAgent to contact in CRM
+                const updated = {...form, assignedAgent:ag.toLowerCase(), updatedAt:new Date().toISOString(), lastTouch:"Sent to "+ag+" agent"}
+                onSave(updated)
+                // 2. Also update CRM storage directly
+                const allContacts = (() => { try { return JSON.parse(localStorage.getItem("sixxab_crm_contacts")||"[]") } catch { return [] } })()
+                const patched = allContacts.map(x => String(x.id)===String(form.id) ? {...x,assignedAgent:ag.toLowerCase(),lastTouch:"Sent to "+ag+" agent"} : x)
+                localStorage.setItem("sixxab_crm_contacts", JSON.stringify(patched))
+                // 3. Navigate to agents page with CXO pre-selected
+                window.location.href = `/agents?cxo=${cxo}&contact=${encodeURIComponent(form.name)}`
+              }}
+                style={{padding:"8px",borderRadius:8,border:`1px solid ${c}33`,background:`${c}08`,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}}
+                onMouseOver={e=>{e.currentTarget.style.background=`${c}18`;e.currentTarget.style.borderColor=`${c}66`}}
+                onMouseOut={e=>{e.currentTarget.style.background=`${c}08`;e.currentTarget.style.borderColor=`${c}33`}}>
                 <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
                   <i className={`ti ${ic}`} style={{fontSize:12,color:c}} aria-hidden="true"/>
                   <span style={{fontSize:11,fontWeight:600,color:N}}>{ag}</span>
                 </div>
-                <div style={{fontSize:9.5,color:"#94A3B8"}}>{ac}</div>
+                <div style={{fontSize:9.5,color:"#94A3B8"}}>{ac} →</div>
               </button>
             ))}
           </div>
         </div>
       </div>
+
+      {/* ── SIXXAB CRM Footer ── */}
+      <footer style={{background:N,padding:"16px 4%",borderTop:"1px solid rgba(255,255,255,.07)",marginTop:40}}>
+        <div style={{maxWidth:1300,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:9}}>
+            <svg width="18" height="18" viewBox="0 0 72 72" aria-hidden="true">
+              <rect x="1.5" y="1.5" width="69" height="69" rx="14" fill="none" stroke={AMBER} strokeWidth="3"/>
+              <text x="7" y="54" fontFamily="Georgia,serif" fontSize="48" fill="none" stroke={AMBER} strokeWidth="1.5" letterSpacing="-3">S</text>
+              <text x="35" y="54" fontFamily="Georgia,serif" fontSize="54" fill="none" stroke={AMBER} strokeWidth="1.5" fontStyle="italic" letterSpacing="-3">X</text>
+            </svg>
+            <div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:13,fontWeight:700,color:CHALK,letterSpacing:1,lineHeight:1}}>
+                SIX<span style={{color:AMBER,fontStyle:"italic"}}>X</span>AB <span style={{fontSize:8,color:"rgba(245,245,240,.35)",letterSpacing:2}}>AI</span>
+              </div>
+              <div style={{fontSize:7,color:"#5F5E5A",letterSpacing:".12em",fontFamily:"monospace"}}>autonomous business platform</div>
+            </div>
+            <span style={{color:"rgba(255,255,255,.12)",margin:"0 8px"}}>·</span>
+            <span style={{fontFamily:"monospace",fontSize:10,color:"#1D9E75",letterSpacing:".08em"}}>SIXXAB CRM</span>
+          </div>
+          <div style={{display:"flex",gap:14,alignItems:"center",flexWrap:"wrap"}}>
+            {[["/orchestrator","Orchestrator"],["/agents","CXO Suite"],["/niche-validator","Niche Selector"],["/verticals","Verticals"],["/runbook","Runbook"]].map(([h,l])=>(
+              <a key={l} href={h} style={{fontSize:12,color:"rgba(255,255,255,.32)",textDecoration:"none"}}>{l}</a>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,.2)"}}>
+            © 2025 SIXXAB AI · Dallas, TX
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
