@@ -56,48 +56,75 @@ const TIERS = [
 const FRAMEWORK = [
   {
     n:"01", icon:"🎯", title:"Validate",
-    sub:"Before you build anything",
+    sub:"$0 — Before you build anything",
     color:"#EF9F27",
-    desc:"Use the Niche Validator to score your market opportunity. Get real TAM, competitive landscape, pricing benchmarks and revenue projections for your exact industry and location before investing a single dollar.",
-    tool:"Niche Validator",
+    entry:"You have an idea or a skill. You have not spent money on it yet.",
+    exit:"Viability score 65+. Clear target customer. Pricing confirmed. First outreach list built.",
+    desc:"Use the Niche Selector to score your market before investing a dollar. Get real TAM, competitive landscape, pricing benchmarks and revenue projections for your exact industry and location. The first decision founders get wrong — nail it here.",
+    tool:"SIXXAB Niche Selector",
     href:"/niche-validator",
-    outcomes:["Viability score out of 100","Market size with real data","Recommended pricing","Days to first sale estimate"],
+    outcomes:["Viability score out of 100","Real TAM/SAM/SOM for your market","Recommended pricing and positioning","Days-to-first-sale estimate"],
+    revenue:"$0 → First customer",
   },
   {
     n:"02", icon:"⚡", title:"Launch",
-    sub:"Idea to first revenue in 48 hours",
+    sub:"$0 → $10k MRR · Months 1–3",
     color:"#1D9E75",
-    desc:"Set one goal in the Orchestrator. All 18 agents run in parallel — strategy, marketing, sales, finance and tech — and return one numbered action plan. Execute Priority 1 today.",
+    entry:"Validated niche. Clear offer. At least 20 people to reach out to.",
+    exit:"First paying customer. $1k MRR. NPS above 50.",
+    desc:"Set one goal in the Orchestrator. All 18 agents run in parallel and return one numbered action plan. Execute Priority 1 today. The 48-hour sprint takes you from idea to first revenue without a team, budget or prior audience.",
     tool:"Orchestrator",
     href:"/orchestrator",
-    outcomes:["48-hour launch sprint","All agents in parallel","One unified action plan","Priority 1 done today"],
+    outcomes:["48-hour sprint from idea to first revenue","18 agents run in parallel","One unified numbered action plan","First paying customer this week"],
+    revenue:"$0 → $10k MRR",
   },
   {
     n:"03", icon:"📈", title:"Optimise",
-    sub:"Systematic weekly improvement",
+    sub:"$10k → $50k MRR · Months 3–6",
     color:"#378ADD",
-    desc:"Every Monday, update your goal and re-run the Orchestrator. Agents track what worked, what didn't, and adjust the plan. Your CXO advisors analyse your pipeline, content and financials and surface the one lever to pull this week.",
-    tool:"CXO Hub",
+    entry:"First 10 paying customers. Product works. Churn below 10%.",
+    exit:"NPS 65+. Month-on-month growth above 20%. Retention above 80% at Day 90.",
+    desc:"Every Monday, update your goal and re-run the Orchestrator. The CDO tracks funnel data and surfaces your #1 bottleneck. The COO builds retention systems. The CMO runs content that compounds. You stop doing random things and start doing the one thing that moves the number.",
+    tool:"CXO Suite",
     href:"/agents",
-    outcomes:["Weekly goal cycle","Pipeline analytics","Content performance","Revenue optimisation"],
+    outcomes:["Weekly orchestrator goal cycle","CDO analytics — activation and retention","CMO content compounding","COO retention and onboarding systems"],
+    revenue:"$10k → $50k MRR",
   },
   {
-    n:"04", icon:"🌍", title:"Scale",
-    sub:"From $10k to $100k MRR",
+    n:"04", icon:"🚀", title:"Scale",
+    sub:"$50k → $500k ARR · Months 6–12",
     color:"#7C3AED",
-    desc:"The CRM manages every contact across every agent. The marketing agent generates personalised outreach at scale. The sales pipeline tracks every deal. The finance agent models your path to $100k ARR and tells you exactly when to hire.",
-    tool:"CRM + Agents",
+    entry:"Product-market fit confirmed. Repeatable sales motion. First hire made.",
+    exit:"$500k ARR. Sales process runs without founder. Marketing generates inbound.",
+    desc:"The SIXXAB CRM manages every contact across every agent. Marketing runs personalised outreach at scale. The CSO pipeline tracks every enterprise deal. The Finance agent calculates exact hire timing. The CHRO builds the team. Revenue grows faster than founder hours.",
+    tool:"SIXXAB CRM",
     href:"/crm",
-    outcomes:["SIXXAB CRM — full contact management","Automated outreach at scale","Revenue path to $100k ARR","Finance agent models exact hire timing"],
+    outcomes:["SIXXAB CRM — full pipeline at scale","Automated outreach to hundreds of prospects","Enterprise deal tracking and close","Finance agent — hire timing model"],
+    revenue:"$50k → $500k ARR",
   },
   {
-    n:"05", icon:"🏢", title:"Global",
-    sub:"Autonomous operations at scale",
+    n:"05", icon:"💰", title:"Capitalise",
+    sub:"$500k → $2M ARR · Months 12–24",
+    color:"#DC2626",
+    entry:"Proven unit economics. MRR growing 15%+ month-on-month. Team of 3–6.",
+    exit:"Seed or Series A closed. Enterprise contracts signed. Board or advisors in place.",
+    desc:"The Capitalise phase is the bridge between product-market fit and institutional scale. The Investor CRM tracks every angel, VC and family office relationship. The Pitch Agent generates data-driven decks from your live MRR and cohort data. The Partnership Agent builds enterprise and strategic alliances. The CFO models your fundraising ask and use of funds. Most founders skip this phase — and stay stuck at $500k ARR for years.",
+    tool:"Investor Hub",
+    href:"/investor",
+    outcomes:["Investor CRM — track every relationship","Pitch Deck Agent — live deck from real metrics","Partnership Agent — enterprise and strategic deals","CFO fundraising model — ask, valuation, dilution"],
+    revenue:"$500k → $2M ARR",
+  },
+  {
+    n:"06", icon:"🌍", title:"Global",
+    sub:"$2M → $10M ARR · Year 2–4",
     color:"#EC4899",
-    desc:"The platform runs with less than 2 hours of founder input per day. Vertical Agent Packs handle industry-specific operations. The Advisor franchise model lets you deploy SIXXAB in new markets through trained local operators.",
+    entry:"Seed or Series A closed. Team of 8–15. Revenue growing in 2+ markets.",
+    exit:"$10M ARR. Operations run with under 2 hrs/day founder input. Advisor network active in 10+ countries.",
+    desc:"The platform runs itself. Vertical Agent Packs deploy your business model into any industry in any geography. The Advisor franchise network extends your reach without headcount. The HOV (Head of Verticals) coordinates market-specific operations. The CEO advisor focuses entirely on vision, culture and the Series B narrative.",
     tool:"Vertical Packs",
-    href:"/agents",
-    outcomes:["<2 hrs/day founder time — platform runs itself","10 Vertical Agent Packs — HVAC, RE, Legal and more","Advisor franchise model","20+ country reach"],
+    href:"/verticals",
+    outcomes:["<2 hrs/day founder input — platform autonomous","10 Vertical Agent Packs — any industry, any geography","Advisor franchise — 20% rev share, zero headcount","HOV dashboard — 20+ country operations"],
+    revenue:"$2M → $10M ARR",
   },
 ]
 
@@ -284,7 +311,7 @@ export default function Index() {
 
         {/* Honest value props */}
         <div className="fu d5" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-          {[["5-step framework","Validate to global"],["18 AI agents","Running in parallel"],["7 CXO advisors","CEO to CHRO"],["10 vertical packs","Texas + Dallas focused"],["$49.50/mo","Founding member rate"]].map(([v,l],i)=>(
+          {[["6-phase framework","$0 → $10M cycle"],["18 AI agents","Running in parallel"],["7 CXO advisors","CEO to CHRO"],["10 vertical packs","Texas + Dallas focused"],["$49.50/mo","Founding member rate"]].map(([v,l],i)=>(
             <div key={i} style={{padding:"7px 16px",borderRadius:20,background:"rgba(255,255,255,.055)",border:"1px solid rgba(255,255,255,.1)",fontSize:13}}>
               <strong style={{color:CHALK}}>{v}</strong>&nbsp;<span style={{color:"rgba(245,245,240,.42)"}}>{l}</span>
             </div>
@@ -307,7 +334,7 @@ export default function Index() {
         <div style={{textAlign:"center",marginBottom:52}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>The SIXXAB framework</div>
           <h2 style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(30px,5vw,62px)",color:N,letterSpacing:1.5,marginBottom:14}}>
-            Validate. Launch. Optimise. Scale. Global.
+            Validate. Launch. Optimise. Scale. Capitalise. Global.
           </h2>
           <p style={{fontSize:16,color:"#64748B",maxWidth:520,margin:"0 auto",lineHeight:1.7}}>
             Every successful autonomous business follows the same five-step process. SIXXAB has a dedicated tool for each step — and an orchestrator that coordinates all of them.
@@ -560,14 +587,14 @@ export default function Index() {
             <SixxabWordmark size="sm"/>
           </a>
           <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            {[["Framework","/#framework"],["Verticals","/verticals"],["Pricing","/#pricing"],["Niche Selector","/niche-validator"],["Runbook","/runbook"],["Orchestrator","/orchestrator"],["CRM","/crm"],["Agents","/agents"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
+            {[["Framework","/#framework"],["Verticals","/verticals"],["Pricing","/#pricing"],["Niche Selector","/niche-validator"],["Investor Hub","/investor"],["Runbook","/runbook"],["Orchestrator","/orchestrator"],["CRM","/crm"],["Agents","/agents"],["Discovery","/discovery"],["Contact","/contact"],["Privacy","/privacy"],["Terms","/terms"]].map(([l,h])=>(
               <a key={l} href={h} style={{fontSize:12,color:"rgba(255,255,255,.32)",textDecoration:"none"}}>{l}</a>
             ))}
           </div>
         </div>
         <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:16,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
           <span style={{fontSize:12,color:"rgba(255,255,255,.22)"}}>© 2025 SIXXAB AI · Autonomous Business Platform · Dallas, TX</span>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.18)"}}>startupsinabox.com · Validate · Launch · Optimise · Scale · Global</span>
+          <span style={{fontSize:12,color:"rgba(255,255,255,.18)"}}>startupsinabox.com · Validate · Launch · Optimise · Scale · Capitalise · Global</span>
         </div>
       </footer>
     </>

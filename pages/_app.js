@@ -5,7 +5,7 @@ import Script                  from "next/script"
 const PROTECTED = [
   "/coach", "/agents", "/agent", "/success",
   "/orchestrator", "/roadmap", "/crm",
-  "/niche-validator", "/verticals",
+  "/niche-validator", "/verticals", "/investor",
 ]
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ""
