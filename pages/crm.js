@@ -41,7 +41,7 @@ function loadContacts() {
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
     // Ensure every contact has a string ID
-    return parsed.map(c => ({ ...c, id: String(c.id || Date.now() + Math.random().toString(36).slice(2)) }))
+    return parsed.map((c,i) => ({ ...c, id: c.id ? String(c.id) : `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}` }))
   } catch {
     // Try backup
     try {
@@ -131,6 +131,7 @@ function parseCSV(text) {
 
 // ── Score calculation ─────────────────────────────────────────────────────────
 function calcScore(c) {
+  if (!c) return 0
   let s = 30
   if (c.email)   s += 15
   if (c.phone)   s += 10
@@ -198,6 +199,7 @@ export default function CRMPage() {
   }
 
   function save(list) {
+    if (!Array.isArray(list)) return
     setContacts(list)
     saveContacts(list)
     // Broadcast to orchestrator and other tabs
@@ -212,7 +214,7 @@ export default function CRMPage() {
     c.score = calcScore(c)
     c.updatedAt = new Date().toISOString()
     const idx = contacts.findIndex(x => String(x.id) === String(c.id))
-    const next = idx >= 0 ? contacts.map(x => x.id===c.id ? c : x) : [...contacts, c]
+    const next = idx >= 0 ? contacts.map(x => String(x.id)===String(c.id) ? c : x) : [...contacts, c]
     save(next)
     showToast(idx >= 0 ? "Contact updated" : "Contact added")
     setSelected(c)
@@ -248,7 +250,7 @@ export default function CRMPage() {
   function confirmImport() {
     setImporting(true)
     const scored = preview.map(c => ({ ...c, score: calcScore(c) }))
-    const merged = [...contacts, ...scored.filter(p => !contacts.find(c => c.email && c.email===p.email))]
+    const merged = [...contacts, ...scored.filter(p => !contacts.find(c => (c.email && c.email===p.email) || String(c.id)===String(p.id)))]
     save(merged)
     showToast(`${scored.length} contacts imported`)
     setPreview([]); setPasteText(""); setCsvText("")
