@@ -209,7 +209,7 @@ export default function SupportWidget() {
             {/* Footer */}
             <div style={{padding:"7px 14px",background:"#F8F9FA",borderTop:"1px solid #F1F5F9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:10,color:"#94A3B8"}}>Powered by SIXXAB AI</span>
-              <div style={{display:"flex",gap:10"}}>
+              <div style={{display:"flex",gap:10}}>
                 <a href="/discovery" target="_blank" style={{fontSize:10.5,color:AMBER,textDecoration:"none",fontWeight:500}}>Book free call →</a>
               </div>
             </div>
