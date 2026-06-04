@@ -8,6 +8,7 @@ const STATIC_ROUTES = [
   { path: "/orchestrator",   priority: "0.9",  freq: "weekly"  },
   { path: "/verticals",      priority: "0.85", freq: "weekly"  },
   { path: "/investor",  priority: "0.8",  freq: "weekly"  },
+  { path: "/mindset",  priority: "0.85", freq: "monthly" },
   { path: "/runbook",        priority: "0.8",  freq: "monthly" },
   { path: "/agents",         priority: "0.8",  freq: "weekly"  },
   { path: "/crm",            priority: "0.75", freq: "weekly"  },

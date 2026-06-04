@@ -342,6 +342,42 @@ const CHAPTERS = [
     ]
   },
   {
+    id:"mindset", icon:"🧠", title:"Founder Mental Model",
+    color:"#8B5CF6", tag:"Framework of thinking",
+    summary:"The 12 laws of autonomous business thinking. Read this before your first Orchestrator session. Return to it whenever you feel stuck, scattered or uncertain about what to do next.",
+    sections:[
+      {
+        title:"The foundational shift — from job to business to platform",
+        steps:[
+          {n:"Job", text:"You do the work. No work = no money. You cannot leave. You are the bottleneck."},
+          {n:"Business", text:"You have a system. The system does the work. You supervise. You can step away for a week."},
+          {n:"Platform", text:"The system runs itself. You set direction. You earn whether you work or not. This is the SIXXAB endpoint."},
+          {n:"Key", text:"Most founders are stuck at Job even when they call themselves business owners. The six-phase framework is the path from Job to Platform."},
+        ],
+        tip:"Every decision you make should be evaluated on one question: does this make the business more like a platform or more like a job? If adding a new feature requires you personally to support it, it's making your job bigger. If it adds to the automated system, it's building the platform."
+      },
+      {
+        title:"The three questions that govern every week",
+        steps:[
+          {n:"Q1", text:"What is the ONE thing that — if done this week — would make everything else easier or unnecessary? This is your Orchestrator goal."},
+          {n:"Q2", text:"Who are the specific people most likely to pay me money this week, and have I contacted them today? This is your CRM priority."},
+          {n:"Q3", text:"What system can I build this week so I never have to do this task manually again? This is your Ops Agent prompt."},
+        ],
+        tip:"If you cannot answer all three questions before 9am on Monday, you are not ready to start the week. Run the Orchestrator first. Let the plan tell you the answers."
+      },
+      {
+        title:"How to use SIXXAB AI when things feel overwhelming",
+        steps:[
+          {n:"1", text:"Open the AI Coach (/coach). Type exactly what is overwhelming you. Do not summarise — describe it fully."},
+          {n:"2", text:"The Coach will identify which phase you are in and which single problem is the actual bottleneck. Almost always it is one of three: no validated niche, no consistent outreach, or no retention system."},
+          {n:"3", text:"Fix the identified bottleneck using the relevant CXO advisor. Do not try to fix everything at once."},
+          {n:"4", text:"Run the Orchestrator with the specific fix as your weekly goal. Execute Priority 1 today."},
+        ],
+        tip:"Overwhelm is almost always caused by too many open loops, not too much work. The Orchestrator's job is to close all the loops and give you one clear action. Trust it."
+      },
+    ]
+  },
+  {
     id:"roadmap", icon:"🗺️", title:"12-Month Roadmap",
     color:"#F59E0B", tag:"See the big picture",
     summary:"The six-phase journey from $0 to $10M ARR — every milestone, feature and team hire mapped out. Track your progress week by week.",

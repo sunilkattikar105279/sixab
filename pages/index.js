@@ -239,6 +239,7 @@ export default function Index() {
           ))}
           <a className="nav-a" href="/niche-validator">Niche Check</a>
           <a className="nav-a" href="/runbook">Runbook</a>
+          <a className="nav-a" href="/mindset">Mental model</a>
           <a className="nav-a" href="/discovery">Book call</a>
           <button className="btn-a" style={{padding:"8px 18px",fontSize:13}} onClick={()=>scrollTo(pricingRef)}>Get 50% off →</button>
         </div>
@@ -626,7 +627,7 @@ export default function Index() {
             <div style={{display:"flex",gap:40,flexWrap:"wrap"}}>
               {[
                 {heading:"Platform",links:[["Orchestrator","/orchestrator"],["CXO Suite","/agents"],["SIXXAB CRM","/crm"],["Niche Selector","/niche-validator"],["Investor Hub","/investor"],["Vertical Packs","/verticals"]]},
-                {heading:"Learn",links:[["Runbook","/runbook"],["Roadmap","/roadmap"],["AI Coach","/coach"],["Discovery Call","/discovery"],["Contact","/contact"]]},
+                {heading:"Learn",links:[["Runbook","/runbook"],["Mental Model","/mindset"],["Roadmap","/roadmap"],["AI Coach","/coach"],["Discovery Call","/discovery"],["Contact","/contact"]]},
                 {heading:"Legal",links:[["Terms","/terms"],["Privacy","/privacy"],["Sitemap","/sitemap.xml"]]},
               ].map(col=>(
                 <div key={col.heading}>
