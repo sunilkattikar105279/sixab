@@ -9,7 +9,7 @@ const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
 const VERTICALS = [
   {
     id:"hvac", icon:"❄️", name:"HVAC & Air Conditioning", color:"#0EA5E9", bg:"#EFF6FF",
-    market:"47,000+ businesses in Texas", phase:"Phase 2 — Scale",
+    market:"47,000+ businesses in Texas", phase:"Phase 04 — Scale",
     tagline:"Win more HVAC jobs with AI-powered outreach, quoting and seasonal campaigns",
     agents:[
       {name:"Campaign Agent",    icon:"📣", desc:"Seasonal email and DM campaigns tuned to Texas summer/winter demand cycles"},
@@ -29,7 +29,7 @@ const VERTICALS = [
   },
   {
     id:"realestate", icon:"🏠", name:"Real Estate & Property", color:"#1D9E75", bg:"#F0FDF4",
-    market:"150,000+ agents in Texas", phase:"Phase 2 — Scale",
+    market:"150,000+ agents in Texas", phase:"Phase 04 — Scale",
     tagline:"More listings, faster closes, and a content engine that keeps you top of mind",
     agents:[
       {name:"Listing Agent",    icon:"🏡", desc:"AI listing descriptions from address + 5 bullets. Professional copy in 10 seconds"},
@@ -49,7 +49,7 @@ const VERTICALS = [
   },
   {
     id:"legal", icon:"⚖️", name:"Legal Services", color:"#7C3AED", bg:"#F5F3FF",
-    market:"$8.2B Texas legal market", phase:"Phase 3 — Global",
+    market:"$8.2B Texas legal market", phase:"Phase 06 — Global",
     tagline:"Attract better clients, present professionally, and bill without chasing",
     agents:[
       {name:"Intake Agent",    icon:"📝", desc:"Client intake form generator tailored to practice area — family, business, criminal, PI"},
@@ -69,7 +69,7 @@ const VERTICALS = [
   },
   {
     id:"consulting", icon:"📊", name:"Business Consulting", color:"#EF9F27", bg:"#FFFBF2",
-    market:"Growing 12% YoY in DFW", phase:"Phase 2 — Scale",
+    market:"Growing 12% YoY in DFW", phase:"Phase 04 — Scale",
     tagline:"Close bigger retainers, deliver faster and build the referral engine that replaces cold outreach",
     agents:[
       {name:"Proposal Agent", icon:"📄", desc:"Consulting proposal writer — scope, deliverables, timeline, investment and ROI case"},
@@ -89,7 +89,7 @@ const VERTICALS = [
   },
   {
     id:"landscaping", icon:"🌿", name:"Landscaping & Lawn Care", color:"#16A34A", bg:"#F0FDF4",
-    market:"$1.4B Texas landscaping market", phase:"Phase 2 — Scale",
+    market:"$1.4B Texas landscaping market", phase:"Phase 04 — Scale",
     tagline:"Fill your schedule, lock in annual contracts and build a referral machine in your target zip codes",
     agents:[
       {name:"Seasonal Agent",  icon:"🌞", desc:"Spring, summer, fall and winter campaign scripts tuned to Texas weather patterns"},
@@ -109,7 +109,7 @@ const VERTICALS = [
   },
   {
     id:"plumbing", icon:"🔧", name:"Plumbing & Electrical", color:"#DC2626", bg:"#FEF2F2",
-    market:"35,000+ licensed contractors in TX", phase:"Phase 2 — Scale",
+    market:"35,000+ licensed contractors in TX", phase:"Phase 04 — Scale",
     tagline:"Emergency response scripts, maintenance upsells and the referral network that keeps your schedule full",
     agents:[
       {name:"Emergency Agent",    icon:"🚨", desc:"24/7 emergency response scripts and callback templates for after-hours calls"},
@@ -129,7 +129,7 @@ const VERTICALS = [
   },
   {
     id:"autorepair", icon:"🚗", name:"Auto Repair & Detailing", color:"#F59E0B", bg:"#FFFBF2",
-    market:"$4.1B Texas auto service market", phase:"Phase 2 — Scale",
+    market:"$4.1B Texas auto service market", phase:"Phase 04 — Scale",
     tagline:"Keep bays full with automated reminders, loyalty programmes and fleet account outreach",
     agents:[
       {name:"Reminder Agent",  icon:"🔔", desc:"Oil change, tyre rotation and inspection reminders timed to mileage and date"},
@@ -149,7 +149,7 @@ const VERTICALS = [
   },
   {
     id:"health", icon:"💊", name:"Health & Wellness", color:"#EC4899", bg:"#FDF2F8",
-    market:"$2.8B Texas fitness market", phase:"Phase 3 — Global",
+    market:"$2.8B Texas fitness market", phase:"Phase 06 — Global",
     tagline:"Fill your roster, sell packages and build a referral engine from every satisfied client",
     agents:[
       {name:"Onboarding Agent",  icon:"👋", desc:"New client welcome sequence — intake, expectations and first session prep"},
@@ -169,7 +169,7 @@ const VERTICALS = [
   },
   {
     id:"roofing", icon:"🏗️", name:"Roofing & Construction", color:"#6B7280", bg:"#F9FAFB",
-    market:"Texas #1 roofing market in US", phase:"Phase 2 — Scale",
+    market:"Texas #1 roofing market in US", phase:"Phase 04 — Scale",
     tagline:"Storm season campaigns, insurance claim guidance and the subcontractor network that scales your capacity",
     agents:[
       {name:"Storm Agent",       icon:"⛈️", desc:"Storm damage campaign scripts launched within 24hrs of major weather events in DFW"},
@@ -189,7 +189,7 @@ const VERTICALS = [
   },
   {
     id:"it", icon:"💼", name:"IT Support & MSP", color:"#378ADD", bg:"#EFF6FF",
-    market:"$12.4B Texas IT services market", phase:"Phase 3 — Global",
+    market:"$12.4B Texas IT services market", phase:"Phase 06 — Global",
     tagline:"Win and retain managed services contracts with professional proposals, QBRs and proactive client communication",
     agents:[
       {name:"Proposal Agent",   icon:"📄", desc:"Managed services proposal writer — tiered MSP packages with SLA and pricing"},
@@ -228,11 +228,10 @@ export default function VerticalsPage() {
   return (
     <>
       <Head>
-        <title>SIXXAB AI — Vertical Agent Packs</title>
+        <title>SIXXAB AI — Vertical Agent Packs · Phase 06 Global</title>
         <meta name="description" content="10 industry-specific AI agent packs for Dallas and Texas markets — HVAC, Real Estate, Legal, Consulting and more"/>
       </Head>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -251,7 +250,7 @@ export default function VerticalsPage() {
       {/* Industry selector */}
       <div style={{background:N,padding:"20px 4%",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
         <div style={{marginBottom:12}}>
-          <div style={{fontSize:10,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:4}}>SIXXAB AI — Vertical Agent Packs</div>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:4}}>SIXXAB AI — Vertical Agent Packs · Phase 06 Global</div>
           <div style={{fontFamily:"'Bebas Neue'",fontSize:26,color:CHALK,letterSpacing:1.5}}>
             10 Industries · Dallas & Texas Market
           </div>

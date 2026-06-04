@@ -1,5 +1,7 @@
 // pages/orchestrator.js
-// Phase 1: Founder Enterprise Orchestrator
+// SIXXAB AI — Founder Enterprise Orchestrator
+// 6-Phase Framework: Validate · Launch · Optimise · Scale · Capitalise · Global
+// $0 → $10M ARR
 // The top-level brain — set one goal, all agents run in parallel
 import SixxabNav from "../components/SixxabNav"
 import { useState, useEffect, useRef } from "react"
@@ -48,7 +50,7 @@ const GOAL_TEMPLATES = [
   { label:"Get first 10 customers", value:"Get 10 paying customers at $99/mo within 30 days. Target: solo founders and freelancers in the Dallas-Fort Worth area." },
   { label:"Scale to $10k MRR", value:"Scale from current revenue to $10,000 MRR within 90 days. Focus on Pro plan ($99.50/mo) conversions and LinkedIn outreach." },
   { label:"Build team & hire", value:"Hire a 3-person remote team (1 engineer, 1 marketer, 1 support) within 60 days. Keep monthly burn under $20,000." },
-  { label:"Raise seed funding", value:"Prepare and close a $500,000 seed round within 90 days. Need pitch deck, financial model, and 10 warm investor introductions." },
+  { label:"Raise seed funding", value:"Prepare and close a $500,000 seed round within 90 days. Need pitch deck from SIXXAB Investor Hub, financial model, and 10 warm investor introductions via warm intros." },
   { label:"Launch globally", value:"Expand SIXXAB to 3 new markets (UK, India, Australia) within 6 months. Achieve 100 customers in each market." },
   { label:"Build 10k audience", value:"Build a 10,000-person email and social audience within 6 months through content marketing, SEO and community building." },
 ]
@@ -180,7 +182,6 @@ export default function OrchestratorPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};overflow-x:hidden;min-height:100vh}
@@ -250,7 +251,7 @@ export default function OrchestratorPage() {
                 style={{flex:1,padding:13,borderRadius:10,background:!goal.trim()||running?"#F1F5F9":AMBER,color:!goal.trim()||running?"#94A3B8":N,fontSize:14,fontWeight:700,border:"none",cursor:!goal.trim()||running?"not-allowed":"pointer",fontFamily:"'Plus Jakarta Sans'",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}>
                 {running
                   ? <><div style={{width:16,height:16,border:"2px solid rgba(10,14,26,.25)",borderTopColor:N,borderRadius:"50%"}} className="spin"/>Running {completedCount}/{AGENTS.length} agents…</>
-                  : phase==="complete" ? "↻ Re-run with updated goal" : "▶ Run orchestrator across all 16 agents →"
+                  : phase==="complete" ? "↻ Re-run with updated goal" : "▶ Run orchestrator across all 18 agents →"
                 }
               </button>
               {phase === "complete" && <button onClick={reset} style={{padding:"13px 18px",borderRadius:10,border:"1px solid #E2E8F0",background:"#fff",fontSize:14,fontWeight:500,color:"#64748B",cursor:"pointer",fontFamily:"'Plus Jakarta Sans'"}}>Reset</button>}

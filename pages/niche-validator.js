@@ -93,7 +93,6 @@ export default function NicheValidator() {
         <meta name="description" content="Validate your business niche before you build. Get viability score, TAM, pricing benchmark and revenue projections in 60 seconds."/>
       </Head>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -111,7 +110,7 @@ export default function NicheValidator() {
       {/* Hero */}
       <div style={{background:N,padding:"36px 5% 32px",textAlign:"center",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:20,border:"1px solid rgba(239,159,39,.3)",background:"rgba(239,159,39,.1)",fontSize:12,fontWeight:500,color:AMBER,marginBottom:14}}>
-          🎯 The first decision founders get wrong — validate before you build
+          🎯 Phase 01 of 6 — Validate · The first decision founders get wrong
         </div>
         <h1 style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(30px,5vw,56px)",color:CHALK,letterSpacing:1.5,lineHeight:1,marginBottom:10}}>
           Niche Validator
@@ -321,8 +320,8 @@ export default function NicheValidator() {
                 <div style={{fontFamily:"'Bebas Neue'",fontSize:16,color:CHALK,letterSpacing:1,marginBottom:6}}>Ready to launch this niche?</div>
                 <div style={{fontSize:13,color:"rgba(245,245,240,.55)",lineHeight:1.6,marginBottom:14}}>{result.sixxabRecommendation}</div>
                 <div style={{display:"flex",gap:8}}>
-                  <a href="/orchestrator" style={{flex:1,padding:"10px",borderRadius:9,background:AMBER,color:N,fontSize:13,fontWeight:600,textDecoration:"none",textAlign:"center"}}>Run orchestrator →</a>
-                  <a href="/discovery" style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid rgba(255,255,255,.15)",color:CHALK,fontSize:13,textDecoration:"none",textAlign:"center"}}>📅 Book a call</a>
+                  <a href="/orchestrator" style={{flex:1,padding:"10px",borderRadius:9,background:AMBER,color:N,fontSize:13,fontWeight:600,textDecoration:"none",textAlign:"center"}}>Phase 02: Launch →</a>
+                  <a href="/discovery" style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid rgba(255,255,255,.15)",color:CHALK,fontSize:13,textDecoration:"none",textAlign:"center"}}>📅 Book a call</a><a href="/runbook" style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid rgba(255,255,255,.15)",color:"rgba(245,245,240,.55)",fontSize:13,textDecoration:"none",textAlign:"center"}}>📖 Full framework</a>
                 </div>
               </div>
             </div>
