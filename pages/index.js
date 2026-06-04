@@ -37,7 +37,7 @@ const FRAMEWORK = [
     sub:"The platform runs itself", entry:"Seed closed. Team of 8–15. Revenue in 2+ markets.",
     exit:"$10M ARR. Under 2 hrs/day founder input. 10+ countries.",
     desc:"Vertical Agent Packs deploy your model into any industry in any geography. The Advisor franchise extends reach without headcount. Corporate Board manages governance at scale. The CEO focuses on Series B.",
-    outcomes:["<2 hrs/day founder input","10 Vertical Agent Packs — any geography","Advisor franchise — 20% rev share","Board governance — M&A, audit, exit planning"] },
+    outcomes:["<2 hrs/day founder input — platform autonomous","30 Vertical Agent Packs — Texas, US, Europe, Global","Advisor franchise — 20% rev share, zero headcount","Board governance — M&A, audit, exit, IPO"] },
 ]
 
 // ── CXO suite (11 advisors) ───────────────────────────────────────────────────
@@ -84,17 +84,43 @@ const TIERS = [
 ]
 
 // ── Verticals ─────────────────────────────────────────────────────────────────
-const VERTICALS = [
-  {icon:"❄️",name:"HVAC & Air Conditioning",  color:"#0EA5E9",market:"47,000+ businesses in Texas"},
-  {icon:"🏠",name:"Real Estate & Property",   color:"#1D9E75",market:"150,000+ agents in Texas"},
-  {icon:"⚖️",name:"Legal Services",           color:"#7C3AED",market:"$8.2B Texas legal market"},
-  {icon:"📊",name:"Business Consulting",      color:"#EF9F27",market:"Growing 12% YoY in DFW"},
-  {icon:"🌿",name:"Landscaping & Lawn Care",  color:"#16A34A",market:"$1.4B Texas market"},
-  {icon:"🔧",name:"Plumbing & Electrical",    color:"#DC2626",market:"35,000+ licensed in TX"},
-  {icon:"🚗",name:"Auto Repair & Detailing",  color:"#F59E0B",market:"$4.1B Texas auto service"},
-  {icon:"💊",name:"Health & Wellness",        color:"#EC4899",market:"$2.8B Texas fitness market"},
-  {icon:"🏗️",name:"Roofing & Construction",  color:"#6B7280",market:"Texas #1 roofing market in US"},
-  {icon:"💼",name:"IT Support & MSP",         color:"#378ADD",market:"$12.4B Texas IT services"},
+const VERTICAL_TIERS = [
+  { id:"texas", label:"🤠 Texas & Local", color:"#EF9F27", packs:[
+    {icon:"❄️",name:"HVAC & Air Conditioning", color:"#0EA5E9",market:"47,000+ businesses",  href:"/verticals"},
+    {icon:"🏠",name:"Real Estate & Property",  color:"#1D9E75",market:"150,000+ agents",     href:"/verticals"},
+    {icon:"⚖️",name:"Legal Services",          color:"#7C3AED",market:"$8.2B market",        href:"/verticals"},
+    {icon:"📊",name:"Business Consulting",     color:"#EF9F27",market:"12% YoY growth",      href:"/verticals"},
+    {icon:"🌿",name:"Landscaping & Lawn Care", color:"#16A34A",market:"$1.4B market",        href:"/verticals"},
+    {icon:"🔧",name:"Plumbing & Electrical",   color:"#DC2626",market:"35,000+ licensed",    href:"/verticals"},
+    {icon:"🚗",name:"Auto Repair & Detailing", color:"#F59E0B",market:"$4.1B market",        href:"/verticals"},
+    {icon:"💊",name:"Health & Wellness",       color:"#EC4899",market:"$2.8B market",        href:"/verticals"},
+    {icon:"🏗️",name:"Roofing & Construction", color:"#6B7280",market:"#1 US roofing state",  href:"/verticals"},
+    {icon:"💼",name:"IT Support & MSP",        color:"#378ADD",market:"$12.4B market",       href:"/verticals"},
+  ]},
+  { id:"us", label:"🇺🇸 US National", color:"#378ADD", packs:[
+    {icon:"❄️",name:"HVAC — US National",      color:"#0284C7",market:"$156B market",        href:"/verticals"},
+    {icon:"💳",name:"FinTech — US",            color:"#7C3AED",market:"$72B investment",     href:"/verticals"},
+    {icon:"🛒",name:"E-Commerce — US",         color:"#F59E0B",market:"$1.1T market",        href:"/verticals"},
+    {icon:"🏫",name:"EdTech — US",             color:"#8B5CF6",market:"$146B market",        href:"/verticals"},
+    {icon:"🏨",name:"Hospitality — US",        color:"#EF4444",market:"$950B industry",      href:"/verticals"},
+    {icon:"🏭",name:"Manufacturing — US",      color:"#64748B",market:"$2.9T GDP",           href:"/verticals"},
+    {icon:"🚛",name:"Logistics & Supply Chain",color:"#0EA5E9",market:"$1.6T market",        href:"/verticals"},
+    {icon:"🎬",name:"Media & Content — US",    color:"#D4537E",market:"$700B industry",      href:"/verticals"},
+    {icon:"❤️",name:"Non-Profit — US",         color:"#16A34A",market:"1.5M organisations",  href:"/verticals"},
+    {icon:"🏠",name:"Real Estate — US",        color:"#0D9488",market:"$4.4T market",        href:"/verticals"},
+  ]},
+  { id:"europe", label:"🌍 Europe & Global", color:"#7C3AED", packs:[
+    {icon:"☁️",name:"SaaS — Europe",           color:"#1E3A5F",market:"€130B market",        href:"/verticals"},
+    {icon:"💳",name:"FinTech — Europe",         color:"#4F46E5",market:"€100B ecosystem",    href:"/verticals"},
+    {icon:"🏥",name:"HealthTech — Europe",      color:"#BE185D",market:"€46B digital health", href:"/verticals"},
+    {icon:"⚖️",name:"Legal Services — Europe", color:"#6D28D9",market:"€200B market",        href:"/verticals"},
+    {icon:"🏠",name:"Real Estate — Europe",    color:"#0F766E",market:"€1.4T market",        href:"/verticals"},
+    {icon:"🛍️",name:"Retail & Commerce — EU", color:"#B45309",market:"€7.5T market",        href:"/verticals"},
+    {icon:"🌱",name:"Sustainability & ESG",    color:"#15803D",market:"$40T global finance",  href:"/verticals"},
+    {icon:"🏛️",name:"GovTech & Public Sector", color:"#1E40AF",market:"$1.1T global",        href:"/verticals"},
+    {icon:"🏭",name:"Manufacturing — Europe",  color:"#475569",market:"€1.9T GDP",           href:"/verticals"},
+    {icon:"❄️",name:"HVAC — Europe",           color:"#0369A1",market:"€119B market",        href:"/verticals"},
+  ]},
 ]
 
 // ── Social proof ──────────────────────────────────────────────────────────────
@@ -111,6 +137,7 @@ export default function Index() {
   const [scrolled,      setScrolled]      = useState(false)
   const [activeStep,    setActiveStep]    = useState(0)
   const [activeVertical,setActiveVertical]= useState(0)
+  const [activeTier,    setActiveTier]    = useState("texas")
   const [activeCxo,     setActiveCxo]     = useState(0)
   const [email,         setEmail]         = useState("")
   const [betaDone,      setBetaDone]      = useState(false)
@@ -237,7 +264,7 @@ export default function Index() {
         </h1>
 
         <p className="fu" style={{fontSize:"clamp(15px,2vw,19px)",color:"rgba(245,245,240,.6)",maxWidth:580,lineHeight:1.8,marginBottom:32}}>
-          SIXXAB AI is the autonomous business platform that takes any business from <strong style={{color:CHALK}}>$0 to $10M ARR</strong>. Six phases. 11 CXO advisors. 36 AI agents. 10 vertical packs. One weekly goal.
+          SIXXAB AI is the autonomous business platform that takes any business from <strong style={{color:CHALK}}>$0 to $10M ARR</strong>. Six phases. 11 CXO advisors. 36 AI agents. <strong style={{color:CHALK}}>30 vertical packs across Texas, the US and Europe</strong>. One weekly goal.
         </p>
 
         <div className="fu" style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginBottom:44}}>
@@ -248,7 +275,7 @@ export default function Index() {
 
         {/* Value props strip */}
         <div className="fu" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-          {[["6-phase framework","$0 → $10M ARR"],["11 CXO advisors","CEO to Corporate Board"],["36 AI agents","In parallel, 24/7"],["10 vertical packs","Dallas & Texas focused"],["$49.50/mo","Founding rate — locked"],["Corporate Board","Governance, M&A, Exit"]].map(([v,l],i)=>(
+          {[["6-phase framework","$0 → $10M ARR"],["11 CXO advisors","CEO to Corporate Board"],["36 AI agents","In parallel, 24/7"],["30 vertical packs","Texas · US · Europe · Global"],["$49.50/mo","Founding rate — locked"],["Corporate Board","Governance, M&A, Exit"]].map(([v,l],i)=>(
             <div key={i} style={{padding:"6px 15px",borderRadius:20,background:"rgba(255,255,255,.055)",border:"1px solid rgba(255,255,255,.1)",fontSize:12.5}}>
               <strong style={{color:CHALK}}>{v}</strong>&nbsp;<span style={{color:"rgba(245,245,240,.4)"}}>{l}</span>
             </div>
@@ -258,7 +285,7 @@ export default function Index() {
         {/* Cities */}
         <div style={{marginTop:40,display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",fontSize:12,color:"rgba(245,245,240,.28)"}}>
           <span style={{fontWeight:600,color:"rgba(245,245,240,.4)"}}>Serving founders in:</span>
-          {["🇺🇸 Dallas · DFW","🇺🇸 Houston · Austin","🇬🇧 London","🇮🇳 Mumbai","🇸🇬 Singapore","🇦🇺 Sydney","🌍 20+ countries"].map((c,i)=>(
+          {["🇺🇸 Dallas · DFW","🇺🇸 Houston · NYC · LA","🇬🇧 London · UK","🇩🇪 Germany · DACH","🇫🇷 France","🇮🇳 Mumbai · Bangalore","🇸🇬 Singapore · SEA","🇦🇺 Sydney · Melbourne","🌍 30+ countries"].map((c,i)=>(
             <span key={i} style={{padding:"2px 10px",borderRadius:16,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)"}}>{c}</span>
           ))}
         </div>
@@ -332,7 +359,7 @@ export default function Index() {
       {/* ── 11 CXO ADVISORS ── */}
       <section ref={agentsRef} style={{padding:"80px 5%",background:N}}>
         <div style={{textAlign:"center",marginBottom:44}}>
-          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>Your virtual C-suite</div>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>Your global virtual C-suite</div>
           <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(28px,5vw,58px)",fontWeight:700,color:CHALK,letterSpacing:"-0.5px",marginBottom:14,lineHeight:1.05}}>11 CXO Advisors
           </h2>
           <p style={{fontSize:15,color:"rgba(245,245,240,.55)",maxWidth:500,margin:"0 auto",lineHeight:1.75}}>
@@ -389,28 +416,78 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ── VERTICAL PACKS ── */}
+      {/* ── GLOBAL VERTICAL PACKS ── */}
       <section ref={verticalsRef} style={{padding:"80px 5%",background:"#fff"}}>
-        <div style={{textAlign:"center",marginBottom:44}}>
-          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>Built for Dallas & Texas markets</div>
-          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(28px,5vw,58px)",fontWeight:700,color:N,letterSpacing:"-0.5px",marginBottom:14,lineHeight:1.05}}>10 Vertical Agent Packs</h2>
-          <p style={{fontSize:15,color:"#64748B",maxWidth:500,margin:"0 auto",lineHeight:1.75}}>Industry-specific AI agents pre-built for the businesses that power Texas. Every script, template and workflow tuned for your exact trade — ready on day one.</p>
+        <div style={{textAlign:"center",marginBottom:40}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>30 vertical agent packs · 3 geographic tiers</div>
+          <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(28px,5vw,58px)",fontWeight:700,color:N,letterSpacing:"-0.5px",marginBottom:14,lineHeight:1.05}}>
+            Texas. United States. Europe.<br/>
+            <span style={{color:AMBER,fontStyle:"italic"}}>Any industry. Any market.</span>
+          </h2>
+          <p style={{fontSize:15,color:"#64748B",maxWidth:600,margin:"0 auto",lineHeight:1.75}}>
+            Every vertical pack is pre-configured with industry language, local regulations, compliance requirements and market-specific workflows. Pick your industry and geography — agents are ready on day one.
+          </p>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,maxWidth:1060,margin:"0 auto 28px"}}>
-          {VERTICALS.map((v,i)=>(
-            <div key={i} onClick={()=>setActiveVertical(i)}
-              style={{padding:"16px 14px",borderRadius:12,border:`1.5px solid ${activeVertical===i?v.color:v.color+"33"}`,background:activeVertical===i?`${v.color}12`:`${v.color}06`,cursor:"pointer",transition:"all .15s",textAlign:"center"}}
-              onMouseOver={e=>{if(activeVertical!==i){e.currentTarget.style.background=`${v.color}10`;e.currentTarget.style.borderColor=`${v.color}55`}}}
-              onMouseOut={e=>{if(activeVertical!==i){e.currentTarget.style.background=`${v.color}06`;e.currentTarget.style.borderColor=`${v.color}33`}}}>
-              <div style={{fontSize:26,marginBottom:7}}>{v.icon}</div>
-              <div style={{fontSize:12,fontWeight:600,color:N,lineHeight:1.3,marginBottom:5}}>{v.name.split(" ")[0]}<br/>{v.name.split(" ").slice(1).join(" ")}</div>
-              <div style={{fontSize:10,fontWeight:600,color:v.color,padding:"2px 7px",background:`${v.color}15`,borderRadius:8,display:"inline-block"}}>{v.market.split(" ").slice(0,2).join(" ")}</div>
-            </div>
+
+        {/* Tier tabs */}
+        <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:28,flexWrap:"wrap"}}>
+          {VERTICAL_TIERS.map(t=>(
+            <button key={t.id} onClick={()=>{setActiveTier(t.id);setActiveVertical(0)}}
+              style={{padding:"9px 22px",borderRadius:10,border:`2px solid ${activeTier===t.id?t.color:"#E2E8F0"}`,background:activeTier===t.id?`${t.color}10`:"#F8F9FA",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:activeTier===t.id?600:400,color:activeTier===t.id?N:"#64748B",transition:"all .15s",display:"flex",alignItems:"center",gap:7}}>
+              {t.label}
+              <span style={{padding:"1px 8px",borderRadius:12,background:`${t.color}20`,color:t.color,fontSize:11,fontWeight:700}}>10</span>
+            </button>
           ))}
         </div>
-        <div style={{textAlign:"center"}}>
-          <a href="/niche-validator" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 28px",borderRadius:10,background:AMBER,color:N,fontSize:14,fontWeight:700,textDecoration:"none",marginRight:12}}>🎯 Validate your niche →</a>
-          <a href="/verticals" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 28px",borderRadius:10,border:"1.5px solid #E2E8F0",color:N,fontSize:14,fontWeight:500,textDecoration:"none"}}>See all vertical packs →</a>
+
+        {/* Pack grid */}
+        {VERTICAL_TIERS.filter(t=>t.id===activeTier).map(tier=>(
+          <div key={tier.id} style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,maxWidth:1060,margin:"0 auto 28px"}}>
+            {tier.packs.map((v,i)=>(
+              <a key={i} href={v.href}
+                style={{padding:"16px 12px",borderRadius:12,border:`1.5px solid ${v.color}33`,background:`${v.color}06`,cursor:"pointer",textAlign:"center",textDecoration:"none",transition:"all .15s",display:"block"}}
+                onMouseOver={e=>{e.currentTarget.style.background=`${v.color}14`;e.currentTarget.style.borderColor=`${v.color}77`;e.currentTarget.style.transform="translateY(-2px)"}}
+                onMouseOut={e=>{e.currentTarget.style.background=`${v.color}06`;e.currentTarget.style.borderColor=`${v.color}33`;e.currentTarget.style.transform="none"}}>
+                <div style={{fontSize:26,marginBottom:7}}>{v.icon}</div>
+                <div style={{fontSize:11.5,fontWeight:600,color:N,lineHeight:1.3,marginBottom:5}}>{v.name}</div>
+                <div style={{fontSize:9.5,fontWeight:600,color:v.color,padding:"2px 6px",background:`${v.color}15`,borderRadius:7,display:"inline-block"}}>{v.market}</div>
+              </a>
+            ))}
+          </div>
+        ))}
+
+        {/* Tier-specific sub-copy */}
+        {activeTier==="texas" && (
+          <div style={{maxWidth:1060,margin:"0 auto 28px",padding:"14px 20px",borderRadius:12,background:"#FFFBF2",border:"1px solid rgba(239,159,39,.3)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:3}}>🤠 Built for Dallas, DFW and Texas</div>
+              <div style={{fontSize:12.5,color:"#64748B"}}>All scripts, pricing benchmarks and compliance guidance pre-tuned for Texas market conditions, customer language and local regulations.</div>
+            </div>
+            <a href="/niche-validator" style={{padding:"9px 20px",borderRadius:9,background:AMBER,color:N,fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}>Validate Texas niche →</a>
+          </div>
+        )}
+        {activeTier==="us" && (
+          <div style={{maxWidth:1060,margin:"0 auto 28px",padding:"14px 20px",borderRadius:12,background:"#EFF6FF",border:"1px solid #BFDBFE",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:3}}>🇺🇸 US national compliance pre-configured</div>
+              <div style={{fontSize:12.5,color:"#64748B"}}>Federal and state regulations, SEC/FINRA/DOT/OSHA requirements, GSA procurement and US market language — all pre-built into every agent.</div>
+            </div>
+            <a href="/niche-validator" style={{padding:"9px 20px",borderRadius:9,background:"#378ADD",color:"#fff",fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}>Validate US niche →</a>
+          </div>
+        )}
+        {activeTier==="europe" && (
+          <div style={{maxWidth:1060,margin:"0 auto 28px",padding:"14px 20px",borderRadius:12,background:"#F5F3FF",border:"1px solid #C4B5FD",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:3}}>🌍 GDPR · DORA · MDR · CSRD · FCA — EU/UK compliance built in</div>
+              <div style={{fontSize:12.5,color:"#64748B"}}>Every European pack has regulatory frameworks pre-loaded: GDPR, EU AI Act, PSD2, MDR, CSRD, FCA, G-Cloud and EU public procurement — ready on day one.</div>
+            </div>
+            <a href="/niche-validator" style={{padding:"9px 20px",borderRadius:9,background:"#7C3AED",color:"#fff",fontSize:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}>Validate European niche →</a>
+          </div>
+        )}
+
+        <div style={{textAlign:"center",display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+          <a href="/verticals" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 28px",borderRadius:10,background:N,color:CHALK,fontSize:14,fontWeight:700,textDecoration:"none"}}>Explore all 30 vertical packs →</a>
+          <a href="/niche-validator" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 28px",borderRadius:10,border:"1.5px solid #E2E8F0",color:N,fontSize:14,fontWeight:500,textDecoration:"none"}}>🎯 Validate your niche free →</a>
         </div>
       </section>
 
@@ -544,7 +621,7 @@ export default function Index() {
                 <SixxabMark size={22}/>
                 <SixxabWordmark/>
               </a>
-              <p style={{fontSize:12,color:"rgba(255,255,255,.3)",maxWidth:220,lineHeight:1.7}}>The autonomous business platform. From $0 to $10M ARR. Dallas, TX.</p>
+              <p style={{fontSize:12,color:"rgba(255,255,255,.3)",maxWidth:220,lineHeight:1.7}}>The autonomous business platform. From $0 to $10M ARR. 30 vertical packs. Texas · US · Europe · Global.</p>
             </div>
             <div style={{display:"flex",gap:40,flexWrap:"wrap"}}>
               {[
