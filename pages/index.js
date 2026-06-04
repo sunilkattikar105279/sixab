@@ -311,7 +311,7 @@ export default function Index() {
 
         {/* Honest value props */}
         <div className="fu d5" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-          {[["6-phase framework","$0 → $10M cycle"],["18 AI agents","Running in parallel"],["7 CXO advisors","CEO to CHRO"],["10 vertical packs","Texas + Dallas focused"],["$49.50/mo","Founding member rate"]].map(([v,l],i)=>(
+          {[["6-phase framework","$0 → $10M ARR"],["18 AI agents","Running in parallel"],["7 CXO advisors","CEO to CHRO"],["10 vertical packs","Texas + Dallas focused"],["$49.50/mo","Founding member rate"]].map(([v,l],i)=>(
             <div key={i} style={{padding:"7px 16px",borderRadius:20,background:"rgba(255,255,255,.055)",border:"1px solid rgba(255,255,255,.1)",fontSize:13}}>
               <strong style={{color:CHALK}}>{v}</strong>&nbsp;<span style={{color:"rgba(245,245,240,.42)"}}>{l}</span>
             </div>

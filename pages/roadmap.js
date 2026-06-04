@@ -1,6 +1,6 @@
 // pages/roadmap.js
-// SIXXAB 12-Month Autonomous Startup Roadmap
-// Phase 1: Launch (months 1-3) · Phase 2: Scale (months 4-8) · Phase 3: Global (months 9-12)
+// SIXXAB AI — $0 to $10M Business Roadmap
+// 6 phases: Validate · Launch · Optimise · Scale · Capitalise · Global
 import SixxabNav from "../components/SixxabNav"
 import { useState } from "react"
 
@@ -153,6 +153,86 @@ const PHASES = [
       "Multi-region deployment (US, EU, APAC)",
     ],
   },
+  {
+    id: 4, label: "Phase 4", title: "Capitalise",
+    months: "Months 13–24", color: "#DC2626", bg: "#FEF2F2",
+    target: "$500k → $2M ARR · Seed or Series A closed · Enterprise contracts signed",
+    tagline: "Raise capital. Lock enterprise deals. Build the board. Fund the $10M push.",
+    milestones: [
+      { month: 13, title: "Investor preparation", items: [
+        { done: false, text: "Investor Hub live at /investor — CRM, pitch and model" },
+        { done: false, text: "50 warm investor contacts mapped in Investor CRM" },
+        { done: false, text: "Pitch deck generated from live SIXXAB CRM data" },
+        { done: false, text: "CFO fundraising model built — 24-month projection" },
+        { done: false, text: "Data room prepared — financials, metrics, team, product" },
+        { done: false, text: "First 5 angel meetings booked via warm introductions" },
+      ]},
+      { month: 16, title: "Seed round active", items: [
+        { done: false, text: "$500k ARR milestone documented and pitched" },
+        { done: false, text: "10 investor meetings · 3 in due diligence" },
+        { done: false, text: "5 enterprise contracts in negotiation" },
+        { done: false, text: "Board of advisors — 3 operators + 1 investor" },
+        { done: false, text: "Monthly investor update automated (CEO agent)" },
+        { done: false, text: "Term sheet received from lead investor" },
+      ]},
+      { month: 20, title: "Capital deployed", items: [
+        { done: false, text: "Seed round closed — $500k+ at target valuation" },
+        { done: false, text: "CTO/Engineer hired from capital" },
+        { done: false, text: "Head of Growth hired — global channels" },
+        { done: false, text: "Enterprise contracts signed — $100k+ ARR enterprise" },
+        { done: false, text: "SOC 2 Type II audit initiated" },
+        { done: false, text: "Series A narrative locked — $10M ARR path" },
+      ]},
+    ],
+    newFeatures: [
+      "/investor — Investor Hub (CRM, pitch, model)",
+      "Investor CRM — track every relationship",
+      "Pitch Generator — AI deck from live metrics",
+      "CFO Fundraising Model — 24-month projection",
+      "CEO agent — monthly investor update generator",
+      "Partnership Agent — enterprise and strategic deals",
+    ],
+  },
+  {
+    id: 5, label: "Phase 5", title: "Global",
+    months: "Months 24–48", color: "#EC4899", bg: "#FDF2F8",
+    target: "$2M → $10M ARR · 10+ countries · Platform autonomous · Series B ready",
+    tagline: "Deploy capital. Expand globally. The platform runs itself.",
+    milestones: [
+      { month: 24, title: "Global infrastructure", items: [
+        { done: false, text: "$2M ARR milestone — Series A criteria met" },
+        { done: false, text: "AWS Marketplace live — enterprise buyer distribution" },
+        { done: false, text: "50+ SIXXAB Advisors active in 10+ countries" },
+        { done: false, text: "All 10 Vertical Agent Packs deployed globally" },
+        { done: false, text: "Platform operations under 2 hrs/day founder input" },
+        { done: false, text: "Head of Advisors hired — managing global network" },
+      ]},
+      { month: 36, title: "Category leadership", items: [
+        { done: false, text: "$5M ARR — Autonomous Business Platform category leader" },
+        { done: false, text: "SIXXAB App Store — third-party agent marketplace" },
+        { done: false, text: "5 university/accelerator white-label deals" },
+        { done: false, text: "Series A closed — $3M–$10M institutional round" },
+        { done: false, text: "20 countries · 5,000+ businesses on platform" },
+        { done: false, text: "ISO 27001 certified · Enterprise SLA live" },
+      ]},
+      { month: 48, title: "$10M ARR — autonomous and global", items: [
+        { done: false, text: "$10M ARR · Platform fully autonomous" },
+        { done: false, text: "Series B preparation — $30M–$50M growth round" },
+        { done: false, text: "SIXXAB AI in 20+ countries via advisor franchise" },
+        { done: false, text: "10,000+ businesses on the platform" },
+        { done: false, text: "Sunil input: <2 hours/day — vision and Series B only" },
+        { done: false, text: "Category defined: Autonomous Business Platform" },
+      ]},
+    ],
+    newFeatures: [
+      "SIXXAB App Store — third-party agent marketplace",
+      "AWS Bedrock integration — enterprise AI gateway",
+      "Multi-region deployment — US, EU, APAC",
+      "Enterprise SSO (SAML) via Amazon Cognito",
+      "SIXXAB Advisor portal — franchise management",
+      "Series B data room — automated from live metrics",
+    ],
+  },
 ]
 
 export default function RoadmapPage() {
@@ -174,7 +254,6 @@ export default function RoadmapPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -196,7 +275,7 @@ export default function RoadmapPage() {
           From launch to <span style={{color:AMBER}}>$1M ARR</span>
         </h1>
         <p style={{fontSize:15,color:"rgba(245,245,240,.55)",maxWidth:480,margin:"0 auto",lineHeight:1.7}}>
-          Three phases. 12 months. Zero guesswork. Every milestone, feature and target mapped out — with the orchestrator running all agents toward each goal.
+          Six phases. $0 to $10M ARR. Zero guesswork. Every milestone, feature and team hire mapped out — Validate → Launch → Optimise → Scale → Capitalise → Global.
         </p>
       </div>
 

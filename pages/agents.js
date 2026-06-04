@@ -2,6 +2,7 @@
 // Complete rebuild: all CXOs working, vertical agent head, real-time CRM sync
 import SixxabNav from "../components/SixxabNav"
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/router"
 import Head from "next/head"
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ const CXOS = [
     color:"#EF9F27", icon:"ti-crown",
     desc:"Vision, strategy, investors, 48-hr sprint execution and revenue targets",
     agents:["strategy","pitch","financial_model"],
-    chatRole:"You are the SIXXAB CEO AI advisor. Give decisive, revenue-focused guidance. Focus on: goal validation, 48-hour sprint planning, investor readiness, and strategic direction. Always include a specific numbered action." },
+    chatRole:"You are the SIXXAB CEO AI advisor. Give decisive, revenue-focused guidance. Focus on: goal validation, 48-hour sprint planning, investor readiness, strategic direction, and the 6-phase framework ($0 to $10M). Know when a founder should move from Scale to Capitalise. Always include a specific numbered action." },
   { id:"cmo",  title:"CMO",  name:"Chief Marketing Officer",
     color:"#D4537E", icon:"ti-speakerphone",
     desc:"Brand, content, multi-channel campaigns, Product Hunt, AppSumo and SEO",
@@ -51,7 +52,7 @@ const CXOS = [
     color:"#378ADD", icon:"ti-chart-line",
     desc:"MRR, burn rate, unit economics, Stripe reconciliation and fundraising",
     agents:["finance","pricing","compliance"],
-    chatRole:"You are the SIXXAB CFO AI advisor. Focus on: MRR tracking, LTV/CAC calculation, burn rate, Stripe revenue, fundraising readiness, pricing strategy, and financial forecasting. Use real numbers from the context." },
+    chatRole:"You are the SIXXAB CFO AI advisor. Focus on: MRR tracking, LTV/CAC calculation, burn rate, Stripe revenue, fundraising readiness (are we ready to raise?), valuation modelling, pricing strategy, and financial forecasting. When a founder is in Phase 5 (Capitalise), focus on building the financial model and due diligence package. Use real numbers from the context." },
   { id:"coo",  title:"COO",  name:"Chief Operating Officer",
     color:"#7C3AED", icon:"ti-settings-automation",
     desc:"Operations, customer support, onboarding, retention and process systems",
@@ -78,6 +79,16 @@ const CXOS = [
     agents:["security","compliance"],
     chatRole:"You are the SIXXAB CISO AI advisor. Focus on: Next.js security best practices, Stripe PCI compliance, GDPR, API key rotation, Supabase row-level security, and data breach prevention." },
   // Head of Verticals — new
+  { id:"cio",  title:"CIO", name:"Chief Investment Officer",
+    color:"#DC2626", icon:"ti-currency-dollar",
+    desc:"Phase 5 — Capitalise: investor relations, fundraising strategy, due diligence, board management and enterprise deal closing",
+    agents:["investor_relations","due_diligence","board_mgmt","fundraising","enterprise_deals","valuation"],
+    chatRole:"You are the SIXXAB CIO AI advisor — Chief Investment Officer. You specialise in Phase 5 (Capitalise) of the SIXXAB 6-phase framework. Your focus: investor relationship strategy, fundraising readiness, due diligence preparation, board management, term sheet negotiation, valuation positioning, enterprise contract structuring, and building the financial narrative from $500k to $2M ARR. Be direct, use real numbers, and always tie advice back to the founder's live metrics." },
+  { id:"board", title:"Board", name:"Corporate Board & Governance",
+    color:"#1E3A5F", icon:"ti-gavel",
+    desc:"Corporate governance, M&A strategy, legal compliance, audit, risk management and board-level decision making",
+    agents:["governance","mergers_acquisitions","legal_counsel","audit_risk","board_comms","compliance_corp","exit_strategy"],
+    chatRole:"You are the SIXXAB Corporate Board AI advisor. You provide board-level strategic guidance for founders in the Capitalise and Global phases. Focus on: corporate governance frameworks, M&A evaluation, legal compliance, audit readiness, risk management, fiduciary duties, board meeting facilitation, exit planning and shareholder value. Always advise with the rigour of a seasoned independent board director. Be direct, specific and legally precise." },
   { id:"hov",  title:"Verticals", name:"Head of Vertical Markets",
     color:"#EC4899", icon:"ti-building-factory",
     desc:"10 vertical agent packs — HVAC, Real Estate, Legal, Consulting and 6 more Texas industries",
@@ -110,6 +121,49 @@ const AGENTS = {
   intelligence:    { label:"Intelligence Agent",   icon:"ti-bulb",               color:"#16A34A", cxo:"cdo",  desc:"Customer insights, NPS verbatims, churn signal analysis" },
   hr:              { label:"HR Agent",             icon:"ti-users",              color:"#F59E0B", cxo:"chro", desc:"Hiring pipeline, job descriptions, interview scripts" },
   hrops:           { label:"HR Ops Agent",         icon:"ti-user-check",         color:"#F59E0B", cxo:"chro", desc:"Onboarding workflows, performance reviews, culture" },
+  // Capitalise agents — Phase 5 · mapped to cio
+  investor_relations: { label:"Investor Relations Agent", icon:"ti-users-group",    color:"#DC2626", cxo:"cio",
+    desc:"Investor outreach scripts, update emails, relationship nurturing and warm intro request templates",
+    chatRole:"You are the SIXXAB Investor Relations Agent. Write personalised investor outreach scripts, monthly investor update emails, follow-up messages, and warm intro request templates. Always be specific, data-driven and professional." },
+  due_diligence:      { label:"Due Diligence Agent",      icon:"ti-file-search",    color:"#DC2626", cxo:"cio",
+    desc:"Due diligence checklist, data room preparation, financials packaging and investor Q&A anticipation",
+    chatRole:"You are the SIXXAB Due Diligence Agent. Help founders prepare for investor due diligence: build the data room checklist, package financial metrics, anticipate investor questions and prepare clear honest answers. Focus on what seed-stage investors actually ask." },
+  board_mgmt:         { label:"Board Management Agent",   icon:"ti-layout-board",   color:"#DC2626", cxo:"cio",
+    desc:"Board meeting agendas, investor update reports, advisor onboarding and governance frameworks",
+    chatRole:"You are the SIXXAB Board Management Agent. Draft board meeting agendas, monthly investor update reports, advisor agreements, and governance frameworks for early-stage companies. Keep everything concise and metrics-driven." },
+  fundraising:        { label:"Fundraising Agent",        icon:"ti-cash",           color:"#DC2626", cxo:"cio",
+    desc:"Fundraising strategy, round structure, investor targeting criteria and deal flow management",
+    chatRole:"You are the SIXXAB Fundraising Agent. Help founders design their fundraising strategy: round size, valuation, ideal investor profile, timeline, and outreach sequencing. Give specific, actionable advice based on the founder's live metrics." },
+  enterprise_deals:   { label:"Enterprise Deals Agent",  icon:"ti-building-skyscraper", color:"#DC2626", cxo:"cio",
+    desc:"Enterprise contract proposals, MSA templates, procurement navigation and C-suite pitch scripts",
+    chatRole:"You are the SIXXAB Enterprise Deals Agent. Draft enterprise contract proposals, MSA frameworks, SOW templates, and C-suite pitch scripts. Help founders navigate enterprise procurement cycles and close large contracts." },
+  valuation:          { label:"Valuation Agent",          icon:"ti-chart-donut",    color:"#DC2626", cxo:"cio",
+    desc:"Pre-money valuation justification, comparable analysis, ARR multiples and dilution modelling",
+    chatRole:"You are the SIXXAB Valuation Agent. Help founders justify their pre-money valuation using ARR multiples, comparable companies, growth rate, retention and market size. Build the valuation narrative that withstands investor scrutiny." },
+
+  // Board & Governance agents — mapped to board
+  governance:       { label:"Governance Agent",     icon:"ti-gavel",            color:"#1E3A5F", cxo:"board",
+    desc:"Corporate governance frameworks, board charter, director duties, shareholder agreements and company constitution",
+    chatRole:"You are the SIXXAB Governance Agent. Draft corporate governance frameworks, board charters, director duty summaries, shareholder agreements and company constitution clauses for early and growth-stage startups. Advise on best practices for Delaware C-corps and Texas LLCs. Be precise and legally careful." },
+  mergers_acquisitions:{ label:"M&A Agent",         icon:"ti-arrows-exchange",  color:"#1E3A5F", cxo:"board",
+    desc:"M&A strategy, acquisition evaluation, due diligence frameworks, LOI drafting and deal structuring",
+    chatRole:"You are the SIXXAB M&A Agent. Help founders evaluate acquisition targets, structure deals, draft Letter of Intent frameworks, and manage M&A due diligence. Also advise on being acquired — what makes your company attractive, how to run a sell-side process, and how to evaluate acquirer offers. Be analytical and deal-focused." },
+  legal_counsel:    { label:"Legal Counsel Agent",  icon:"ti-scale",            color:"#1E3A5F", cxo:"board",
+    desc:"Contract review guidance, employment law, IP protection, shareholder disputes and corporate legal structure",
+    chatRole:"You are the SIXXAB Legal Counsel Agent. Provide legal guidance on contract structures, employment agreements, IP protection, shareholder disputes, corporate restructuring and compliance requirements. Always recommend consulting a qualified attorney for final decisions while giving founders the framework to understand their situation." },
+  audit_risk:       { label:"Audit & Risk Agent",   icon:"ti-shield-check",     color:"#1E3A5F", cxo:"board",
+    desc:"Financial audit readiness, risk register, internal controls, SOC 2 preparation and insurance planning",
+    chatRole:"You are the SIXXAB Audit & Risk Agent. Help founders build financial audit readiness, create risk registers, design internal controls, prepare for SOC 2 Type II, assess business insurance needs and establish risk management frameworks appropriate for a funded startup." },
+  board_comms:      { label:"Board Comms Agent",    icon:"ti-mail-forward",     color:"#1E3A5F", cxo:"board",
+    desc:"Board meeting agendas, investor update reports, board deck templates and shareholder communications",
+    chatRole:"You are the SIXXAB Board Communications Agent. Draft professional board meeting agendas, monthly and quarterly investor update reports, board deck templates, and shareholder communications. Keep everything metrics-driven, concise and boardroom-ready. Mirror the tone of a Fortune 500 board communication style." },
+  compliance_corp:  { label:"Corp Compliance Agent",icon:"ti-certificate",      color:"#1E3A5F", cxo:"board",
+    desc:"Regulatory compliance, data privacy (GDPR/CCPA), employment law, tax compliance and licensing requirements",
+    chatRole:"You are the SIXXAB Corporate Compliance Agent. Guide founders on regulatory compliance across: data privacy (GDPR, CCPA), employment law, tax obligations, industry-specific licensing, anti-bribery, environmental requirements and multi-jurisdiction compliance for global operations." },
+  exit_strategy:    { label:"Exit Strategy Agent",  icon:"ti-door-exit",        color:"#1E3A5F", cxo:"board",
+    desc:"Exit planning, IPO readiness, acquisition positioning, earnout structures and shareholder liquidity strategies",
+    chatRole:"You are the SIXXAB Exit Strategy Agent. Help founders plan their exit: evaluate IPO vs strategic acquisition vs private equity, build the story that maximises exit valuation, structure earnout agreements, plan employee equity liquidity events, and prepare the company for a professional M&A process. Focus on value maximisation and founder protection." },
+
   // Vertical agents — mapped to hov
   hvac:       { label:"HVAC Agent",       icon:"ti-air-conditioning",    color:"#0EA5E9", cxo:"hov", desc:"Seasonal campaigns, service quotes, tech scheduling, review requests" },
   realestate: { label:"Real Estate Agent",icon:"ti-home",                color:"#1D9E75", cxo:"hov", desc:"Listing descriptions, buyer/seller outreach, CMA reports" },
@@ -142,6 +196,7 @@ const HIRE_PLAN = [
 ]
 
 export default function AgentHub() {
+  const router = useRouter()
   const [activeCxo, setActiveCxo]     = useState("ceo")
   const [activeAgent, setActiveAgent] = useState(null)
   const [activeVertical, setActiveVertical] = useState("hvac")
@@ -158,6 +213,16 @@ export default function AgentHub() {
   const [crmContacts, setCrmContacts] = useState([])
   const [activeTab, setActiveTab]     = useState("chat") // chat | agents | pipeline | details
   const bottomRef = useRef(null)
+
+  // ── Read URL params from CRM navigation ─────────────────────────────────────
+  useEffect(() => {
+    const { cxo, contact } = router.query
+    if (cxo) setActiveCxo(cxo)
+    if (contact) {
+      // Pre-fill chat input with the contact name from CRM
+      setChatInput(`Help me with ${decodeURIComponent(contact)} — they are a CRM contact I just sent to this agent`)
+    }
+  }, [router.query])
 
   // ── Real-time CRM sync ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -272,7 +337,6 @@ export default function AgentHub() {
     <>
       <Head><title>SIXXAB AI — CXO Suite & Agent Hub</title></Head>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh;overflow-x:hidden}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -411,15 +475,17 @@ export default function AgentHub() {
                 </div>
                 {/* Quick prompts */}
                 <div style={{display:"flex",gap:5,marginTop:6,flexWrap:"wrap"}}>
-                  {(activeCxo==="ceo"?["What is my #1 priority this week?","How do I reach $10k MRR?","Validate my goal for today"]:
+                  {(activeCxo==="ceo"?["What is my #1 priority this week?","How do I reach $10k MRR?","Validate my goal for today","When should I start the Capitalise phase?","Prepare my investor update"]:
                     activeCxo==="cmo"?["Best channel for my niche?","Write me a LinkedIn post","Plan my content this week"]:
-                    activeCxo==="cso"?["Write a demo script","Handle my top objection","Who should I upsell?"]:
+                    activeCxo==="cso"?["Write a demo script","Handle my top objection","Who should I upsell?","Find my next enterprise deal","Track investor conversations"]:
                     activeCxo==="cfo"?["Calculate my unit economics","What is my break-even?","Model my 90-day MRR"]:
                     activeCxo==="coo"?["Write my onboarding sequence","Reduce my churn — what do I do?","What process should I document first?"]:
                     activeCxo==="cto"?["What tech should I build next?","Review my Vercel setup","Supabase migration plan"]:
                     activeCxo==="cdo"?["What is my activation bottleneck?","Analyse my funnel","What metric should I focus on?"]:
                     activeCxo==="chro"?["When should I hire?","Write a job description","Interview questions for a growth marketer"]:
                     activeCxo==="ciso"?["Check my security posture","GDPR checklist","API key rotation plan"]:
+                    activeCxo==="board"?["Draft my board meeting agenda","Review our governance framework","Evaluate an M&A opportunity","Write my investor update report","Assess our exit readiness","Build our risk register"]:
+                    activeCxo==="cio"?["Am I ready to raise?","Write my investor update email","What should my valuation be?","Prepare my due diligence checklist","Write a cold investor outreach script","How do I find my lead investor?"]:
                     activeCxo==="hov"?["Best niche in Dallas for HVAC?","HVAC seasonal campaign script","Real estate listing description"]:
                     ["Help me with this","Give me a plan","What should I do today?"]
                   ).map((q,i)=>(
@@ -747,6 +813,91 @@ export default function AgentHub() {
                     </div>
                   </div>
                 )}
+                {/* Board — Corporate Governance details */}
+                {activeCxo==="board" && (
+                  <div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+                      <div className="card" style={{padding:16}}>
+                        <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>Board activation timeline</div>
+                        {[["Phase 1–3","Advisory board optional — 1–2 operators"],["Phase 4","Formal board at first institutional raise"],["Phase 5","Full board: lead investor + 2 independents"],["Phase 6","Expanded board + audit committee pre-IPO"]].map(([p,d])=>(
+                          <div key={p} style={{padding:"7px 0",borderBottom:"1px solid #F1F5F9",fontSize:12}}>
+                            <div style={{fontWeight:600,color:N,marginBottom:2}}>{p}</div>
+                            <div style={{color:"#64748B"}}>{d}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="card" style={{padding:16}}>
+                        <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>Cross-CXO board connections</div>
+                        {[{cxo:"CIO",icon:"ti-currency-dollar",color:"#DC2626",link:"Fundraising, investor relations, valuation",action:()=>setActiveCxo("cio")},{cxo:"CFO",icon:"ti-chart-line",color:"#378ADD",link:"Audit readiness, financial controls",action:()=>setActiveCxo("cfo")},{cxo:"CISO",icon:"ti-shield-lock",color:"#DC2626",link:"SOC 2, risk management, data governance",action:()=>setActiveCxo("ciso")},{cxo:"CEO",icon:"ti-crown",color:"#EF9F27",link:"Strategic decisions, board reporting",action:()=>setActiveCxo("ceo")}].map((r,i)=>(
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:9,padding:"7px 0",borderBottom:i<3?"1px solid #F1F5F9":"none",cursor:"pointer"}} onClick={r.action}>
+                            <div style={{width:26,height:26,borderRadius:7,background:`${r.color}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <i className={`ti ${r.icon}`} style={{fontSize:12,color:r.color}} aria-hidden="true"/>
+                            </div>
+                            <div style={{flex:1,fontSize:11.5,color:"#64748B"}}><strong style={{color:N}}>{r.cxo}</strong> — {r.link}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                      {[["ti-gavel","Governance","charter, duties, structure"],["ti-arrows-exchange","M&A","evaluate, structure, exit"],["ti-shield-check","Audit","controls, SOC 2, risk"],["ti-door-exit","Exit","IPO, acquisition, liquidity"]].map(([ic,l,d])=>(
+                        <div key={l} style={{padding:"12px",borderRadius:10,background:"#EEF2F8",border:"1px solid #C7D2E0",textAlign:"center"}}>
+                          <i className={`ti ${ic}`} style={{fontSize:20,color:"#1E3A5F",display:"block",marginBottom:6}} aria-hidden="true"/>
+                          <div style={{fontSize:12,fontWeight:600,color:"#1E3A5F",marginBottom:2}}>{l}</div>
+                          <div style={{fontSize:10,color:"#64748B"}}>{d}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* CIO — Capitalise phase details */}
+                {activeCxo==="cio" && (
+                  <div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+                      <div className="card" style={{padding:16}}>
+                        <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>Phase 5 — Capitalise gate</div>
+                        {[["Entry","$500k ARR, MRR growing 15%+, team of 3–6"],["Exit","Seed or Series A closed, enterprise contracts signed"],["Timeline","Months 13–24"],["Revenue","$500k → $2M ARR"]].map(([l,v])=>(
+                          <div key={l} style={{display:"flex",justifyContent:"space-between",gap:8,padding:"7px 0",borderBottom:"1px solid #F1F5F9",fontSize:12}}>
+                            <span style={{color:"#94A3B8",flexShrink:0}}>{l}</span>
+                            <span style={{fontWeight:500,color:N,textAlign:"right"}}>{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="card" style={{padding:16}}>
+                        <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>Live metrics from SIXXAB CRM</div>
+                        {[["Contacts",crmStats.total],["Pipeline",crmStats.pipeline],["Closed customers",crmStats.closed],["MRR potential","$"+crmStats.mrr.toFixed(0)+"/mo"]].map(([l,v])=>(
+                          <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #F1F5F9",fontSize:12}}>
+                            <span style={{color:"#94A3B8"}}>{l}</span>
+                            <span style={{fontWeight:700,color:"#DC2626"}}>{v}</span>
+                          </div>
+                        ))}
+                        <a href="/investor" style={{display:"block",marginTop:10,padding:"9px",borderRadius:9,background:"#DC2626",color:"#fff",fontSize:12,fontWeight:600,textDecoration:"none",textAlign:"center"}}>Open Investor Hub →</a>
+                      </div>
+                    </div>
+                    <div className="card" style={{padding:16}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}}>Capitalise phase cross-CXO connections</div>
+                      {[
+                        {cxo:"CEO",icon:"ti-crown",color:"#EF9F27",link:"Board narrative, Series A story, investor update",action:()=>setActiveCxo("ceo")},
+                        {cxo:"CFO",icon:"ti-chart-line",color:"#378ADD",link:"Financial model, unit economics, fundraising ask",action:()=>setActiveCxo("cfo")},
+                        {cxo:"CSO",icon:"ti-trending-up",color:"#1D9E75",link:"Enterprise pipeline, strategic partnerships",action:()=>setActiveCxo("cso")},
+                        {cxo:"CHRO",icon:"ti-users",color:"#F59E0B",link:"Hire plan post-close, org structure, comp design",action:()=>setActiveCxo("chro")},
+                        {cxo:"CTO",icon:"ti-code",color:"#0EA5E9",link:"Tech due diligence, SOC 2, architecture review",action:()=>setActiveCxo("cto")},
+                      ].map((r,i)=>(
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:i<4?"1px solid #F1F5F9":"none",cursor:"pointer"}} onClick={r.action}>
+                          <div style={{width:30,height:30,borderRadius:8,background:`${r.color}18`,border:`1px solid ${r.color}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <i className={`ti ${r.icon}`} style={{fontSize:14,color:r.color}} aria-hidden="true"/>
+                          </div>
+                          <div style={{flex:1}}>
+                            <span style={{fontSize:12.5,fontWeight:500,color:N}}>{r.cxo}</span>
+                            <span style={{fontSize:11.5,color:"#64748B",marginLeft:6}}>{r.link}</span>
+                          </div>
+                          <i className="ti ti-chevron-right" style={{fontSize:12,color:"#CBD5E1"}} aria-hidden="true"/>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* HOV — Verticals dashboard summary */}
                 {activeCxo==="hov" && (
                   <div>

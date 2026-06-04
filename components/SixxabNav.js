@@ -4,14 +4,15 @@ import { useState, useEffect } from "react"
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
 
 export const MODULES = [
-  { label:"Orchestrator",   href:"/orchestrator",   icon:"ti-crown",            color:AMBER    },
-  { label:"CXO Suite",      href:"/agents",          icon:"ti-briefcase",        color:AMBER    },
-  { label:"SIXXAB CRM",     href:"/crm",             icon:"ti-address-book",     color:"#1D9E75"},
-  { label:"Niche Selector", href:"/niche-validator", icon:"ti-target",           color:"#378ADD"},
-  { label:"AI Coach",       href:"/coach",           icon:"ti-message-chatbot",  color:"#7C3AED"},
-  { label:"Verticals",      href:"/verticals",       icon:"ti-building-factory", color:"#EC4899"},
-  { label:"Roadmap",        href:"/roadmap",         icon:"ti-map",              color:"#F59E0B"},
-  { label:"Runbook",        href:"/runbook",         icon:"ti-book",             color:"#16A34A"},
+  { label:"01 Validate",   href:"/niche-validator", icon:"ti-target",          color:"#EF9F27" },
+  { label:"02 Launch",     href:"/orchestrator",    icon:"ti-crown",           color:"#1D9E75" },
+  { label:"03 Optimise",   href:"/agents",          icon:"ti-briefcase",       color:"#378ADD" },
+  { label:"04 Scale",      href:"/crm",             icon:"ti-address-book",    color:"#7C3AED" },
+  { label:"05 Capitalise", href:"/investor",        icon:"ti-currency-dollar", color:"#DC2626" },
+  { label:"06 Global",     href:"/verticals",       icon:"ti-building-factory",color:"#EC4899" },
+  { label:"Coach",         href:"/coach",           icon:"ti-message-chatbot", color:"#7C3AED" },
+  { label:"Roadmap",       href:"/roadmap",         icon:"ti-map",             color:"#F59E0B" },
+  { label:"Runbook",       href:"/runbook",         icon:"ti-book",            color:"#16A34A" },
 ]
 
 export function SixxabMark({ size = 22 }) {

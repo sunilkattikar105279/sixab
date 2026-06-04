@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useRouter }           from "next/router"
 import Script                  from "next/script"
+import SupportWidget            from "../components/SupportWidget"
 
 const PROTECTED = [
   "/coach", "/agents", "/agent", "/success",
@@ -85,6 +86,7 @@ export default function App({ Component, pageProps }) {
         </>
       )}
       <Component {...pageProps}/>
+      <SupportWidget/>
     </>
   )
 }

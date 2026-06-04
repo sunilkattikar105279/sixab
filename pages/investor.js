@@ -55,7 +55,64 @@ export default function InvestorHub() {
   const [ask,          setAsk]         = useState("500000")
   const [valuation,    setValuation]   = useState("3000000")
   const [toast,        setToast]       = useState(null)
+  const [activeAgent,  setActiveAgent] = useState("investor_relations")
+  const [agentMsgs,    setAgentMsgs]   = useState({})
+  const [agentInput,   setAgentInput]  = useState("")
+  const [agentLoading, setAgentLoading]= useState(false)
   const metrics = getPitchMetrics()
+
+  // ── Capitalise agents definition ──────────────────────────────────────────
+  const CAP_AGENTS = [
+    { id:"investor_relations", label:"Investor Relations", icon:"ti-users-group",        color:"#DC2626",
+      desc:"Investor outreach scripts, update emails, relationship nurturing, warm intro requests",
+      prompts:["Write my monthly investor update","Draft a warm intro request","Write a cold investor LinkedIn DM","Follow up after a meeting that went quiet"],
+      role:"You are the SIXXAB Investor Relations Agent. Write personalised investor outreach scripts, monthly investor update emails, follow-up messages after meetings, and warm intro request templates. Always be specific, data-driven and professional. Reference the founder's MRR of $"+metrics.mrr+"/mo and "+metrics.customers+" paying customers." },
+    { id:"due_diligence", label:"Due Diligence", icon:"ti-file-search",           color:"#B91C1C",
+      desc:"Data room checklist, financials packaging, investor Q&A preparation",
+      prompts:["Build my due diligence checklist","What will investors ask in DD?","How do I package my financials?","What goes in my data room?"],
+      role:"You are the SIXXAB Due Diligence Agent. Help founders prepare for investor due diligence. Build data room checklists, package financial metrics clearly, anticipate tough investor questions and prepare honest answers. Focus on what seed-stage investors actually scrutinise. Current metrics: MRR $"+metrics.mrr+"/mo, "+metrics.customers+" customers, "+metrics.contacts+" CRM contacts." },
+    { id:"board_mgmt", label:"Board Management", icon:"ti-layout-board",         color:"#991B1B",
+      desc:"Board meeting agendas, investor updates, advisor agreements, governance",
+      prompts:["Draft my board meeting agenda","Write my investor update report","Create an advisor agreement","What should I report monthly?"],
+      role:"You are the SIXXAB Board Management Agent. Draft board meeting agendas, monthly investor update reports, advisor agreements and governance frameworks for early-stage companies. Keep everything concise, metrics-driven and professional." },
+    { id:"fundraising", label:"Fundraising Strategy", icon:"ti-cash",            color:"#7F1D1D",
+      desc:"Round structure, investor targeting, timeline, deal flow strategy",
+      prompts:["Am I ready to raise a seed round?","How should I structure my round?","What type of investor should I target?","Build my fundraising timeline"],
+      role:"You are the SIXXAB Fundraising Agent. Help founders design their complete fundraising strategy: round size, valuation rationale, ideal investor profile, timeline, outreach sequence, and negotiation approach. Give specific actionable advice. Current state: MRR $"+metrics.mrr+"/mo, "+metrics.customers+" paying customers, asking $"+0+" at $"+0+" pre-money." },
+    { id:"enterprise_deals", label:"Enterprise Deals", icon:"ti-building-skyscraper", color:"#DC2626",
+      desc:"Enterprise contract proposals, MSA templates, C-suite pitch scripts",
+      prompts:["Write an enterprise proposal","Draft an MSA framework","How do I pitch a university?","Navigate enterprise procurement"],
+      role:"You are the SIXXAB Enterprise Deals Agent. Draft enterprise contract proposals, MSA frameworks, SOW templates and C-suite pitch scripts. Help founders navigate enterprise procurement cycles, handle security reviews, and close large contracts that anchor the Capitalise phase." },
+    { id:"valuation", label:"Valuation", icon:"ti-chart-donut",                  color:"#B91C1C",
+      desc:"Pre-money valuation justification, ARR multiples, dilution modelling",
+      prompts:["What should my valuation be?","Justify my pre-money valuation","Model my dilution","What ARR multiple should I use?"],
+      role:"You are the SIXXAB Valuation Agent. Help founders justify their pre-money valuation using ARR multiples, comparable SaaS companies, growth rate, retention metrics and market size. Build the valuation narrative that withstands investor scrutiny. Current MRR: $"+metrics.mrr+"/mo (ARR: $"+(Number(metrics.mrr)*12).toLocaleString()+")." },
+  ]
+
+  const currentAgent = CAP_AGENTS.find(a=>a.id===activeAgent)||CAP_AGENTS[0]
+  const currentMsgs = agentMsgs[activeAgent] || [{ role:"assistant",
+    content: currentAgent.desc+" Ready to help with your Capitalise phase. What do you need?" }]
+
+  async function sendAgentMsg(override) {
+    const text = (override||agentInput).trim()
+    if (!text||agentLoading) return
+    setAgentInput(""); setAgentLoading(true)
+    const next = [...currentMsgs, {role:"user",content:text}]
+    setAgentMsgs(m=>({...m,[activeAgent]:next}))
+    try {
+      const investorContext = investors.length>0
+        ? "\n\nInvestor pipeline: "+investors.length+" tracked, "+investors.filter(i=>i.stage==="Closed ✓").length+" closed, "+investors.filter(i=>["Meeting","DD","Term sheet"].includes(i.stage)).length+" in active conversations."
+        : ""
+      const res = await fetch("/api/chat", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({messages:[{role:"user",
+          content:currentAgent.role+investorContext+"\n\nFounder: "+text}]})
+      })
+      const d = await res.json()
+      setAgentMsgs(m=>({...m,[activeAgent]:[...next,{role:"assistant",content:d.reply||"Unable to respond."}]}))
+    } catch { setAgentMsgs(m=>({...m,[activeAgent]:[...next,{role:"assistant",content:"Network error — check connection."}]})) }
+    setAgentLoading(false)
+  }
 
   useEffect(() => { setInvestors(loadInvestors()) }, [])
 
@@ -244,7 +301,7 @@ Be specific with numbers. Format clearly with headers. Write for a founder prepa
 
         {/* Tabs */}
         <div style={{display:"flex",gap:6,marginBottom:16,background:"#F1F5F9",borderRadius:11,padding:4,width:"fit-content"}}>
-          {[["crm","ti-address-book","Investor CRM"],["kanban","ti-layout-columns","Pipeline"],["pitch","ti-presentation","Pitch Generator"],["model","ti-calculator","Fundraising Model"]].map(([v,ic,l])=>(
+          {[["crm","ti-address-book","Investor CRM"],["kanban","ti-layout-columns","Pipeline"],["agents","ti-robot","AI Agents"],["pitch","ti-presentation","Pitch Generator"],["model","ti-calculator","Fundraising Model"],["cxo","ti-briefcase","CXO Integration"]].map(([v,ic,l])=>(
             <button key={v} className={`tab-btn${view===v?" on":""}`} onClick={()=>setView(v)}>
               <i className={`ti ${ic}`} style={{fontSize:11,marginRight:4}} aria-hidden="true"/>{l}
             </button>
@@ -324,6 +381,128 @@ Be specific with numbers. Format clearly with headers. Write for a founder prepa
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══ CAPITALISE AGENTS ══ */}
+        {view==="agents" && (
+          <div style={{display:"grid",gridTemplateColumns:"220px 1fr",gap:14,height:"calc(100vh - 280px)",minHeight:500}} className="fu">
+            {/* Agent selector */}
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {CAP_AGENTS.map(a=>(
+                <button key={a.id} onClick={()=>setActiveAgent(a.id)}
+                  style={{display:"flex",alignItems:"flex-start",gap:10,padding:"11px 13px",borderRadius:11,border:`1.5px solid ${activeAgent===a.id?a.color:a.color+"33"}`,background:activeAgent===a.id?`${a.color}12`:`${a.color}06`,cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}}>
+                  <div style={{width:32,height:32,borderRadius:8,background:`${a.color}20`,border:`1px solid ${a.color}44`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <i className={`ti ${a.icon}`} style={{fontSize:15,color:a.color}} aria-hidden="true"/>
+                  </div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:600,color:N,lineHeight:1.3,marginBottom:2}}>{a.label}</div>
+                    <div style={{fontSize:10.5,color:"#64748B",lineHeight:1.4}}>{a.desc.split(",")[0]}</div>
+                  </div>
+                </button>
+              ))}
+              <div style={{marginTop:6,padding:"10px 12px",borderRadius:10,background:"#FFFBF2",border:"1px solid rgba(239,159,39,.3)"}}>
+                <div style={{fontSize:10,fontWeight:600,color:AMBER,marginBottom:4,textTransform:"uppercase",letterSpacing:".07em"}}>Also in CXO Suite</div>
+                {[["CEO","Strategy","#EF9F27","/agents?cxo=ceo"],["CFO","Financial model","#378ADD","/agents?cxo=cfo"],["CSO","Enterprise deals","#1D9E75","/agents?cxo=cso"]].map(([t,d,c,h])=>(
+                  <a key={t} href={h} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",borderBottom:"1px solid rgba(239,159,39,.15)",textDecoration:"none"}}>
+                    <span style={{fontSize:10,fontWeight:600,color:c,width:30}}>{t}</span>
+                    <span style={{fontSize:10.5,color:"#64748B"}}>{d}</span>
+                    <i className="ti ti-external-link" style={{fontSize:9,color:"#94A3B8",marginLeft:"auto"}} aria-hidden="true"/>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Agent chat */}
+            <div className="card" style={{display:"flex",flexDirection:"column",overflow:"hidden"}}>
+              <div style={{padding:"12px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
+                <div style={{width:32,height:32,borderRadius:8,background:`${currentAgent.color}18`,border:`1px solid ${currentAgent.color}33`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <i className={`ti ${currentAgent.icon}`} style={{fontSize:15,color:currentAgent.color}} aria-hidden="true"/>
+                </div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:600,color:N}}>{currentAgent.label}</div>
+                  <div style={{fontSize:11,color:"#64748B"}}>{currentAgent.desc}</div>
+                </div>
+              </div>
+              {/* Messages */}
+              <div style={{flex:1,overflow:"auto",padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
+                {currentMsgs.map((m,i)=>(
+                  <div key={i} style={{display:"flex",gap:8,justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                    <div style={{maxWidth:"85%",padding:"9px 13px",borderRadius:m.role==="user"?"13px 13px 3px 13px":"13px 13px 13px 3px",fontSize:13,lineHeight:1.7,background:m.role==="user"?`${currentAgent.color}15`:"#F8F9FA",border:`1px solid ${m.role==="user"?currentAgent.color+"33":"#E8ECF4"}`,whiteSpace:"pre-wrap",wordBreak:"break-word",color:N}}>
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+                {agentLoading&&<div style={{display:"flex",gap:8}}><div style={{padding:"10px 14px",borderRadius:13,background:"#F8F9FA",border:"1px solid #E8ECF4",fontSize:13,color:"#94A3B8"}}>Thinking…</div></div>}
+              </div>
+              {/* Quick prompts */}
+              <div style={{display:"flex",gap:6,padding:"8px 14px",borderTop:"1px solid #E8ECF4",flexWrap:"wrap",flexShrink:0,background:"#FAFAFA"}}>
+                {currentAgent.prompts.map((p,i)=>(
+                  <button key={i} onClick={()=>sendAgentMsg(p)} disabled={agentLoading}
+                    style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:`1px solid ${currentAgent.color}44`,background:`${currentAgent.color}08`,color:currentAgent.color,cursor:agentLoading?"not-allowed":"pointer",fontFamily:"inherit",opacity:agentLoading?.5:1}}>
+                    {p}
+                  </button>
+                ))}
+              </div>
+              {/* Input */}
+              <div style={{display:"flex",gap:8,padding:"10px 14px",borderTop:"1px solid #E8ECF4",flexShrink:0}}>
+                <input value={agentInput} onChange={e=>setAgentInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&sendAgentMsg()}
+                  placeholder={`Ask ${currentAgent.label}…`}
+                  style={{flex:1,padding:"9px 12px",border:"1.5px solid #E2E8F0",borderRadius:8,fontSize:13,fontFamily:"inherit",outline:"none"}}/>
+                <button onClick={()=>sendAgentMsg()} disabled={agentLoading||!agentInput.trim()}
+                  style={{padding:"9px 18px",borderRadius:8,background:agentLoading||!agentInput.trim()?"#F1F5F9":currentAgent.color,color:agentLoading||!agentInput.trim()?"#94A3B8":"#fff",border:"none",cursor:agentLoading||!agentInput.trim()?"not-allowed":"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ CXO INTEGRATION ══ */}
+        {view==="cxo" && (
+          <div className="fu">
+            <div style={{fontSize:13,color:"#64748B",marginBottom:16,lineHeight:1.6}}>
+              The Capitalise phase connects all CXO advisors. Click any card to jump to that advisor in the CXO Suite — your investor pipeline data is automatically available in every agent conversation.
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
+              {[
+                {cxo:"CEO",icon:"ti-crown",color:"#EF9F27",href:"/agents?cxo=ceo",title:"CEO Advisor",items:["Investor update narrative","Board meeting strategy","Series A story arc","Post-close vision and culture"]},
+                {cxo:"CFO",icon:"ti-chart-line",color:"#378ADD",href:"/agents?cxo=cfo",title:"CFO Advisor",items:["Fundraising financial model","Unit economics for investors","Burn rate and runway","Dilution and cap table"]},
+                {cxo:"CSO",icon:"ti-trending-up",color:"#1D9E75",href:"/agents?cxo=cso",title:"CSO Advisor",items:["Enterprise deal pipeline","Strategic partnership deals","Revenue to hit raise criteria","ARR milestone acceleration"]},
+                {cxo:"CTO",icon:"ti-code",color:"#0EA5E9",href:"/agents?cxo=cto",title:"CTO Advisor",items:["Technical due diligence prep","SOC 2 Type II roadmap","AWS migration for enterprise","Architecture review for investors"]},
+                {cxo:"CHRO",icon:"ti-users",color:"#F59E0B",href:"/agents?cxo=chro",title:"CHRO Advisor",items:["Post-close hiring plan","Org structure design","Compensation benchmarking","Culture for a funded team"]},
+                {cxo:"CDO",icon:"ti-database",color:"#16A34A",href:"/agents?cxo=cdo",title:"CDO Advisor",items:["Metrics dashboard for DD","Cohort data for investors","Activation and retention proof","Growth rate narrative"]},
+              ].map((c,i)=>(
+                <a key={i} href={c.href} style={{textDecoration:"none"}}>
+                  <div className="card" style={{padding:16,border:`1px solid ${c.color}33`,transition:"all .15s",cursor:"pointer"}}
+                    onMouseOver={e=>e.currentTarget.style.borderColor=c.color}
+                    onMouseOut={e=>e.currentTarget.style.borderColor=`${c.color}33`}>
+                    <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
+                      <div style={{width:34,height:34,borderRadius:9,background:`${c.color}18`,border:`1px solid ${c.color}33`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <i className={`ti ${c.icon}`} style={{fontSize:16,color:c.color}} aria-hidden="true"/>
+                      </div>
+                      <div>
+                        <div style={{fontSize:12.5,fontWeight:600,color:N}}>{c.cxo} — {c.title}</div>
+                        <div style={{fontSize:10,color:"#94A3B8"}}>Open in CXO Suite →</div>
+                      </div>
+                    </div>
+                    {c.items.map((item,j)=>(
+                      <div key={j} style={{display:"flex",gap:6,fontSize:11.5,color:"#64748B",marginBottom:4}}>
+                        <span style={{color:c.color,flexShrink:0}}>→</span>{item}
+                      </div>
+                    ))}
+                  </div>
+                </a>
+              ))}
+            </div>
+            <div style={{padding:"14px 18px",background:N,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:CHALK,marginBottom:4}}>Vertical Agents + Capitalise</div>
+                <div style={{fontSize:12,color:"rgba(245,245,240,.5)",lineHeight:1.6}}>Your vertical agent packs (HVAC, Real Estate, Legal etc.) connect to Capitalise through enterprise deal flow. The Enterprise Deals Agent can structure vertical-specific contracts, the Investor Relations Agent can position your vertical focus as a market moat.</div>
+              </div>
+              <a href="/verticals" style={{padding:"9px 20px",borderRadius:9,background:"#EC4899",color:"#fff",fontSize:12,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap"}}>Open Verticals →</a>
             </div>
           </div>
         )}

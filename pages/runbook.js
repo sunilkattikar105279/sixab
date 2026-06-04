@@ -45,7 +45,7 @@ const CHAPTERS = [
   },
   {
     id:"niche", icon:"🎯", title:"SIXXAB Niche Selector",
-    color:"#378ADD", tag:"Step 1 — Validate",
+    color:"#378ADD", tag:"Phase 01 — Validate",
     summary:"Validate your business niche before investing time or money. Get viability score, market size and pricing benchmarks for any industry in any location.",
     sections:[
       {
@@ -82,7 +82,7 @@ const CHAPTERS = [
   },
   {
     id:"orchestrator", icon:"👑", title:"Founder Enterprise Orchestrator",
-    color:"#EF9F27", tag:"Step 2 — Launch",
+    color:"#EF9F27", tag:"Phase 02 — Launch",
     summary:"Set one goal. 18 AI agents run in parallel. One unified action plan returned. This is your Monday morning ritual.",
     sections:[
       {
@@ -122,7 +122,7 @@ const CHAPTERS = [
   },
   {
     id:"cxo", icon:"💼", title:"SIXXAB CXO Suite",
-    color:"#7C3AED", tag:"Step 3 — Optimise",
+    color:"#7C3AED", tag:"Phase 03 — Optimise",
     summary:"Seven CXO advisors — CEO, CMO, CFO, COO, CTO, CDO, CHRO — each with AI chat, KPI dashboard and 18 specialist agents underneath.",
     sections:[
       {
@@ -162,7 +162,7 @@ const CHAPTERS = [
   },
   {
     id:"crm", icon:"📋", title:"SIXXAB CRM",
-    color:"#1D9E75", tag:"Step 4 — Scale",
+    color:"#1D9E75", tag:"Phase 04 — Scale",
     summary:"Full contact management, LinkedIn import, pipeline tracking and AI script generation — all in one place, shared across every agent.",
     sections:[
       {
@@ -201,7 +201,7 @@ const CHAPTERS = [
   },
   {
     id:"verticals", icon:"🏭", title:"Vertical Agent Packs",
-    color:"#EC4899", tag:"Step 5 — Specialise",
+    color:"#EC4899", tag:"Phase 06 — Global",
     summary:"10 industry-specific agent configurations for HVAC, Real Estate, Legal, Consulting and 6 more Texas markets — pre-built language, workflows and scripts.",
     sections:[
       {
@@ -233,28 +233,140 @@ const CHAPTERS = [
     ]
   },
   {
-    id:"roadmap", icon:"🗺️", title:"12-Month Roadmap",
-    color:"#F59E0B", tag:"See the big picture",
-    summary:"The three-phase journey from launch to $1M ARR — every milestone, feature and team hire mapped out. Track your progress week by week.",
+    id:"board", icon:"⚖️", title:"Corporate Board & Governance",
+    color:"#1E3A5F", tag:"Board — Governance & M&A",
+    summary:"Board-level AI advisors for corporate governance, mergers and acquisitions, legal compliance, audit, risk management and exit planning. Activates when you form your first formal board after a seed raise.",
     sections:[
       {
-        title:"The three phases",
+        title:"When to activate the Board CXO",
         steps:[
-          {n:"Phase 1", text:"Months 1–3 — Validate and Launch. Target: $10k MRR, 100 customers, NPS 70+. Solo founder + 18 agents. No hires."},
-          {n:"Phase 2", text:"Months 4–8 — Optimise and Scale. Target: $100k ARR, 1,000 customers, 3 global markets. First 2 hires at Month 4 and 6."},
-          {n:"Phase 3", text:"Months 9–12 — Autonomous Global. Target: $1M ARR, 5,000 customers, 20 countries. Platform runs <2hrs/day founder time."},
+          {n:"Phase 1–3", text:"Advisory board optional. 1–2 experienced operators who can give product and market feedback. No formal governance required."},
+          {n:"Phase 4–5", text:"Form a formal board at your first institutional raise. Minimum: lead investor (board seat), founder (CEO), and 1 independent director."},
+          {n:"Phase 5–6", text:"Full board: lead investor + 2 independent directors + audit committee. Governance Agent drafts all frameworks and charters."},
+          {n:"Pre-exit", text:"Exit Strategy Agent and M&A Agent engage 12–18 months before any planned liquidity event."},
         ],
-        tip:"Most founders try to skip Phase 1 and jump to scale. The roadmap is specifically designed to build the validation and systems foundation before scaling. Trust the sequence."
+        tip:"The biggest board mistake early founders make is giving away board seats too early. Do not give a board seat to an angel investor. Board seats go to lead institutional investors. Advisors get advisor agreements — not board seats."
       },
       {
-        title:"Using the interactive checklist",
+        title:"The 7 Board agents and what they do",
+        steps:[
+          {n:"Governance", text:"Corporate governance frameworks, board charter, director duties, shareholder agreements, company constitution. Use when forming the board or restructuring equity."},
+          {n:"M&A", text:"Acquisition target evaluation, deal structure, Letter of Intent frameworks, sell-side process guidance, competitor acquisition scenarios."},
+          {n:"Legal Counsel", text:"Contract review guidance, employment law, IP protection, shareholder disputes, corporate restructuring. Always recommend qualified counsel for final sign-off."},
+          {n:"Audit & Risk", text:"Financial audit readiness, risk register, internal controls, SOC 2 Type II preparation, business insurance planning."},
+          {n:"Board Comms", text:"Board meeting agendas, monthly investor update reports, board deck templates, shareholder communications."},
+          {n:"Corp Compliance", text:"GDPR, CCPA, employment law, tax obligations, industry licensing, anti-bribery, multi-jurisdiction compliance."},
+          {n:"Exit Strategy", text:"IPO vs acquisition evaluation, exit valuation maximisation, earnout structures, employee equity liquidity, M&A process preparation."},
+        ],
+        tip:"Use the Board Comms Agent to generate your monthly investor update on the 1st of each month. Consistent, metrics-driven updates build more trust with investors than quarterly calls."
+      },
+      {
+        title:"Board agents and CXO integration",
+        steps:[
+          {n:"Board + CIO", text:"Board governance connects to investor relations. The CIO manages the investor relationship; the Board manages governance and fiduciary duties after the close."},
+          {n:"Board + CFO", text:"Audit & Risk Agent and Corp Compliance Agent work alongside CFO to build financial controls and audit readiness."},
+          {n:"Board + CISO", text:"Audit & Risk Agent coordinates with CISO on SOC 2, data governance, cybersecurity risk register and insurance."},
+          {n:"Board + CEO", text:"Board Comms Agent generates CEO's board reports. Exit Strategy Agent informs the CEO's long-term vision and Series B/exit narrative."},
+          {n:"Board + CHRO", text:"Governance Agent drafts employee equity agreements, option pool frameworks and employment contracts reviewed by Legal Counsel Agent."},
+        ],
+        tip:"Run the Governance Agent once per quarter to check whether your corporate structure, equity agreements and compliance obligations have changed with your company's growth stage."
+      },
+    ]
+  },
+  {
+    id:"capitalise", icon:"💰", title:"SIXXAB Investor Hub",
+    color:"#DC2626", tag:"Phase 5 — Capitalise",
+    summary:"The bridge from product-market fit to institutional scale. Track investor relationships, generate pitch decks from live data, model your fundraise. Entry: $500k ARR. Exit: seed or Series A closed.",
+    sections:[
+      {
+        title:"When to use the Investor Hub",
+        steps:[
+          {n:"→", text:"Entry gate: $500k ARR, proven unit economics, MRR growing 15%+ month-on-month, team of 3–6"},
+          {n:"→", text:"Track every angel, VC, family office, accelerator and strategic partner in one place"},
+          {n:"→", text:"Generate investor pitch narratives from your live SIXXAB CRM data — MRR, customers, growth rate"},
+          {n:"→", text:"Model your fundraise: ask size, valuation, equity, 24-month projections, use of funds"},
+          {n:"→", text:"Track partnership deals alongside investor conversations — enterprise and strategic alliances"},
+        ],
+        tip:"Do not start the Capitalise phase too early. If your MRR is below $50k and growing inconsistently, investors will pass. The Optimise phase exists specifically to make your metrics investor-ready."
+      },
+      {
+        title:"The 4 Investor Hub tools",
+        steps:[
+          {n:"CRM", text:"Investor CRM — track every investor by name, fund, type, ticket size, stage (Identified → Term sheet → Closed) and warm intro path"},
+          {n:"Pipeline", text:"Kanban pipeline across 8 stages. Shows pipeline potential ($k) and closed ($k) calculated from ticket sizes"},
+          {n:"Pitch", text:"Pitch Generator — pulls live MRR, customer count from SIXXAB CRM. Enter ask and valuation. AI generates full 5-section pitch: Problem, Solution, Traction, Ask, Why Now"},
+          {n:"Model", text:"Fundraising Model — CFO agent builds 24-month projection, use of funds, key investor KPIs and dilution analysis from your inputs"},
+        ],
+        tip:"Add your warm intro path for every investor. Cold outreach to VCs has a less than 1% response rate. A warm intro from a mutual connection gets a response 80%+ of the time. The intro field keeps you focused on relationship-building before pitching."
+      },
+      {
+        title:"What comes after closing",
+        steps:[
+          {n:"1", text:"With capital raised, move to Phase 6 — Global. Deploy Vertical Agent Packs into new markets."},
+          {n:"2", text:"The CHRO advisor in the CXO Suite builds your hiring plan for the capital deployment"},
+          {n:"3", text:"The CEO advisor helps you build the board, manage investor updates and set the Series B narrative"},
+          {n:"4", text:"The Orchestrator goal changes from 'close deals' to 'deploy capital and grow to $10M ARR'"},
+        ],
+        tip:"Investor updates sent monthly, consistently, build more trust than quarterly updates. The CEO agent in the CXO Suite generates your monthly investor update from your live metrics. Set a reminder for the 1st of each month."
+      },
+    ]
+  },
+  {
+    id:"support", icon:"💬", title:"SIXXAB AI Support",
+    color:"#1D9E75", tag:"Help & Support",
+    summary:"The support chat widget appears on every page of startupsinabox.com. It answers questions about pricing, features, which tool to use, and can escalate to Sunil by email. No login required.",
+    sections:[
+      {
+        title:"How the support widget works",
+        steps:[
+          {n:"1", text:"Click the chat bubble (bottom-right corner) on any page — no login needed"},
+          {n:"2", text:"Type your question or click a quick-prompt button"},
+          {n:"3", text:"The AI support agent answers instantly using SIXXAB AI platform knowledge"},
+          {n:"4", text:"If the answer is unclear or you need Sunil, type 'talk to a human' or click escalate"},
+          {n:"5", text:"Enter your email — Sunil receives the full conversation and replies within a few hours"},
+        ],
+        tip:"The support widget is different from the AI Coach (/coach). The Coach is your strategic advisor. The support widget handles platform questions, pricing, feature explanations and escalation. Use the Coach for business strategy. Use the widget for platform help."
+      },
+      {
+        title:"What the support agent can answer",
+        steps:[
+          {n:"→", text:"Pricing: exact founding rates, what each plan includes, billing and cancellation"},
+          {n:"→", text:"Features: what each tool does, which agents handle which tasks, how to use the Orchestrator"},
+          {n:"→", text:"Niche questions: which vertical pack applies to your industry, how the Niche Selector works"},
+          {n:"→", text:"Getting started: first steps, how to import LinkedIn contacts, running the first Orchestrator session"},
+          {n:"→", text:"Technical: Vercel deployment, Stripe webhook issues, Supabase migration questions"},
+          {n:"→", text:"Booking: how to book a discovery call, what to expect, who you will speak with"},
+        ],
+        tip:"If you ask a question the support agent cannot answer confidently, it will automatically offer to connect you with Sunil. You never get a generic 'I don't know' — you always get a path forward."
+      },
+    ]
+  },
+  {
+    id:"roadmap", icon:"🗺️", title:"12-Month Roadmap",
+    color:"#F59E0B", tag:"See the big picture",
+    summary:"The six-phase journey from $0 to $10M ARR — every milestone, feature and team hire mapped out. Track your progress week by week.",
+    sections:[
+      {
+        title:"The six phases — $0 to $10M",
+        steps:[
+          {n:"01", text:"Validate — $0 → first customer. Niche Selector scores your market before you spend a dollar."},
+          {n:"02", text:"Launch — $0 → $10k MRR. Months 1–3. Orchestrator runs 18 agents. 48-hour sprint to first revenue."},
+          {n:"03", text:"Optimise — $10k → $50k MRR. Months 3–6. CXO Suite drives weekly improvement. Retention and activation focus."},
+          {n:"04", text:"Scale — $50k → $500k ARR. Months 6–12. SIXXAB CRM at scale. Enterprise pipeline. First hires."},
+          {n:"05", text:"Capitalise — $500k → $2M ARR. Year 1–2. Investor Hub. Seed/Series A. Enterprise contracts. Board."},
+          {n:"06", text:"Global — $2M → $10M ARR. Year 2–4. Vertical Packs. Advisor network. 10+ countries. <2hrs/day."},
+        ],
+        tip:"The gates between phases matter more than the timelines. Do not move from Validate to Launch until your viability score is 65+. Do not move from Optimise to Scale until NPS is above 65 and retention is above 80% at Day 90."
+      },
+      {
+        title:"Using the roadmap checklist",
         steps:[
           {n:"1", text:"Go to /roadmap → select the phase you are in"},
           {n:"2", text:"Click each milestone checkbox to mark it complete — the phase progress bar updates in real time"},
-          {n:"3", text:"Items marked 'shipped' are already built into the platform — tick them immediately"},
+          {n:"3", text:"Items marked done are already shipped into the platform — tick them immediately"},
           {n:"4", text:"Items without a tick are your current targets — bring them into your Orchestrator as weekly goals"},
         ],
-        tip:"The roadmap is a reference, not a constraint. If you are ahead of schedule, skip forward. If behind, look at what is blocking you and bring it to the Orchestrator."
+        tip:"The roadmap is a reference, not a constraint. If you are ahead of schedule, skip forward. If behind, look at what is blocking you and bring it to the Orchestrator as this week's goal."
       },
     ]
   },
@@ -273,11 +385,10 @@ export default function RunbookPage() {
   return (
     <>
       <Head>
-        <title>SIXXAB AI — Platform Runbook</title>
-        <meta name="description" content="Complete guide to using every SIXXAB AI module — Orchestrator, CXO Suite, CRM, Niche Selector, Verticals and Roadmap."/>
+        <title>SIXXAB AI — Platform Runbook · $0 to $10M Framework</title>
+        <meta name="description" content="Complete guide to every SIXXAB AI module — 6-phase framework from $0 to $10M ARR. Orchestrator, CXO Suite, CRM, Niche Selector, Investor Hub, Verticals and Roadmap."/>
       </Head>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F4F0;color:${N};min-height:100vh}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -307,7 +418,7 @@ export default function RunbookPage() {
           <div style={{fontSize:10,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:8}}>SIXXAB AI — Autonomous Business Platform</div>
           <h1 style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(28px,5vw,52px)",color:CHALK,letterSpacing:1.5,marginBottom:10}}>Platform Runbook</h1>
           <p style={{fontSize:14,color:"rgba(245,245,240,.55)",lineHeight:1.7,maxWidth:600}}>
-            Step-by-step guide to every SIXXAB AI module. Read this once before your first session. Refer back whenever you get stuck. The platform follows the same sequence every time — Validate → Launch → Optimise → Scale → Global.
+            Step-by-step guide to every SIXXAB AI module. Read this once before your first session. Refer back whenever you get stuck. The platform follows the same 6-phase sequence every time — Validate → Launch → Optimise → Scale → Capitalise → Global. From $0 to $10M ARR.
           </p>
         </div>
       </div>
