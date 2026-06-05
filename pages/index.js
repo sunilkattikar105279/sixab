@@ -58,7 +58,8 @@ const CXOS = [
 // ── Agents (26 horizontal + 10 vertical) ─────────────────────────────────────
 const AGENT_GROUPS = [
   { label:"Strategy & Vision", color:"#EF9F27", agents:["Strategy","Pitch Deck","Financial Model"] },
-  { label:"Marketing", color:"#D4537E", agents:["Marketing","Content","Social","SEO"] },
+  { label:"Content Studio", color:"#D4537E", agents:["LinkedIn Post","Email Campaign","Blog Post","Video Script","Ad Copy","Brand Story"] },
+  { label:"Lead Gen", color:"#1D9E75", agents:["ICP Builder","Prospect Generator","Outreach Sequence","Lead Qualifier","Objection Handler"] },
   { label:"Sales", color:"#1D9E75", agents:["Sales","Lead Gen","Partnership"] },
   { label:"Finance", color:"#378ADD", agents:["Finance","Pricing","Compliance"] },
   { label:"Operations", color:"#7C3AED", agents:["Support","Ops"] },
@@ -272,6 +273,7 @@ export default function Index() {
           <button className="btn-a" onClick={()=>scrollTo(pricingRef)}>Start for $49.50/mo →</button>
           <a className="btn-g" href="/niche-validator">🎯 Validate your niche free</a>
           <a className="btn-g" href="/discovery" style={{borderColor:"rgba(239,159,39,.35)",color:AMBER}}>📅 Free strategy call</a>
+          <a className="btn-g" href="/waitlist" style={{borderColor:"rgba(29,158,117,.35)",color:"#1D9E75"}}>📋 Join founding waitlist</a>
         </div>
 
         {/* Value props strip */}
@@ -626,8 +628,8 @@ export default function Index() {
             </div>
             <div style={{display:"flex",gap:40,flexWrap:"wrap"}}>
               {[
-                {heading:"Platform",links:[["Orchestrator","/orchestrator"],["CXO Suite","/agents"],["SIXXAB CRM","/crm"],["Niche Selector","/niche-validator"],["Investor Hub","/investor"],["Vertical Packs","/verticals"]]},
-                {heading:"Learn",links:[["Runbook","/runbook"],["Mental Model","/mindset"],["Roadmap","/roadmap"],["AI Coach","/coach"],["Discovery Call","/discovery"],["Contact","/contact"]]},
+                {heading:"Platform",links:[["Orchestrator","/orchestrator"],["CXO Suite","/agents"],["SIXXAB CRM","/crm"],["Content Studio","/studio"],["Lead Gen","/leads"],["Proposals","/proposal"],["Niche Selector","/niche-validator"],["Investor Hub","/investor"],["Vertical Packs","/verticals"]]},
+                {heading:"Learn",links:[["Runbook","/runbook"],["Mental Model","/mindset"],["Roadmap","/roadmap"],["AI Coach","/coach"],["Validate Idea","/validate"],["Join Waitlist","/waitlist"],["Discovery Call","/discovery"],["Contact","/contact"]]},
                 {heading:"Legal",links:[["Terms","/terms"],["Privacy","/privacy"],["Sitemap","/sitemap.xml"]]},
               ].map(col=>(
                 <div key={col.heading}>
