@@ -73,15 +73,15 @@ const AGENT_GROUPS = [
 
 // ── Pricing tiers ─────────────────────────────────────────────────────────────
 const TIERS = [
-  { id:"starter", name:"Starter",  price:99,  founding:49.50, badge:null,           highlight:false,
-    tagline:"Validate and launch your niche",  phase:"Phases 01–02",
-    features:["SIXXAB Niche Selector — viability score, TAM, pricing","Founder Enterprise Orchestrator — 18 agents in parallel","AI Strategy Coach — 50 sessions/month","Marketing Agent — 20 personalised DM scripts/month","Strategy, Content and Analytics agents","Email support · Cancel anytime"] },
-  { id:"pro",     name:"Pro",      price:199, founding:99.50, badge:"Most Popular",  highlight:true,
-    tagline:"Optimise and scale with 11 CXO advisors", phase:"Phases 03–04",
-    features:["Everything in Starter — unlimited","Full 11-CXO Suite — CEO to Corporate Board","SIXXAB CRM — full contact management and pipeline","Multi-channel outreach — LinkedIn, X, WhatsApp, Email, SMS","Investor Hub — Capitalise phase tools","HR, Finance, Ops and Security agents","1 discovery call/month · Priority support"] },
-  { id:"agency",  name:"Agency",   price:350, founding:175,   badge:null,           highlight:false,
-    tagline:"Run multiple businesses and clients autonomously", phase:"Phases 05–06",
-    features:["Everything in Pro — unlimited scale","5 team seats + white-label AI persona","10 Vertical Agent Packs — all Texas industries","Corporate Board agents — governance, M&A, exit planning","SIXXAB Advisor franchise eligibility — 20% rev share","API access + dedicated success manager","Custom onboarding and enterprise SLA"] },
+  { id:"starter", name:"Starter",  price:250,  badge:null,         highlight:false,
+    tagline:"Validate and launch your niche",
+    features:["SIXXAB Niche Selector — viability score, TAM, pricing","Founder Enterprise Orchestrator — 18 AI agents in parallel","AI Strategy Coach — unlimited sessions","Marketing Agent — personalised outreach scripts","Content Studio — social, email and blog generation","Lead Generation — ICP builder and prospect generator","Email support · Cancel anytime"] },
+  { id:"pro",     name:"Pro",      price:999,  badge:"Most Popular",highlight:true,
+    tagline:"Optimise and scale with 11 CXO advisors",
+    features:["Everything in Starter — unlimited","Full 11-CXO Suite — CEO to Corporate Board","SIXXAB CRM — full contact management and pipeline","Proposal Writer — full proposals, SOW and case studies","Investor Hub — Capitalise phase and fundraising tools","Content Studio and Lead Gen — full access","Customer Success agent — onboarding and retention","Priority support · 2 discovery calls/month"] },
+  { id:"agency",  name:"Agency",   price:2499, badge:null,         highlight:false,
+    tagline:"Run multiple businesses and clients autonomously",
+    features:["Everything in Pro — unlimited scale","10 team seats + white-label AI persona","30 Vertical Agent Packs — Texas, US and European markets","Corporate Board agents — governance, M&A, exit planning","SIXXAB Advisor franchise eligibility — 20% revenue share","API access for custom integrations","Dedicated customer success manager · Enterprise SLA","Custom onboarding workshop with Sunil"] },
 ]
 
 // ── Verticals ─────────────────────────────────────────────────────────────────
@@ -195,10 +195,10 @@ export default function Index() {
     <>
       <Head>
         <title>SIXXAB AI — Autonomous Business Platform · Your business runs itself</title>
-        <meta name="description" content="SIXXAB AI is the autonomous business platform that takes any business from $0 to $10M ARR. 6-phase framework. 11 CXO advisors. 36 specialist agents. 10 vertical packs. From $49.50/mo."/>
+        <meta name="description" content="SIXXAB AI is the autonomous business platform that takes any business from $0 to $10M ARR. 6-phase framework. 11 CXO advisors. 36 specialist agents. 10 vertical packs. Plans from $250/mo."/>
         <link rel="canonical" href="https://startupsinabox.com"/>
         <meta property="og:title" content="SIXXAB AI — Your business runs itself."/>
-        <meta property="og:description" content="6-phase framework. 11 CXO advisors. 36 AI agents. $0 to $10M ARR. From $49.50/mo."/>
+        <meta property="og:description" content="6-phase framework. 11 CXO advisors. 36 AI agents. $0 to $10M ARR. Plans from $250/mo."/>
         <meta property="og:image" content="https://startupsinabox.com/api/og"/>
         <meta property="og:url" content="https://startupsinabox.com"/>
         <meta name="twitter:card" content="summary_large_image"/>
@@ -207,13 +207,13 @@ export default function Index() {
         html{scroll-behavior:smooth}
         body{background:#fff;overflow-x:hidden}
         .btn-a{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;border-radius:11px;background:${AMBER};color:${N};font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none}
-        .btn-a:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(239,159,39,.35)}
+        .btn-a:hover{opacity:.9}
         .btn-g{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);color:${CHALK};font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .18s;text-decoration:none}
         .btn-g:hover{background:rgba(255,255,255,.14)}
         .nav-a{font-size:13px;color:rgba(255,255,255,.55);text-decoration:none;cursor:pointer;transition:color .15s;background:none;border:none;font-family:inherit}
         .nav-a:hover{color:#fff}
         .card-h{background:#fff;border-radius:14px;border:1px solid #E2E8F0;overflow:hidden;transition:all .2s}
-        .card-h:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(0,0,0,.09)}
+        .card-h:hover{border-color:#CBD5E1}
         .tier{background:#fff;border:1.5px solid #E8ECF4;border-radius:16px;padding:28px 22px;display:flex;flex-direction:column;transition:all .2s;position:relative}
         .tier:hover{transform:translateY(-4px);box-shadow:0 18px 44px rgba(0,0,0,.1)}
         .tier.pop{border:2px solid ${AMBER};background:#FFFBF2}
@@ -225,7 +225,20 @@ export default function Index() {
         @keyframes slide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
         .fu{animation:fadeUp .45s ease both}
         .sl{animation:slide .3s ease both}
-        @media(max-width:860px){.hide-m{display:none!important}.g2,.g3{grid-template-columns:1fr!important}}
+        @media(max-width:860px){
+  .hide-m{display:none!important}
+  .g2,.g3{grid-template-columns:1fr!important}
+}
+@media(max-width:640px){
+  .hero-ctas{flex-direction:column!important;align-items:stretch!important}
+  .hero-ctas a,.hero-ctas button{width:100%!important;justify-content:center!important;text-align:center!important}
+  .hero-pills{display:none!important}
+  .nav-logo-sub{display:none!important}
+  .framework-tabs{gap:4px!important}
+  .framework-tabs button{padding:6px 10px!important;font-size:11px!important}
+  .pricing-grid{grid-template-columns:1fr!important}
+  .testi-grid{grid-template-columns:1fr!important}
+}
       `}</style>
 
       {/* ── NAV ── */}
@@ -242,7 +255,7 @@ export default function Index() {
           <a className="nav-a" href="/runbook">Runbook</a>
           <a className="nav-a" href="/mindset">Mental model</a>
           <a className="nav-a" href="/discovery">Book call</a>
-          <button className="btn-a" style={{padding:"8px 18px",fontSize:13}} onClick={()=>scrollTo(pricingRef)}>Get 50% off →</button>
+          <button className="btn-a" style={{padding:"8px 18px",fontSize:13}} onClick={()=>scrollTo(pricingRef)}>Start free trial →</button>
         </div>
       </nav>
 
@@ -256,7 +269,7 @@ export default function Index() {
           {FRAMEWORK.map((f,i)=>(
             <button key={i} onClick={()=>{setActiveStep(i);scrollTo(frameworkRef)}}
               style={{padding:"4px 13px",borderRadius:20,border:`1px solid ${f.color}55`,background:activeStep===i?`${f.color}22`:`${f.color}0A`,fontSize:11.5,fontWeight:500,color:activeStep===i?f.color:"rgba(245,245,240,.45)",cursor:"pointer",fontFamily:"inherit",transition:"all .18s"}}>
-              {f.n} {f.title}
+              {f.title}
             </button>
           ))}
         </div>
@@ -269,16 +282,16 @@ export default function Index() {
           SIXXAB AI is the autonomous business platform that takes any business from <strong style={{color:CHALK}}>$0 to $10M ARR</strong>. Six phases. 11 CXO advisors. 36 AI agents. <strong style={{color:CHALK}}>30 vertical packs across Texas, the US and Europe</strong>. One weekly goal.
         </p>
 
-        <div className="fu" style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginBottom:44}}>
-          <button className="btn-a" onClick={()=>scrollTo(pricingRef)}>Start for $49.50/mo →</button>
+        <div className="fu hero-ctas" style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center",marginBottom:44}}>
+          <button className="btn-a" onClick={()=>scrollTo(pricingRef)}>Start free trial →</button>
           <a className="btn-g" href="/niche-validator">🎯 Validate your niche free</a>
           <a className="btn-g" href="/discovery" style={{borderColor:"rgba(239,159,39,.35)",color:AMBER}}>📅 Free strategy call</a>
-          <a className="btn-g" href="/waitlist" style={{borderColor:"rgba(29,158,117,.35)",color:"#1D9E75"}}>📋 Join founding waitlist</a>
+          <a className="btn-g" href="/waitlist" style={{borderColor:"rgba(29,158,117,.35)",color:"#1D9E75"}}>📋 Join the waitlist</a>
         </div>
 
         {/* Value props strip */}
-        <div className="fu" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-          {[["6-phase framework","$0 → $10M ARR"],["11 CXO advisors","CEO to Corporate Board"],["36 AI agents","In parallel, 24/7"],["30 vertical packs","Texas · US · Europe · Global"],["$49.50/mo","Founding rate — locked"],["Corporate Board","Governance, M&A, Exit"]].map(([v,l],i)=>(
+        <div className="fu hero-pills" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+          {[["6-phase framework","$0 → $10M ARR"],["11 CXO advisors","CEO to Corporate Board"],["36 AI agents","In parallel, 24/7"],["30 vertical packs","Texas · US · Europe · Global"],["From $250/mo","Professional plans"],["Corporate Board","Governance, M&A, Exit"]].map(([v,l],i)=>(
             <div key={i} style={{padding:"6px 15px",borderRadius:20,background:"rgba(255,255,255,.055)",border:"1px solid rgba(255,255,255,.1)",fontSize:12.5}}>
               <strong style={{color:CHALK}}>{v}</strong>&nbsp;<span style={{color:"rgba(245,245,240,.4)"}}>{l}</span>
             </div>
@@ -313,7 +326,7 @@ export default function Index() {
               style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",borderRadius:10,border:`2px solid ${activeStep===i?f.color:"#E2E8F0"}`,background:activeStep===i?`${f.color}08`:"#F8F9FA",cursor:"pointer",fontFamily:"inherit",transition:"all .18s"}}>
               <span style={{fontSize:16}}>{f.icon}</span>
               <div style={{textAlign:"left"}}>
-                <div style={{fontSize:12.5,fontWeight:600,color:activeStep===i?N:"#64748B"}}>{f.n} {f.title}</div>
+                <div style={{fontSize:12.5,fontWeight:600,color:activeStep===i?N:"#64748B"}}>{f.title}</div>
                 <div style={{fontSize:10.5,color:activeStep===i?f.color:"#94A3B8"}}>{f.revenue}</div>
               </div>
             </button>
@@ -500,7 +513,7 @@ export default function Index() {
           <div style={{fontSize:11,fontWeight:700,letterSpacing:".14em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>Pricing</div>
           <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(28px,5vw,58px)",fontWeight:700,color:CHALK,letterSpacing:"-0.5px",marginBottom:14,lineHeight:1.05}}>One price. The full system.</h2>
           <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"8px 20px",borderRadius:20,background:"rgba(239,159,39,.15)",border:`1.5px solid ${AMBER}66`,fontSize:14,fontWeight:500,color:AMBER}}>
-            🔥 Beta launch — <strong>50% off founding members.</strong> Rate locked forever.
+            Professional pricing. No lock-in. Cancel anytime.
           </div>
         </div>
         <div className="g3" style={{maxWidth:1060,margin:"0 auto"}}>
@@ -515,14 +528,11 @@ export default function Index() {
                 <div style={{fontSize:13,color:"#64748B"}}>{tier.tagline}</div>
               </div>
               <div style={{marginBottom:18}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:5,marginBottom:2}}>
-                  <span style={{fontSize:14,color:"#CBD5E1",textDecoration:"line-through"}}>${tier.price}/mo</span>
-                </div>
-                <div style={{display:"flex",alignItems:"baseline",gap:4}}>
-                  <span style={{fontFamily:"Georgia,serif",fontSize:52,color:tier.highlight?AMBER:N,lineHeight:1,fontWeight:700}}>${tier.founding}</span>
+                <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:4}}>
+                  <span style={{fontFamily:"Georgia,serif",fontSize:48,color:tier.highlight?AMBER:N,lineHeight:1,fontWeight:700}}>${tier.price}</span>
                   <span style={{fontSize:14,color:"#94A3B8"}}>/mo</span>
                 </div>
-                <div style={{fontSize:12,color:"#1D9E75",fontWeight:600,marginTop:3}}>↑ Founding rate · save ${(tier.price-tier.founding).toFixed(2)}/mo · locked forever</div>
+                <div style={{fontSize:12,color:"#64748B",marginTop:2}}>Billed monthly · Cancel anytime</div>
               </div>
               <ul style={{listStyle:"none",flex:1,marginBottom:22,display:"flex",flexDirection:"column",gap:8}}>
                 {tier.features.map(f=>(
@@ -540,7 +550,7 @@ export default function Index() {
           ))}
         </div>
         <p style={{textAlign:"center",marginTop:24,fontSize:14,color:"rgba(245,245,240,.4)"}}>
-          🛡️ <strong style={{color:"rgba(245,245,240,.6)"}}>14-day money-back guarantee.</strong> Full refund if SIXXAB AI doesn't help you make progress.
+          🛡️ <strong style={{color:"rgba(245,245,240,.6)"}}>14-day free trial on all plans.</strong> Full refund if SIXXAB AI doesn't help you make progress.
         </p>
       </section>
 
@@ -589,7 +599,7 @@ export default function Index() {
       <section style={{padding:"72px 5%",background:AMBER,textAlign:"center"}}>
         <h2 style={{fontFamily:"Georgia,serif",fontSize:"clamp(28px,5vw,56px)",fontWeight:700,color:N,letterSpacing:"-0.5px",lineHeight:1.05,marginBottom:10}}>Get 50% off. Locked forever.</h2>
         <p style={{fontSize:15,color:"rgba(10,14,26,.62)",marginBottom:28,maxWidth:380,margin:"0 auto 28px",lineHeight:1.65}}>
-          Founding member rate: <strong style={{color:N}}>$49.50 · $99.50 · $175/mo</strong><br/>Your price never increases — ever.
+          Start with a 14-day free trial.<br/>No credit card required on Starter.
         </p>
         {betaDone ? (
           <div style={{background:"rgba(10,14,26,.1)",borderRadius:14,padding:"18px 28px",display:"inline-block"}}>
@@ -604,7 +614,7 @@ export default function Index() {
                 style={{flex:1,minWidth:200,padding:"13px 16px",borderRadius:9,border:"2px solid transparent",fontSize:14,fontFamily:"inherit",background:"rgba(10,14,26,.1)",color:N,outline:"none"}}/>
               <button type="submit" disabled={betaBusy}
                 style={{padding:"13px 22px",borderRadius:9,background:N,color:CHALK,fontSize:14,fontWeight:700,border:"none",cursor:"pointer",fontFamily:"inherit",opacity:betaBusy?.65:1,whiteSpace:"nowrap"}}>
-                {betaBusy?"Sending…":"Get 50% off →"}
+                {betaBusy?"Sending…":"Start free trial →"}
               </button>
             </form>
             {betaErr&&<p style={{fontSize:13,color:"rgba(120,20,20,.8)",fontWeight:500,marginBottom:8}}>⚠ {betaErr}</p>}

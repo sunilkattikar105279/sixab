@@ -147,7 +147,7 @@ function calcScore(c) {
 }
 
 export default function CRMPage() {
-  const [contacts,  setContacts]  = useState([])
+  const [contacts,  setContacts]  = useState(() => { try { return loadContacts() } catch { return [] } })
   const [view,      setView]      = useState("list") // list | kanban | import | contact
   const [search,    setSearch]    = useState("")
   const [filter,    setFilter]    = useState({ stage:"", source:"", agent:"", value:"" })
@@ -165,9 +165,8 @@ export default function CRMPage() {
   const fileRef = useRef(null)
 
   useEffect(() => {
-    const loaded = loadContacts()
-    setContacts(loaded)
-
+    // useState already loaded contacts synchronously.
+    // This effect only handles backup recovery and cross-tab sync.
     // Check if backup has more contacts than primary (recovery scenario)
     try {
       const primary = JSON.parse(localStorage.getItem(STORE_KEY) || "[]")
@@ -395,7 +394,7 @@ Return ONLY the message text, no preamble.`
             {l:"CRM MRR",v:"$"+stats.mrr.toFixed(0),c:"#1D9E75"},
           ].map((s,i)=>(
             <div key={i} className="card" style={{padding:"14px 16px"}}>
-              <div style={{fontSize:22,fontWeight:700,color:s.c,fontFamily:"'Bebas Neue'",letterSpacing:.5}}>{s.v}</div>
+              <div style={{fontSize:22,fontWeight:700,color:s.c,fontFamily:"Georgia,serif",letterSpacing:.5}}>{s.v}</div>
               <div style={{fontSize:11,color:"#94A3B8",marginTop:2}}>{s.l}</div>
             </div>
           ))}
@@ -966,7 +965,7 @@ function ContactForm({ contact, isNew, onSave, onDelete, onBack, onGenScript, ge
         <div className="card" style={{padding:16}}>
           <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Contact score</div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-            <div style={{fontSize:36,fontWeight:700,color:form.score>=80?"#1D9E75":form.score>=60?AMBER:"#94A3B8",fontFamily:"'Bebas Neue'",letterSpacing:1}}>
+            <div style={{fontSize:36,fontWeight:700,color:form.score>=80?"#1D9E75":form.score>=60?AMBER:"#94A3B8",fontFamily:"Georgia,serif",letterSpacing:1}}>
               {calcScore(form)}
             </div>
             <div style={{flex:1}}>

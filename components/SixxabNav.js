@@ -4,15 +4,15 @@ import { useState, useEffect } from "react"
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
 
 export const MODULES = [
-  { label:"01 Validate",   href:"/niche-validator", icon:"ti-target",          color:"#EF9F27" },
-  { label:"02 Launch",     href:"/orchestrator",    icon:"ti-crown",           color:"#1D9E75" },
-  { label:"03 Optimise",   href:"/agents",          icon:"ti-briefcase",       color:"#378ADD" },
+  { label:"Validate",   href:"/niche-validator", icon:"ti-target",          color:"#EF9F27" },
+  { label:"Launch",     href:"/orchestrator",    icon:"ti-crown",           color:"#1D9E75" },
+  { label:"Optimise",   href:"/agents",          icon:"ti-briefcase",       color:"#378ADD" },
   { label:"Content Studio", href:"/studio",          icon:"ti-sparkles",        color:"#D4537E" },
   { label:"Lead Gen",       href:"/leads",           icon:"ti-user-search",     color:"#1D9E75" },
   { label:"Proposals",      href:"/proposal",        icon:"ti-file-text",       color:"#378ADD" },
-  { label:"04 Scale",      href:"/crm",             icon:"ti-address-book",    color:"#7C3AED" },
-  { label:"05 Capitalise", href:"/investor",        icon:"ti-currency-dollar", color:"#DC2626" },
-  { label:"06 Global",     href:"/verticals",       icon:"ti-building-factory",color:"#EC4899" },
+  { label:"Scale",      href:"/crm",             icon:"ti-address-book",    color:"#7C3AED" },
+  { label:"Capitalise", href:"/investor",        icon:"ti-currency-dollar", color:"#DC2626" },
+  { label:"Global",     href:"/verticals",       icon:"ti-building-factory",color:"#EC4899" },
   { label:"Coach",         href:"/coach",           icon:"ti-message-chatbot", color:"#7C3AED" },
   { label:"Roadmap",       href:"/roadmap",         icon:"ti-map",             color:"#F59E0B" },
   { label:"Runbook",       href:"/runbook",         icon:"ti-book",            color:"#16A34A" },

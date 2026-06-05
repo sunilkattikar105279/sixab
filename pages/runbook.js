@@ -15,8 +15,8 @@ const CHAPTERS = [
         title:"Create your account",
         steps:[
           {n:"1", text:"Go to startupsinabox.com and click 'Get started'"},
-          {n:"2", text:"Sign up with email/password or Google. Choose a founding member plan ($49.50, $99.50 or $175/mo)"},
-          {n:"3", text:"Complete Stripe checkout — your founding rate is locked forever from this moment"},
+          {n:"2", text:"Sign up with email/password or Google. Choose a early access member plan ($250, $999 or $2,499/mo)"},
+          {n:"3", text:"Complete Stripe checkout — your professional rate is billed monthly from this moment"},
           {n:"4", text:"You land on the Orchestrator page — this is your command centre"},
         ],
         tip:"Use your business email, not personal — it makes the AI agents personalise scripts to your business domain."
@@ -45,7 +45,7 @@ const CHAPTERS = [
   },
   {
     id:"niche", icon:"🎯", title:"SIXXAB Niche Selector",
-    color:"#378ADD", tag:"Phase 01 — Validate",
+    color:"#378ADD", tag:"Phase — Validate",
     summary:"Validate your business niche before investing time or money. Get viability score, market size and pricing benchmarks for any industry in any location.",
     sections:[
       {
@@ -82,7 +82,7 @@ const CHAPTERS = [
   },
   {
     id:"orchestrator", icon:"👑", title:"Founder Enterprise Orchestrator",
-    color:"#EF9F27", tag:"Phase 02 — Launch",
+    color:"#EF9F27", tag:"Phase — Launch",
     summary:"Set one goal. 18 AI agents run in parallel. One unified action plan returned. This is your Monday morning ritual.",
     sections:[
       {
@@ -122,7 +122,7 @@ const CHAPTERS = [
   },
   {
     id:"cxo", icon:"💼", title:"SIXXAB CXO Suite",
-    color:"#7C3AED", tag:"Phase 03 — Optimise",
+    color:"#7C3AED", tag:"Phase — Optimise",
     summary:"Seven CXO advisors — CEO, CMO, CFO, COO, CTO, CDO, CHRO — each with AI chat, KPI dashboard and 18 specialist agents underneath.",
     sections:[
       {
@@ -162,7 +162,7 @@ const CHAPTERS = [
   },
   {
     id:"crm", icon:"📋", title:"SIXXAB CRM",
-    color:"#1D9E75", tag:"Phase 04 — Scale",
+    color:"#1D9E75", tag:"Phase — Scale",
     summary:"Full contact management, LinkedIn import, pipeline tracking and AI script generation — all in one place, shared across every agent.",
     sections:[
       {
@@ -201,7 +201,7 @@ const CHAPTERS = [
   },
   {
     id:"verticals", icon:"🏭", title:"Vertical Agent Packs",
-    color:"#EC4899", tag:"Phase 06 — Global",
+    color:"#EC4899", tag:"Phase — Global",
     summary:"10 industry-specific agent configurations for HVAC, Real Estate, Legal, Consulting and 6 more Texas markets — pre-built language, workflows and scripts.",
     sections:[
       {
@@ -330,7 +330,7 @@ const CHAPTERS = [
       {
         title:"What the support agent can answer",
         steps:[
-          {n:"→", text:"Pricing: exact founding rates, what each plan includes, billing and cancellation"},
+          {n:"→", text:"Pricing: exact professional rates, what each plan includes, billing and cancellation"},
           {n:"→", text:"Features: what each tool does, which agents handle which tasks, how to use the Orchestrator"},
           {n:"→", text:"Niche questions: which vertical pack applies to your industry, how the Niche Selector works"},
           {n:"→", text:"Getting started: first steps, how to import LinkedIn contacts, running the first Orchestrator session"},
@@ -338,6 +338,44 @@ const CHAPTERS = [
           {n:"→", text:"Booking: how to book a discovery call, what to expect, who you will speak with"},
         ],
         tip:"If you ask a question the support agent cannot answer confidently, it will automatically offer to connect you with Sunil. You never get a generic 'I don't know' — you always get a path forward."
+      },
+    ]
+  },
+  {
+    id:"validate", icon:"📋", title:"Product Launch Validation",
+    color:"#EC4899", tag:"Phase 01 — Validate ideas",
+    summary:"Before building anything, run your idea through 5 structured interview stages with real customers. Generate AI-powered custom questions. Score validation signals. Then build a waitlist to capture demand.",
+    sections:[
+      {
+        title:"The 5 interview stages",
+        steps:[
+          {n:"Stage 1", text:"Problem Discovery — confirm the problem is real, painful and frequent before revealing your solution. 7 questions."},
+          {n:"Stage 2", text:"Customer Profile — understand who the buyer is, how they decide and what triggers a purchase. 7 questions."},
+          {n:"Stage 3", text:"Solution Feedback — present your idea and measure genuine enthusiasm, not politeness. 7 questions."},
+          {n:"Stage 4", text:"Commitment Signals — separate real intent from polite interest. Ask for time, money and introductions. 6 questions."},
+          {n:"Stage 5", text:"Market & Competition — understand the competitive landscape from the customer's perspective. 6 questions."},
+        ],
+        tip:"Never reveal your solution until Stage 3. The first two stages are for listening only. If you mention your idea too early, every answer will be polluted by the customer trying to be helpful rather than honest."
+      },
+      {
+        title:"Scoring validation signals",
+        steps:[
+          {n:"75–100", text:"Strong validation. Move to Phase 02 immediately. Set your Orchestrator goal: get 10 paying customers in 30 days. Build your waitlist today."},
+          {n:"50–74",  text:"Promising signals. Run 3 more interviews with a sharper focus on commitment questions (Stage 4). Look for patterns across all interviews before concluding."},
+          {n:"0–49",   text:"Weak signal. This is valuable data. Review your target customer definition and problem statement. You may be talking to the wrong person, not necessarily solving the wrong problem."},
+        ],
+        tip:"The most common mistake is treating polite enthusiasm as validation. 'That sounds great!' is not validation. 'I would pay $X for that right now' is validation."
+      },
+      {
+        title:"Building your waitlist",
+        steps:[
+          {n:"1", text:"Go to /waitlist — the signup page is live and public. Share it before your product is built."},
+          {n:"2", text:"Add the waitlist URL to your LinkedIn bio, outreach DMs and any content you publish."},
+          {n:"3", text:"Every person who signs up receives an automatic confirmation email with early access resources."},
+          {n:"4", text:"Sunil receives a notification for every signup — reply to any that mention specific needs."},
+          {n:"5", text:"When you are ready to launch, email the waitlist with your early access member rate and first 48 hours access."},
+        ],
+        tip:"A waitlist of 50 interested people is worth more than 500 social media followers. These are people who raised their hand. They convert at 5–10× the rate of cold outreach."
       },
     ]
   },

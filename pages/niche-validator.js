@@ -112,7 +112,7 @@ export default function NicheValidator() {
         <div style={{display:"inline-flex",alignItems:"center",gap:7,padding:"5px 14px",borderRadius:20,border:"1px solid rgba(239,159,39,.3)",background:"rgba(239,159,39,.1)",fontSize:12,fontWeight:500,color:AMBER,marginBottom:14}}>
           🎯 Phase 01 of 6 — Validate · The first decision founders get wrong
         </div>
-        <h1 style={{fontFamily:"'Bebas Neue'",fontSize:"clamp(30px,5vw,56px)",color:CHALK,letterSpacing:1.5,lineHeight:1,marginBottom:10}}>
+        <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(26px,5vw,44px)",fontWeight:700,color:CHALK,letterSpacing:"-0.5px",lineHeight:1.05,marginBottom:10}}>
           Niche Validator
         </h1>
         <p style={{fontSize:15,color:"rgba(245,245,240,.55)",maxWidth:460,margin:"0 auto",lineHeight:1.7}}>

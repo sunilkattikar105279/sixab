@@ -11,7 +11,7 @@ export default function Document() {
         {/* ── Google Fonts — loaded ONCE here, not per page ── */}
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
-        <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
         {/* ── Tabler Icons CDN ── */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css"/>
@@ -53,7 +53,9 @@ export default function Document() {
         <style>{`
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
           html{scroll-behavior:smooth}
-          body{font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+          body{font-family:'Inter','Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-0.01em}
+          h1,h2,h3{letter-spacing:-0.03em}
+          strong{font-weight:600}
           ::-webkit-scrollbar{width:3px}
           ::-webkit-scrollbar-thumb{background:#EF9F27;border-radius:2px}
           @keyframes spin{to{transform:rotate(360deg)}}

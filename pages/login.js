@@ -146,7 +146,7 @@ export default function LoginPage() {
   // ── Tab helper ─────────────────────────────────────────────────────────────
   const headings = {
     login: { title:"Welcome back", sub:"Sign in to your SIXXAB AI platform" },
-    signup:{ title:"Create account", sub:plan ? `Activate ${plan} · 50% founding rate` : "Join founders building autonomous businesses" },
+    signup:{ title:"Create account", sub:plan ? `Activate ${plan} · 50% professional rate` : "Join founders building autonomous businesses" },
     forgot:{ title:"Reset password", sub:"We'll send a reset link to your email" },
     reset: { title:"Set new password", sub:"Choose a strong new password" },
   }
@@ -223,8 +223,8 @@ export default function LoginPage() {
             {/* Plan badge */}
             {plan && (
               <div style={{background:"rgba(239,159,39,.15)",border:"1px solid rgba(239,159,39,.3)",borderRadius:9,padding:"7px 14px",marginBottom:14,fontSize:12.5,color:AMBER,fontWeight:500}}>
-                🔒 {mode==="signup" ? "Create account to activate" : "Sign in for"}{" "}
-                <strong>{plan}</strong> · 50% off founding rate — locked forever
+                🔒 {mode==="signup" ? "Create your account to begin" : "Sign in for"}{" "}
+                <strong>{plan}</strong> · 50% off professional rate — billed monthly
               </div>
             )}
 
@@ -379,7 +379,7 @@ export default function LoginPage() {
                     By creating an account you agree to our{" "}
                     <a href="/terms" style={{color:"#64748B"}}>Terms</a> and{" "}
                     <a href="/privacy" style={{color:"#64748B"}}>Privacy</a>.{" "}
-                    14-day money-back guarantee.
+                    14-day free trial.
                   </p>
                 )}
               </>

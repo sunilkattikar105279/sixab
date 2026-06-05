@@ -55,9 +55,9 @@ const CXOS = [
     chatRole:"You are the SIXXAB CFO AI advisor. Focus on: MRR tracking, LTV/CAC calculation, burn rate, Stripe revenue, fundraising readiness (are we ready to raise?), valuation modelling, pricing strategy, and financial forecasting. When a founder is in Phase 5 (Capitalise), focus on building the financial model and due diligence package. Use real numbers from the context." },
   { id:"coo",  title:"COO",  name:"Chief Operating Officer",
     color:"#7C3AED", icon:"ti-settings-automation",
-    desc:"Operations, customer support, onboarding, retention and process systems",
-    agents:["support","ops"],
-    chatRole:"You are the SIXXAB COO AI advisor. Focus on: customer onboarding sequences, support ticket systems, churn reduction tactics, process documentation, and scaling operations from solo to team." },
+    desc:"Operations, customer onboarding, customer success, retention and process systems",
+    agents:["support","ops","customer_success","onboarding_agent"],
+    chatRole:"You are the SIXXAB COO AI advisor. You own customer onboarding, customer success, support operations, retention systems and process documentation. When a customer signs up, the Onboarding Agent runs their welcome sequence. The Customer Success Agent monitors health scores, NPS and churn signals. Always tie advice to specific metrics: Day 1 activation rate, Day 30 retention, NPS score." },
   { id:"cto",  title:"CTO",  name:"Chief Technology Officer",
     color:"#0EA5E9", icon:"ti-code",
     desc:"Tech stack, product roadmap, deployments, security and API integrations",
@@ -118,6 +118,12 @@ const AGENTS = {
   compliance:      { label:"Compliance Agent",     icon:"ti-certificate",        color:"#378ADD", cxo:"cfo",  desc:"GDPR, PCI, CCPA, HIPAA checklists and legal templates" },
   support:         { label:"Support Agent",        icon:"ti-headset",            color:"#7C3AED", cxo:"coo",  desc:"Ticket drafts, onboarding emails, NPS surveys, escalation" },
   ops:             { label:"Ops Agent",            icon:"ti-settings-automation",color:"#7C3AED", cxo:"coo",  desc:"Process automation, SOP builder, system documentation" },
+  customer_success:{ label:"Customer Success Agent",icon:"ti-star",               color:"#7C3AED", cxo:"coo",
+    desc:"Customer health scoring, churn signals, NPS surveys, expansion revenue and renewal management",
+    chatRole:"You are the SIXXAB Customer Success Agent. Your goal is to ensure every customer achieves their promised outcome: first revenue in 48 hours, $10k MRR in 90 days. You monitor: Day 1 activation (did they run the Orchestrator?), Day 7 engagement (are they using the CRM?), Day 30 retention (are they seeing results?), Day 90 NPS (would they refer others?). You generate: health score reports, at-risk customer alerts, expansion opportunity flags, renewal scripts, and win-back sequences for churned customers. Always give specific, actionable interventions not generic advice." },
+  onboarding_agent:{ label:"Onboarding Agent",       icon:"ti-rocket",             color:"#7C3AED", cxo:"coo",
+    desc:"New customer welcome sequences, platform walkthrough scripts, milestone check-ins and first-value moments",
+    chatRole:"You are the SIXXAB Onboarding Agent. Every new customer needs to experience their first value moment within 48 hours of signing up. You design and write: welcome email sequences (Day 0, 1, 3, 7, 14, 30), platform walkthrough scripts, milestone celebration messages, first-goal guidance prompts, and check-in questions that surface obstacles early. You know the SIXXAB platform thoroughly: Niche Selector → Orchestrator → CRM → CXO Suite → Content Studio → Lead Gen → Proposal Writer. Always tell customers which tool to open first and exactly what to do with it." },
   product:         { label:"Product Agent",        icon:"ti-package",            color:"#0EA5E9", cxo:"cto",  desc:"Roadmap, feature prioritisation, user feedback sprints" },
   tech:            { label:"Tech Agent",           icon:"ti-code",               color:"#0EA5E9", cxo:"cto",  desc:"Architecture decisions, deployments, API integrations" },
   security:        { label:"Security Agent",       icon:"ti-shield-lock",        color:"#DC2626", cxo:"cto",  desc:"Vulnerability scanning, API key hygiene, pen test prep" },
@@ -547,7 +553,7 @@ export default function AgentHub() {
                     activeCxo==="cmo"?["Best channel for my niche?","Write me a LinkedIn post","Plan my content this week"]:
                     activeCxo==="cso"?["Write a demo script","Handle my top objection","Who should I upsell?","Find my next enterprise deal","Track investor conversations"]:
                     activeCxo==="cfo"?["Calculate my unit economics","What is my break-even?","Model my 90-day MRR"]:
-                    activeCxo==="coo"?["Write my onboarding sequence","Reduce my churn — what do I do?","What process should I document first?"]:
+                    activeCxo==="coo"?["Write my Day 1 welcome email","Generate a customer health score report","Write an at-risk customer intervention","Design my 30-day onboarding sequence","Create an NPS survey email","Write a win-back sequence for churned customers"]:
                     activeCxo==="cto"?["What tech should I build next?","Review my Vercel setup","Supabase migration plan"]:
                     activeCxo==="cdo"?["What is my activation bottleneck?","Analyse my funnel","What metric should I focus on?"]:
                     activeCxo==="chro"?["When should I hire?","Write a job description","Interview questions for a growth marketer"]:
@@ -865,7 +871,7 @@ export default function AgentHub() {
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                     <div className="card" style={{padding:16}}>
                       <div style={{fontSize:12,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:12}}>Customer onboarding sequence</div>
-                      {[["Day 1","Welcome email + platform walkthrough","#7C3AED"],["Day 3","First check-in — did they run the orchestrator?","#EF9F27"],["Day 7","Goal review — are they on track?","#EF9F27"],["Day 14","Churn risk assessment — low usage triggers","#DC2626"],["Day 30","NPS survey + upgrade offer","#1D9E75"]].map(([d,t,c])=>(
+                      {[["Day 0","Welcome email + account setup guide","#7C3AED"],["Day 1","Run Orchestrator walkthrough — set first weekly goal","#7C3AED"],["Day 3","Check-in — did they complete their first outreach?","#EF9F27"],["Day 7","Progress review — CRM contacts added? Scripts sent?","#EF9F27"],["Day 14","Health score check — usage signals reviewed","#DC2626"],["Day 30","NPS survey + success milestone celebration","#1D9E75"],["Day 60","Expansion conversation — upgrade or add team seats","#1D9E75"],["Day 90","Renewal + case study offer","#1D9E75"]].map(([d,t,c])=>(
                         <div key={d} style={{display:"flex",gap:9,padding:"8px 0",borderBottom:"1px solid #F1F5F9"}}>
                           <div style={{width:24,height:24,borderRadius:"50%",background:`${c}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:c,flexShrink:0}}>{d.split(" ")[1]}</div>
                           <div style={{fontSize:12.5,color:N,lineHeight:1.5}}>{t}</div>

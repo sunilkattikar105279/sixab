@@ -105,12 +105,12 @@ export default function SupportWidget() {
         @keyframes s-fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes s-pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,159,39,.5)}70%{box-shadow:0 0 0 10px rgba(239,159,39,0)}}
         @keyframes s-spin{to{transform:rotate(360deg)}}
-        .s-widget{position:fixed;bottom:24px;right:24px;z-index:9999;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+        .s-widget{position:fixed;bottom:16px;right:16px;z-index:9999;font-family:'Plus Jakarta Sans',system-ui,sans-serif;max-width:calc(100vw - 32px)}
         .s-btn{width:54px;height:54px;border-radius:50%;background:#0A0E1A;border:2.5px solid #EF9F27;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(0,0,0,.25);transition:all .2s;position:relative}
         .s-btn:hover{transform:scale(1.06)}
         .s-pulse{animation:s-pulse 1.8s infinite}
         .s-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:#DC2626;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
-        .s-panel{position:absolute;bottom:66px;right:0;width:340px;background:#fff;border-radius:18px;box-shadow:0 16px 48px rgba(0,0,0,.18);overflow:hidden;animation:s-fadeUp .28s ease;border:1px solid #E2E8F0}
+        .s-panel{position:fixed;bottom:80px;right:16px;left:16px;width:auto;max-width:360px;margin-left:auto;background:#fff;border-radius:18px;box-shadow:0 16px 48px rgba(0,0,0,.18);overflow:hidden;animation:s-fadeUp .28s ease;border:1px solid #E2E8F0}@media(min-width:420px){.s-panel{position:absolute;bottom:66px;right:0;left:auto;width:340px}}
         .s-user{background:rgba(239,159,39,.13);border:1px solid rgba(239,159,39,.25);border-radius:14px 14px 4px 14px;padding:9px 13px;max-width:82%;margin-left:auto;font-size:13px;line-height:1.65;color:#0A0E1A;white-space:pre-wrap;word-break:break-word}
         .s-ai{background:#F8F9FA;border:1px solid #E8ECF4;border-radius:14px 14px 14px 4px;padding:9px 13px;max-width:88%;font-size:13px;line-height:1.7;color:#0A0E1A;white-space:pre-wrap;word-break:break-word}
         .s-quick{font-size:11px;padding:5px 11px;border-radius:20px;border:1px solid rgba(239,159,39,.35);background:rgba(239,159,39,.07);cursor:pointer;color:#EF9F27;font-weight:500;white-space:nowrap;transition:all .14s;font-family:inherit}
