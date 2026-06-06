@@ -16,7 +16,7 @@ const PLATFORMS = [
     setupSteps: [
       "Go to linkedin.com/developers → Create app",
       "Add product: 'Share on LinkedIn' and 'Sign In with LinkedIn using OpenID Connect'",
-      "Set Redirect URL: https://startupsinabox.com/api/social/callback/linkedin",
+      "Set Redirect URL: https://www.startupsinabox.com/api/linkedin-callback",
       "Copy Client ID and Client Secret to Vercel env vars",
     ],
     envVars: ["LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET"],
@@ -28,7 +28,7 @@ const PLATFORMS = [
     setupSteps: [
       "Go to developer.twitter.com → Projects & Apps → Create app",
       "Enable OAuth 2.0 with Read and Write permissions",
-      "Set Callback URL: https://startupsinabox.com/api/social/callback/twitter",
+      "Set Callback URL: https://www.startupsinabox.com/api/twitter-callback",
       "Copy Client ID and Client Secret to Vercel env vars",
     ],
     envVars: ["TWITTER_CLIENT_ID", "TWITTER_CLIENT_SECRET"],
@@ -40,7 +40,7 @@ const PLATFORMS = [
     setupSteps: [
       "Go to developers.facebook.com → Create app → Business type",
       "Add Facebook Login and Pages API products",
-      "Set Redirect URI: https://startupsinabox.com/api/social/callback/facebook",
+      "Set Redirect URI: https://www.startupsinabox.com/api/facebook-callback",
       "Copy App ID and App Secret to Vercel env vars",
       "Submit app for Facebook review (required for pages_manage_posts permission)",
     ],
@@ -65,7 +65,7 @@ const PLATFORMS = [
     setupSteps: [
       "Go to console.cloud.google.com → APIs → YouTube Data API v3",
       "Create OAuth 2.0 credentials → Web application type",
-      "Set Redirect URI: https://startupsinabox.com/api/social/callback/youtube",
+      "Set Redirect URI: https://www.startupsinabox.com/api/youtube-callback",
       "Use same GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET as your Google Sign-in",
     ],
     envVars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
@@ -95,6 +95,15 @@ export default function SocialHub() {
   useEffect(() => {
     fetchStatus()
     try { setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")) } catch {}
+    // Load content passed from Content Studio via sessionStorage
+    try {
+      const draft = sessionStorage.getItem("sixxab_studio_draft")
+      if (draft) {
+        const { content: c, type } = JSON.parse(draft)
+        if (c) { setContent(c); setActiveTab("publish") }
+        sessionStorage.removeItem("sixxab_studio_draft")
+      }
+    } catch {}
     // Handle OAuth callback
     const { connected, error, desc } = router.query
     if (connected) {
@@ -361,6 +370,14 @@ export default function SocialHub() {
                 </div>
               </div>
 
+              {/* Studio integration banner */}
+              {content && (
+                <div style={{padding:"9px 14px",background:"rgba(212,83,126,.1)",border:"1px solid rgba(212,83,126,.3)",borderRadius:10,marginBottom:10,display:"flex",alignItems:"center",gap:10,fontSize:12.5}}>
+                  <i className="ti ti-sparkles" style={{color:"#D4537E",fontSize:14}} aria-hidden="true"/>
+                  <span style={{color:"#D4537E",fontWeight:500}}>Content loaded from Content Studio</span>
+                  <button onClick={()=>setContent("")} style={{marginLeft:"auto",fontSize:11,color:"#94A3B8",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit"}}>Clear ✕</button>
+                </div>
+              )}
               {/* Content editor */}
               <div className="card" style={{marginBottom:12}}>
                 <div style={{padding:"12px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -557,7 +574,7 @@ export default function SocialHub() {
                     </div>
                   ))}
                   <div style={{marginTop:10,padding:"9px 12px",background:"#EFF6FF",borderRadius:9,border:"1px solid #BFDBFE",fontSize:12.5,color:"#1E40AF"}}>
-                    <strong>Redirect URI:</strong> <code>https://startupsinabox.com/api/social/callback/{p.id==="youtube"?"youtube":p.id==="facebook"?"facebook":p.id}</code>
+                    <strong>Redirect URI:</strong>{" "}<code style={{userSelect:"all",background:"#E0E7FF",padding:"2px 6px",borderRadius:4}}>{`https://www.startupsinabox.com/api/${p.id==="youtube"?"youtube":p.id==="instagram"?"facebook":p.id}-callback`}</code>
                   </div>
                 </div>
               </div>

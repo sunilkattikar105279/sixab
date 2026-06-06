@@ -20,40 +20,54 @@ function getToken(req, platform) {
 // ── Platform publishers ────────────────────────────────────────────────────────
 async function publishLinkedIn(token, { content, mediaUrl }) {
   const { accessToken, sub } = token
+  if (!sub) throw new Error("LinkedIn sub (user ID) missing — reconnect your account")
+
   const body = {
     author: `urn:li:person:${sub}`,
     lifecycleState: "PUBLISHED",
     specificContent: {
       "com.linkedin.ugc.ShareContent": {
         shareCommentary: { text: content },
-        shareMediaCategory: mediaUrl ? "IMAGE" : "NONE",
-        ...(mediaUrl && { media:[{ status:"READY", description:{ text:content.slice(0,100) }, media: mediaUrl }] })
+        shareMediaCategory: "NONE",
       }
     },
     visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" }
   }
+
   const r = await fetch("https://api.linkedin.com/v2/ugcPosts", {
     method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type":"application/json", "X-Restli-Protocol-Version":"2.0.0" },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Restli-Protocol-Version": "2.0.0",
+      "LinkedIn-Version": "202401",
+    },
     body: JSON.stringify(body)
   })
-  const d = await r.json()
-  if (!r.ok) throw new Error(d.message || d.serviceErrorCode || "LinkedIn publish failed")
-  return { platform:"linkedin", id: d.id, url: `https://www.linkedin.com/feed/update/${d.id}` }
+  const text = await r.text()
+  let d = {}
+  try { d = JSON.parse(text) } catch {}
+  if (!r.ok) throw new Error(d.message || d.serviceErrorCode || `LinkedIn error ${r.status}: ${text.slice(0,200)}`)
+  const postId = d.id || r.headers?.get("x-restli-id") || ""
+  return { platform:"linkedin", id: postId, url: postId ? `https://www.linkedin.com/feed/update/${postId}` : "https://www.linkedin.com/feed" }
 }
 
 async function publishTwitter(token, { content }) {
   const { accessToken } = token
-  // Tweets: max 280 chars — truncate if longer
-  const text = content.length > 280 ? content.slice(0,277)+"..." : content
+  // Twitter/X: max 280 chars — truncate if longer
+  const text = content.length > 280 ? content.slice(0,277)+"…" : content
   const r = await fetch("https://api.twitter.com/2/tweets", {
     method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type":"application/json" },
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ text })
   })
   const d = await r.json()
-  if (d.errors) throw new Error(d.errors[0]?.message || "Twitter publish failed")
-  return { platform:"twitter", id: d.data?.id, url: `https://twitter.com/i/web/status/${d.data?.id}` }
+  if (!r.ok || d.errors) {
+    const msg = d.errors?.[0]?.message || d.detail || d.title || `Twitter error ${r.status}`
+    throw new Error(msg)
+  }
+  const id = d.data?.id
+  return { platform:"twitter", id, url: id ? `https://twitter.com/i/web/status/${id}` : "https://twitter.com" }
 }
 
 async function publishFacebook(token, { content, pageId, mediaUrl }) {

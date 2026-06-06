@@ -142,6 +142,14 @@ export default function StudioPage() {
     setPublishing(false)
   }
 
+  function openInSocialHub() {
+    if (!output) return
+    try {
+      sessionStorage.setItem("sixxab_studio_draft", JSON.stringify({ content: output, type: activeType }))
+    } catch {}
+    window.open("/social", "_blank")
+  }
+
   function exportMd() {
     if (!output) return
     const blob = new Blob([`# ${ct.label}: ${params.topic||params.purpose||""}\n\n${output}`], {type:"text/markdown"})
@@ -301,7 +309,10 @@ export default function StudioPage() {
                       <button onClick={addToCalendar} style={{padding:"5px 13px",borderRadius:7,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:12,fontWeight:500,color:"#1D4ED8",cursor:"pointer",fontFamily:"inherit"}}>
                         📅 Add to calendar
                       </button>
-                      <button onClick={exportMd} style={{padding:"5px 13px",borderRadius:7,background:"#F5F3FF",border:"1px solid #C4B5FD",fontSize:12,fontWeight:500,color:"#6D28D9",cursor:"pointer",fontFamily:"inherit"}}>
+                      <button onClick={openInSocialHub} style={{padding:"5px 13px",borderRadius:7,background:"#0A0E1A",border:"none",fontSize:12,fontWeight:600,color:"#EF9F27",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                        <i className="ti ti-share" style={{fontSize:11}} aria-hidden="true"/>Social Hub
+                      </button>
+                    <button onClick={exportMd} style={{padding:"5px 13px",borderRadius:7,background:"#F5F3FF",border:"1px solid #C4B5FD",fontSize:12,fontWeight:500,color:"#6D28D9",cursor:"pointer",fontFamily:"inherit"}}>
                         ↓ Export .md
                       </button>
                       <button onClick={()=>navigator.clipboard.writeText(output).then(()=>showToast("Copied!"))}
@@ -319,8 +330,10 @@ export default function StudioPage() {
                       {/* Header */}
                       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
                         <i className="ti ti-share" style={{fontSize:14,color:N}} aria-hidden="true"/>
-                        <span style={{fontSize:13,fontWeight:600,color:N}}>Publish directly</span>
-                        <a href="/social" style={{marginLeft:"auto",fontSize:11,color:"#378ADD",textDecoration:"none",fontWeight:500}}>Manage connections ↗</a>
+                        <span style={{fontSize:13,fontWeight:600,color:N}}>Publish to social media</span>
+                        <button onClick={openInSocialHub} style={{marginLeft:"auto",padding:"4px 11px",borderRadius:7,background:"#0A0E1A",border:"none",fontSize:11,fontWeight:600,color:"#EF9F27",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                          <i className="ti ti-external-link" style={{fontSize:10}} aria-hidden="true"/>Open Social Hub
+                        </button>
                       </div>
 
                       {/* Platform selector */}
@@ -348,7 +361,7 @@ export default function StudioPage() {
                         <div style={{padding:"9px 12px",background:"#FFFBF2",border:"1px solid rgba(239,159,39,.3)",borderRadius:9,fontSize:12.5,color:"#92400E",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
                           <i className="ti ti-plug" style={{fontSize:13}} aria-hidden="true"/>
                           No accounts connected yet.{" "}
-                          <a href="/social" style={{color:AMBER,fontWeight:600,textDecoration:"none"}}>Connect LinkedIn, X, Facebook, Instagram or YouTube →</a>
+                          <a href="/social" onClick={e=>{e.preventDefault();openInSocialHub()}} style={{color:AMBER,fontWeight:600,textDecoration:"none"}}>Connect accounts in Social Hub →</a>
                         </div>
                       )}
 
@@ -366,18 +379,23 @@ export default function StudioPage() {
                       {publishResult && (
                         <div style={{marginBottom:10}}>
                           {publishResult.published?.map((p,i)=>(
-                            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#E1F5EE",border:"1px solid #6EE7B7",marginBottom:5,fontSize:12.5,color:"#085041"}}>
+                            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 11px",borderRadius:8,background:"#E1F5EE",border:"1px solid #6EE7B7",marginBottom:5,fontSize:12.5,color:"#085041"}}>
                               <i className={`ti ${SOCIAL_PLATFORMS.find(pl=>pl.id===p.platform)?.icon||"ti-check"}`} style={{fontSize:13}} aria-hidden="true"/>
-                              <span style={{flex:1}}>Published to {p.platform}</span>
-                              {p.url&&p.url!=="#"&&<a href={p.url} target="_blank" rel="noopener noreferrer" style={{color:"#085041",fontWeight:600,fontSize:11}}>View ↗</a>}
+                              <span style={{flex:1,fontWeight:500}}>Published to {p.platform}</span>
+                              {p.url&&p.url!=="#"&&<a href={p.url} target="_blank" rel="noopener noreferrer" style={{color:"#085041",fontWeight:600,fontSize:11,textDecoration:"none"}}>View post ↗</a>}
                             </div>
                           ))}
                           {publishResult.failed?.map((f,i)=>(
-                            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#FEF2F2",border:"1px solid #FECACA",marginBottom:5,fontSize:12.5,color:"#991B1B"}}>
-                              <i className="ti ti-x" style={{fontSize:13}} aria-hidden="true"/>
-                              <span style={{flex:1}}>{f.platform}: {f.error}</span>
+                            <div key={i} style={{display:"flex",alignItems:"start",gap:8,padding:"7px 11px",borderRadius:8,background:"#FEF2F2",border:"1px solid #FECACA",marginBottom:5,fontSize:12.5,color:"#991B1B"}}>
+                              <i className="ti ti-x" style={{fontSize:13,marginTop:1,flexShrink:0}} aria-hidden="true"/>
+                              <div style={{flex:1}}><strong>{f.platform}:</strong> {f.error}</div>
                             </div>
                           ))}
+                          {publishResult.published?.length > 0 && (
+                            <a href="/social?tab=history" onClick={e=>{e.preventDefault();openInSocialHub()}} style={{display:"block",textAlign:"center",fontSize:11.5,color:"#378ADD",marginTop:6,textDecoration:"none"}}>
+                              View publish history in Social Hub →
+                            </a>
+                          )}
                         </div>
                       )}
 
