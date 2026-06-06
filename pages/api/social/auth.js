@@ -10,7 +10,7 @@ export default function handler(req, res) {
       const p = new URLSearchParams({
         response_type: "code",
         client_id:     process.env.LINKEDIN_CLIENT_ID || "",
-        redirect_uri:  `${BASE}/api/social/callback/linkedin`,
+        redirect_uri:  `${BASE}/api/linkedin-callback`,
         state:         STATE,
         scope:         "openid profile email w_member_social",
       })
@@ -21,7 +21,7 @@ export default function handler(req, res) {
       const p = new URLSearchParams({
         response_type:         "code",
         client_id:             process.env.TWITTER_CLIENT_ID || "",
-        redirect_uri:          `${BASE}/api/social/callback/twitter`,
+        redirect_uri:          `${BASE}/api/twitter-callback`,
         scope:                 "tweet.read tweet.write users.read offline.access",
         state:                 STATE,
         code_challenge:        "challenge", // simplified — full PKCE in production
@@ -32,7 +32,7 @@ export default function handler(req, res) {
     facebook: () => {
       const p = new URLSearchParams({
         client_id:    process.env.FACEBOOK_APP_ID || "",
-        redirect_uri: `${BASE}/api/social/callback/facebook`,
+        redirect_uri: `${BASE}/api/facebook-callback`,
         scope:        "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,pages_show_list",
         state:        STATE,
         response_type:"code",
@@ -42,7 +42,7 @@ export default function handler(req, res) {
     youtube: () => {
       const p = new URLSearchParams({
         client_id:     process.env.GOOGLE_CLIENT_ID || "",
-        redirect_uri:  `${BASE}/api/social/callback/youtube`,
+        redirect_uri:  `${BASE}/api/youtube-callback`,
         response_type: "code",
         scope:         "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.profile",
         access_type:   "offline",
@@ -55,7 +55,7 @@ export default function handler(req, res) {
       // Instagram uses Facebook OAuth — same flow, different scope handling
       const p = new URLSearchParams({
         client_id:    process.env.FACEBOOK_APP_ID || "",
-        redirect_uri: `${BASE}/api/social/callback/facebook`,
+        redirect_uri: `${BASE}/api/facebook-callback`,
         scope:        "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement",
         state:        STATE,
         response_type:"code",
