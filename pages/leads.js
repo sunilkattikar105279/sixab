@@ -2,7 +2,7 @@
 // CSO-owned: ICP, prospect generation, outreach sequences, scoring, CRM push
 import Head from "next/head"
 import SixxabNav from "../components/SixxabNav"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0", GREEN = "#1D9E75"
 
@@ -26,16 +26,24 @@ const TOOLS = [
   { id:"sequence", icon:"📧", label:"Outreach Sequence",   color:"#378ADD", desc:"7-touchpoint multi-channel sequence" },
   { id:"qualify",  icon:"⚡", label:"Lead Qualifier",      color:"#7C3AED", desc:"Score and qualify any lead from CRM" },
   { id:"objections",icon:"🛡️",label:"Objection Handler",  color:"#DC2626", desc:"Handle any sales objection with 3 responses" },
-  { id:"followup", icon:"🔄", label:"Follow-Up Writer",    color:"#EC4899", desc:"Write a follow-up for any non-responder" },
+  { id:"followup",      icon:"🔄", label:"Follow-Up Writer",    color:"#EC4899", desc:"Write a follow-up for any non-responder" },
+  { id:"linkedin_dm",   icon:"💬", label:"LinkedIn DM",          color:"#0A66C2", desc:"3 personalised DM variations for any prospect" },
+  { id:"bulk_outreach", icon:"📨", label:"Bulk Outreach",        color:"#7C3AED", desc:"Generate personalised messages for multiple prospects at once" },
+  { id:"email_dm",      icon:"📧", label:"Cold Email",           color:"#EF9F27", desc:"Personalised cold email with subject, body and PS" },
 ]
 
 export default function LeadsPage() {
   const [activeTool,     setActiveTool]     = useState("icp")
-  const [params,         setParams]         = useState({ industry:"", location:"Dallas, TX", product:"SIXXAB AI — Autonomous Business Platform", price:"$49.50/mo", prospectName:"", prospectRole:"", company:"", painPoint:"", offer:"50% off founding member access at $49.50/mo", notes:"", stage:"Outreach", channel:"LinkedIn", daysSince:"7", context:"", objection:"", name:"", role:"", lastTouch:"" })
+  const [params,         setParams]         = useState({ industry:"", location:"Dallas, TX", product:"SIXXAB AI — Autonomous Business Platform", price:"from $250/mo", prospectName:"", prospectRole:"", company:"", painPoint:"", offer:"SIXXAB AI — Autonomous Business Platform (from $250/mo)", notes:"", stage:"Outreach", channel:"LinkedIn", daysSince:"7", context:"", objection:"", name:"", role:"", lastTouch:"" })
   const [loading,        setLoading]        = useState(false)
   const [output,         setOutput]         = useState("")
   const [prospects,      setProspects]      = useState([]) // parsed JSON list from prospect_list
   const [selectedLeads,  setSelectedLeads]  = useState([])
+  const [bulkSelected,   setBulkSelected]   = useState([]) // prospects selected for bulk outreach
+  const [senderName,     setSenderName]     = useState("Sunil")
+  const [tone,           setTone]           = useState("direct, peer-to-peer, no corporate speak")
+  const [copiedId,       setCopiedId]       = useState(null)
+  const outputScrollRef = useRef(null)
   const [crmContacts,    setCrmContacts]    = useState([])
   const [selectedCrmId,  setSelectedCrmId]  = useState("")
   const [toast,          setToast]          = useState(null)
@@ -60,14 +68,27 @@ export default function LeadsPage() {
     setParams(p=>({...p, name:c.name, prospectName:c.name, prospectRole:c.role||"", role:c.role||"", company:c.company||"", stage:c.stage||"Outreach", painPoint:c.notes||"", notes:c.notes||"", lastTouch:c.lastTouch||"Initial outreach" }))
   }
 
+  function copyMsg(text, id) {
+    navigator.clipboard.writeText(text).then(()=>{
+      setCopiedId(id); setTimeout(()=>setCopiedId(null),2500)
+    })
+  }
+
   async function generate() {
-    const typeMap = { icp:"prospect_profile", prospects:"prospect_list", sequence:"outreach_sequence", qualify:"qualify_lead", objections:"objection_rebuttal", followup:"follow_up" }
+    const typeMap = { icp:"prospect_profile", prospects:"prospect_list", sequence:"outreach_sequence", qualify:"qualify_lead", objections:"objection_rebuttal", followup:"follow_up", linkedin_dm:"linkedin_dm", bulk_outreach:"bulk_outreach", email_dm:"email_dm" }
     const type = typeMap[activeTool]
     setLoading(true); setOutput(""); setProspects([])
     try {
       const r = await fetch("/api/leads", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ type, params, existingContacts:crmContacts })
+        body: JSON.stringify({
+          type,
+          params: { ...params, senderName, tone,
+            // Pass bulk prospects for bulk_outreach
+            prospects: activeTool==="bulk_outreach" ? (bulkSelected.length ? bulkSelected : prospects.slice(0,8)) : undefined,
+          },
+          existingContacts: crmContacts
+        })
       })
       const d = await r.json()
       if (!r.ok || d.error) { showToast(d.error||"Generation failed", false); setLoading(false); return }
@@ -99,6 +120,8 @@ export default function LeadsPage() {
     saveCRM(current); setCrmContacts(current)
     setSelectedLeads([])
     showToast(`Added ${added.length} leads to SIXXAB CRM`)
+    // Brief delay then hint retention pipeline
+    setTimeout(()=>showToast(`Open Retention Pipeline to run outreach agents →`,true),2000)
   }
 
   // CRM filtered for qualify/followup pickers
@@ -111,7 +134,10 @@ export default function LeadsPage() {
     sequence:  [["prospectName","Prospect name *",""],["prospectRole","Their role",""],["company","Their company",""],["painPoint","Their pain point",""],["offer","Your offer",""]],
     qualify:   [["industry","Industry",""],["location","Location",""],["notes","Notes / context",""],["budget","Budget signal",""],["timeline","Timeline signal",""]],
     objections:[["objection","The objection *","e.g. We don't have budget right now"],["context","Prospect context",""]],
-    followup:  [["lastTouch","Last touchpoint",""],["daysSince","Days since last contact",""],["channel","Channel",""],["notes","Notes",""]],
+    followup:    [["lastTouch","Last touchpoint",""],["daysSince","Days since last contact",""],["channel","Channel",""],["notes","Notes",""]],
+    linkedin_dm: [["prospectName","Prospect name *",""],["prospectRole","Their role",""],["company","Their company",""],["industry","Their industry",""],["painPoint","Their pain point",""],["triggerEvent","Trigger event","e.g. just hired 5 people, raised a round, moved role"]],
+    email_dm:    [["prospectName","Prospect name *",""],["prospectRole","Their role",""],["company","Their company *",""],["industry","Their industry",""],["painPoint","Their pain point",""]],
+    bulk_outreach:[],
   }
   const fields = FIELDS[activeTool] || []
 
@@ -169,6 +195,7 @@ export default function LeadsPage() {
               <div style={{fontSize:9.5,color:"rgba(245,245,240,.4)",textTransform:"uppercase",letterSpacing:".07em"}}>CRM Contacts</div>
             </div>
             <a href="/studio" style={{padding:"6px 14px",borderRadius:8,background:"rgba(212,83,126,.2)",border:"1px solid rgba(212,83,126,.4)",fontSize:12,fontWeight:500,color:"#F9A8D4",textDecoration:"none"}}>Content Studio →</a>
+            <a href="/retention" style={{padding:"6px 14px",borderRadius:8,background:"rgba(29,158,117,.2)",border:"1px solid rgba(29,158,117,.4)",fontSize:12,fontWeight:600,color:"#6EE7B7",textDecoration:"none"}}>Retention Pipeline →</a>
             <a href="/proposal" style={{padding:"6px 14px",borderRadius:8,background:"rgba(55,138,221,.2)",border:"1px solid rgba(55,138,221,.4)",fontSize:12,fontWeight:500,color:"#93C5FD",textDecoration:"none"}}>Proposals →</a>
           </div>
         </div>
@@ -293,9 +320,17 @@ export default function LeadsPage() {
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                           <a href={p.linkedin} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
                             style={{fontSize:10.5,padding:"2px 8px",borderRadius:8,background:"#EFF6FF",color:"#1D4ED8",textDecoration:"none",fontWeight:500}}>LinkedIn</a>
+                          <button onClick={(e)=>{e.stopPropagation();setParams(p2=>({...p2,prospectName:p.name,prospectRole:p.role,company:p.company,painPoint:p.painPoint,triggerEvent:p.triggerEvent||""}));setActiveTool("linkedin_dm");setOutput("")}}
+                            style={{fontSize:10.5,padding:"2px 8px",borderRadius:8,background:"rgba(10,102,194,.12)",color:"#0A66C2",border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:500}}>
+                            💬 LinkedIn DM
+                          </button>
                           <button onClick={(e)=>{e.stopPropagation();setParams(p2=>({...p2,prospectName:p.name,prospectRole:p.role,company:p.company,painPoint:p.painPoint}));setActiveTool("sequence");setOutput("")}}
                             style={{fontSize:10.5,padding:"2px 8px",borderRadius:8,background:`${GREEN}18`,color:GREEN,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:500}}>
-                            → Generate sequence
+                            → Sequence
+                          </button>
+                          <button onClick={(e)=>{e.stopPropagation();setParams(p2=>({...p2,prospectName:p.name,prospectRole:p.role,company:p.company,painPoint:p.painPoint}));setActiveTool("email_dm");setOutput("")}}
+                            style={{fontSize:10.5,padding:"2px 8px",borderRadius:8,background:"rgba(239,159,39,.12)",color:AMBER,border:"none",cursor:"pointer",fontFamily:"inherit",fontWeight:500}}>
+                            📧 Email
                           </button>
                         </div>
                       </div>
@@ -308,23 +343,125 @@ export default function LeadsPage() {
             {/* Text output */}
             {output && (
               <div className="card fu">
+                {/* Header */}
                 <div style={{padding:"11px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                  <div style={{fontSize:13,fontWeight:600,color:N}}>{tool.label} output</div>
+                  <div style={{fontSize:13,fontWeight:600,color:N}}>{tool.label}</div>
                   <div style={{display:"flex",gap:7}}>
-                    <button onClick={()=>navigator.clipboard.writeText(output).then(()=>showToast("Copied!"))}
-                      style={{padding:"5px 13px",borderRadius:7,background:GREEN,border:"none",fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer",fontFamily:"inherit"}}>Copy</button>
-                    {activeTool==="qualify" && (
-                      <a href="/proposal" style={{padding:"5px 13px",borderRadius:7,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:12,fontWeight:500,color:"#1D4ED8",textDecoration:"none"}}>Write proposal →</a>
-                    )}
+                    <button onClick={()=>copyMsg(output,"all")}
+                      style={{padding:"5px 13px",borderRadius:7,background:copiedId==="all"?"#1D9E75":GREEN,border:"none",fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer",fontFamily:"inherit",transition:"background .2s"}}>
+                      {copiedId==="all"?"✓ Copied!":"Copy all"}
+                    </button>
+                    {activeTool==="qualify" && <a href="/proposal" style={{padding:"5px 13px",borderRadius:7,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:12,fontWeight:500,color:"#1D4ED8",textDecoration:"none"}}>Write proposal →</a>}
                   </div>
                 </div>
-                <div style={{padding:"16px 20px",fontSize:13.5,color:N,lineHeight:1.85,whiteSpace:"pre-wrap",maxHeight:600,overflowY:"auto"}}>{output}</div>
-                <div style={{padding:"10px 16px",borderTop:"1px solid #E8ECF4",background:"#FAFAFA",fontSize:12.5,color:"#64748B",display:"flex",gap:8,alignItems:"center"}}>
+
+                {/* LinkedIn DM — 3 variation cards */}
+                {activeTool==="linkedin_dm" ? (
+                  <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
+                    {output.split(/VARIATION [A-C]/i).filter(s=>s.trim()).map((v,i)=>{
+                      const text = v.replace(/^[\s\-—]+/,"").trim()
+                      const label = ["A — Observation","B — Insight","C — Mutual Problem"][i]||`${i+1}`
+                      const over = text.length>300
+                      return (
+                        <div key={i} style={{borderRadius:11,border:`1.5px solid ${over?"#FECACA":"#E2E8F0"}`,overflow:"hidden"}}>
+                          <div style={{padding:"8px 13px",background:over?"#FEF2F2":"#FAFAFA",borderBottom:"1px solid #E8ECF4",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <i className="ti ti-brand-linkedin" style={{fontSize:13,color:"#0A66C2"}} aria-hidden="true"/>
+                              <span style={{fontSize:12,fontWeight:600,color:N}}>Variation {label}</span>
+                              <span style={{fontSize:10,padding:"1px 7px",borderRadius:10,background:over?"#FEE2E2":"#E1F5EE",color:over?"#991B1B":"#085041",fontWeight:600}}>{text.length} chars {over?"— OVER LIMIT":"— ✓ OK"}</span>
+                            </div>
+                            <button onClick={()=>copyMsg(text,`var${i}`)}
+                              style={{padding:"4px 11px",borderRadius:7,background:copiedId===`var${i}`?"#1D9E75":"#0A66C2",color:"#fff",border:"none",fontSize:11.5,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"background .2s"}}>
+                              {copiedId===`var${i}`?"✓ Copied!":"Copy & send on LinkedIn"}
+                            </button>
+                          </div>
+                          <div style={{padding:"12px 14px",fontSize:13.5,color:N,lineHeight:1.8,whiteSpace:"pre-wrap"}}>{text}</div>
+                        </div>
+                      )
+                    })}
+                    <div style={{padding:"10px 13px",background:"#FFFBF2",borderRadius:10,border:"1px solid rgba(239,159,39,.25)",fontSize:12,color:"#92400E",display:"flex",gap:8,alignItems:"flex-start"}}>
+                      <i className="ti ti-info-circle" style={{fontSize:13,flexShrink:0,marginTop:1}} aria-hidden="true"/>
+                      LinkedIn connection requests are limited to 300 characters. Copy → open LinkedIn → find the prospect → Connect → Add a note → paste.
+                    </div>
+                  </div>
+
+                ) : activeTool==="bulk_outreach" ? (
+                  <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
+                    {output.split("---").filter(s=>s.trim()).map((block,i)=>{
+                      const lines = block.trim().split("\n").filter(l=>l.trim())
+                      const name  = lines[0]||`Prospect ${i+1}`
+                      const msg   = lines.slice(1).join("\n").trim()
+                      const key   = `bulk_${i}`
+                      return (
+                        <div key={i} style={{borderRadius:10,border:"1px solid #E2E8F0",overflow:"hidden"}}>
+                          <div style={{padding:"8px 12px",background:"#FAFAFA",borderBottom:"1px solid #E8ECF4",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                            <div style={{display:"flex",alignItems:"center",gap:7}}>
+                              <i className="ti ti-brand-linkedin" style={{fontSize:12,color:"#0A66C2"}} aria-hidden="true"/>
+                              <span style={{fontSize:12.5,fontWeight:600,color:N}}>{name}</span>
+                              <span style={{fontSize:10,color:"#94A3B8"}}>{msg.length} chars</span>
+                            </div>
+                            <button onClick={()=>copyMsg(msg,key)}
+                              style={{padding:"3px 10px",borderRadius:7,background:copiedId===key?"#1D9E75":"#0A66C2",color:"#fff",border:"none",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"background .2s"}}>
+                              {copiedId===key?"✓":"Copy"}
+                            </button>
+                          </div>
+                          <div style={{padding:"10px 12px",fontSize:13,color:N,lineHeight:1.75,whiteSpace:"pre-wrap"}}>{msg}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                ) : activeTool==="email_dm" ? (
+                  <div style={{padding:"14px 16px"}}>
+                    {(()=>{
+                      const lines    = output.split("\n")
+                      const subLine  = lines.find(l=>/^SUBJECT:/i.test(l.trim()))
+                      const psLine   = lines.find(l=>/^PS:/i.test(l.trim()))
+                      const subject  = subLine ? subLine.replace(/^SUBJECT:\s*/i,"").trim() : ""
+                      const psText   = psLine  ? psLine.replace(/^PS:\s*/i,"").trim()       : ""
+                      const bodyLines= lines.filter(l=>!/^(SUBJECT:|PS:|BODY:)/i.test(l.trim()))
+                      const body     = bodyLines.join("\n").replace(/^BODY:\s*/i,"").trim()
+                      return (
+                        <>
+                          {subject&&(
+                            <div style={{marginBottom:10,padding:"9px 13px",background:"#FFFBF2",borderRadius:9,border:"1px solid rgba(239,159,39,.25)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                              <div>
+                                <div style={{fontSize:10,fontWeight:700,color:AMBER,letterSpacing:".07em",textTransform:"uppercase",marginBottom:3}}>Subject line</div>
+                                <div style={{fontSize:13.5,fontWeight:600,color:N}}>{subject}</div>
+                              </div>
+                              <button onClick={()=>copyMsg(subject,"subj")}
+                                style={{padding:"4px 10px",borderRadius:7,background:copiedId==="subj"?"#1D9E75":AMBER,color:copiedId==="subj"?"#fff":N,border:"none",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"background .2s",flexShrink:0}}>
+                                {copiedId==="subj"?"✓":"Copy"}
+                              </button>
+                            </div>
+                          )}
+                          <div style={{marginBottom:psText?10:0,padding:"12px 14px",background:"#F8F9FA",borderRadius:10,border:"1px solid #E2E8F0",fontSize:13.5,color:N,lineHeight:1.85,whiteSpace:"pre-wrap"}}>{body}</div>
+                          {psText&&<div style={{padding:"9px 13px",background:"#EFF6FF",borderRadius:9,border:"1px solid #BFDBFE",fontSize:12.5,color:"#1E40AF",fontStyle:"italic",marginBottom:10}}>PS: {psText}</div>}
+                          <div style={{display:"flex",gap:8}}>
+                            <button onClick={()=>copyMsg(`Subject: ${subject}\n\n${body}${psText?"\n\nPS: "+psText:""}`, "full-email")}
+                              style={{flex:1,padding:"9px",borderRadius:9,background:copiedId==="full-email"?"#1D9E75":GREEN,color:"#fff",border:"none",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"background .2s"}}>
+                              {copiedId==="full-email"?"✓ Copied!":"Copy full email"}
+                            </button>
+                            <a href={`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body+(psText?"\n\nPS: "+psText:""))}`}
+                              style={{flex:1,padding:"9px",borderRadius:9,background:"#fff",border:"1px solid #E2E8F0",color:N,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center"}}>
+                              Open in Mail →
+                            </a>
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+
+                ) : (
+                  <div style={{padding:"16px 20px",fontSize:13.5,color:N,lineHeight:1.85,whiteSpace:"pre-wrap",maxHeight:600,overflowY:"auto"}}>{output}</div>
+                )}
+
+                {/* Footer links */}
+                <div style={{padding:"10px 16px",borderTop:"1px solid #E8ECF4",background:"#FAFAFA",fontSize:12.5,color:"#64748B",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
                   <i className="ti ti-arrow-right" aria-hidden="true"/>
-                  Ready to propose?
-                  <a href="/proposal" style={{color:"#378ADD",fontWeight:500,textDecoration:"none"}}>Write a full proposal →</a>
-                  or
-                  <a href="/crm" style={{color:GREEN,fontWeight:500,textDecoration:"none"}}>Add to SIXXAB CRM →</a>
+                  <a href="/proposal" style={{color:"#378ADD",fontWeight:500,textDecoration:"none"}}>Write proposal →</a>
+                  <a href="/crm" style={{color:GREEN,fontWeight:500,textDecoration:"none"}}>Update CRM →</a>
+                  <a href="/calendar" style={{color:AMBER,fontWeight:500,textDecoration:"none"}}>📅 Schedule →</a>
                 </div>
               </div>
             )}

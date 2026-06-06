@@ -310,7 +310,7 @@ Return ONLY the message text, no preamble.`
     hot: contacts.filter(c => c.score >= 80).length,
     pipeline: contacts.filter(c => ["Outreach","Replied","Demo","Proposal","Negotiation"].includes(c.stage)).length,
     closed: contacts.filter(c => c.stage === "Closed ✓").length,
-    mrr: contacts.filter(c => c.stage==="Closed ✓").reduce((a,c) => a+(c.value==="Pro"?99.50:c.value==="Agency"?175:c.value==="Enterprise"?350:49.50), 0),
+    mrr: contacts.filter(c => c.stage==="Closed ✓").reduce((a,c) => a+(c.value==="Pro"?999:c.value==="Agency"?2499:c.value==="Enterprise"?2499:250), 0),
   }
 
   return (

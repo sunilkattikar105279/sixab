@@ -11,6 +11,7 @@ export const MODULES = [
   { label:"Social Hub",     href:"/social",          icon:"ti-share",           color:"#EF9F27" },
   { label:"Calendar",      href:"/calendar",        icon:"ti-calendar-month",  color:"#EF9F27" },
   { label:"Lead Gen",       href:"/leads",           icon:"ti-user-search",     color:"#1D9E75" },
+  { label:"Retention",     href:"/retention",       icon:"ti-chart-arrows-vertical", color:"#1D9E75" },
   { label:"Proposals",      href:"/proposal",        icon:"ti-file-text",       color:"#378ADD" },
   { label:"Scale",      href:"/crm",             icon:"ti-address-book",    color:"#7C3AED" },
   { label:"Capitalise", href:"/investor",        icon:"ti-currency-dollar", color:"#DC2626" },
