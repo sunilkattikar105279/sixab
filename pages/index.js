@@ -638,7 +638,7 @@ export default function Index() {
             </div>
             <div style={{display:"flex",gap:40,flexWrap:"wrap"}}>
               {[
-                {heading:"Platform",links:[["Orchestrator","/orchestrator"],["CXO Suite","/agents"],["SIXXAB CRM","/crm"],["Content Studio","/studio"],["Lead Gen","/leads"],["Proposals","/proposal"],["Niche Selector","/niche-validator"],["Investor Hub","/investor"],["Vertical Packs","/verticals"]]},
+                {heading:"Platform",links:[["Orchestrator","/orchestrator"],["CXO Suite","/agents"],["SIXXAB CRM","/crm"],["Content Studio","/studio"],["Social Hub","/social"],["Lead Gen","/leads"],["Proposals","/proposal"],["Niche Selector","/niche-validator"],["Investor Hub","/investor"],["Vertical Packs","/verticals"]]},
                 {heading:"Learn",links:[["Runbook","/runbook"],["Mental Model","/mindset"],["Roadmap","/roadmap"],["AI Coach","/coach"],["Validate Idea","/validate"],["Join Waitlist","/waitlist"],["Discovery Call","/discovery"],["Contact","/contact"]]},
                 {heading:"Legal",links:[["Terms","/terms"],["Privacy","/privacy"],["Sitemap","/sitemap.xml"]]},
               ].map(col=>(

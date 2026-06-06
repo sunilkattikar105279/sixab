@@ -46,6 +46,13 @@ export default function StudioPage() {
   const [activeTab,     setActiveTab]     = useState("create") // create | brand | history | calendar
   const [toast,         setToast]         = useState(null)
   const [calendarItems, setCalendarItems] = useState([])
+  const [publishing,    setPublishing]    = useState(false)
+  const [publishResult, setPublishResult] = useState(null)
+  const [showPublish,   setShowPublish]   = useState(false)
+  const [socialStatus,  setSocialStatus]  = useState({}) // connected platforms
+  const [selPlatforms,  setSelPlatforms]  = useState([]) // selected for publish
+  const [scheduleAt,    setScheduleAt]    = useState("") // ISO datetime
+  const [statusLoaded,  setStatusLoaded]  = useState(false)
   const outputRef = useRef(null)
 
   useEffect(() => {
@@ -96,6 +103,43 @@ export default function StudioPage() {
     setCalendarItems(updated)
     localStorage.setItem("sixxab_content_calendar", JSON.stringify(updated))
     showToast("Added to content calendar")
+  }
+
+  // Load social connection status once
+  useEffect(() => {
+    if (statusLoaded) return
+    fetch("/api/social/status").then(r=>r.json()).then(d=>{ setSocialStatus(d.status||{}); setStatusLoaded(true) }).catch(()=>{})
+  }, [statusLoaded])
+
+  const SOCIAL_PLATFORMS = [
+    {id:"linkedin",  label:"LinkedIn",  icon:"ti-brand-linkedin",  color:"#0A66C2"},
+    {id:"twitter",   label:"X",         icon:"ti-brand-x",         color:"#000000"},
+    {id:"facebook",  label:"Facebook",  icon:"ti-brand-facebook",  color:"#1877F2"},
+    {id:"instagram", label:"Instagram", icon:"ti-brand-instagram", color:"#E1306C"},
+    {id:"youtube",   label:"YouTube",   icon:"ti-brand-youtube",   color:"#FF0000"},
+  ]
+
+  async function publishToSocial() {
+    if (!output) return
+    if (!selPlatforms.length) { showToast("Select at least one platform", false); return }
+    const notConnected = selPlatforms.filter(p => !socialStatus[p]?.connected)
+    if (notConnected.length) {
+      showToast(`Connect ${notConnected.join(", ")} first — go to Social Hub`, false)
+      return
+    }
+    setPublishing(true); setPublishResult(null)
+    try {
+      const r = await fetch("/api/social/publish", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platforms: selPlatforms, content: output, scheduleAt: scheduleAt||undefined })
+      })
+      const d = await r.json()
+      if (!r.ok && !d.published) { showToast(d.error||"Publish failed", false); setPublishing(false); return }
+      setPublishResult(d)
+      const n = d.published?.length || 0
+      showToast(n > 0 ? `Published to ${n} platform${n!==1?"s":""}!` : "Publish failed — check results", n>0)
+    } catch { showToast("Network error — check connection", false) }
+    setPublishing(false)
   }
 
   function exportMd() {
@@ -269,6 +313,87 @@ export default function StudioPage() {
                   <div style={{padding:"16px 20px",fontSize:14,color:N,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"'Plus Jakarta Sans',sans-serif",maxHeight:600,overflowY:"auto"}}>
                     {output}
                   </div>
+                  {/* ── Native Social Publish Panel ── */}
+                  {showPublish && (
+                    <div style={{padding:"16px 18px",borderTop:"1px solid #E8ECF4",background:"#F8F9FA"}}>
+                      {/* Header */}
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                        <i className="ti ti-share" style={{fontSize:14,color:N}} aria-hidden="true"/>
+                        <span style={{fontSize:13,fontWeight:600,color:N}}>Publish directly</span>
+                        <a href="/social" style={{marginLeft:"auto",fontSize:11,color:"#378ADD",textDecoration:"none",fontWeight:500}}>Manage connections ↗</a>
+                      </div>
+
+                      {/* Platform selector */}
+                      <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
+                        {SOCIAL_PLATFORMS.map(p=>{
+                          const connected = socialStatus[p.id]?.connected
+                          const sel = selPlatforms.includes(p.id)
+                          return (
+                            <button key={p.id}
+                              onClick={()=>connected&&setSelPlatforms(sel?selPlatforms.filter(x=>x!==p.id):[...selPlatforms,p.id])}
+                              title={!connected?`Connect ${p.label} at /social`:""}
+                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:20,border:`1.5px solid ${sel?p.color:connected?"#E2E8F0":"#F1F5F9"}`,background:sel?`${p.color}12`:connected?"#fff":"#FAFAFA",cursor:connected?"pointer":"not-allowed",fontFamily:"inherit",opacity:connected?1:.5,transition:"all .14s"}}>
+                              <i className={`ti ${p.icon}`} style={{fontSize:12,color:sel?p.color:connected?p.color:"#CBD5E1"}} aria-hidden="true"/>
+                              <span style={{fontSize:11.5,fontWeight:sel?600:400,color:sel?p.color:connected?N:"#94A3B8"}}>{p.label}</span>
+                              {connected
+                                ? <div style={{width:5,height:5,borderRadius:"50%",background:"#1D9E75",flexShrink:0}}/>
+                                : <span style={{fontSize:9,color:"#94A3B8"}}>connect</span>}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {/* Not connected message */}
+                      {Object.values(socialStatus).filter(s=>s?.connected).length===0 && (
+                        <div style={{padding:"9px 12px",background:"#FFFBF2",border:"1px solid rgba(239,159,39,.3)",borderRadius:9,fontSize:12.5,color:"#92400E",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
+                          <i className="ti ti-plug" style={{fontSize:13}} aria-hidden="true"/>
+                          No accounts connected yet.{" "}
+                          <a href="/social" style={{color:AMBER,fontWeight:600,textDecoration:"none"}}>Connect LinkedIn, X, Facebook, Instagram or YouTube →</a>
+                        </div>
+                      )}
+
+                      {/* Schedule */}
+                      <div style={{marginBottom:12}}>
+                        <div style={{fontSize:10.5,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>Schedule (optional — leave empty to post now)</div>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <input type="datetime-local" value={scheduleAt} onChange={e=>setScheduleAt(e.target.value)}
+                            style={{flex:1,padding:"8px 11px",border:"1.5px solid #E2E8F0",borderRadius:9,fontSize:13,fontFamily:"inherit",outline:"none",background:"#fff"}}/>
+                          {scheduleAt&&<button onClick={()=>setScheduleAt("")} style={{fontSize:11.5,color:"#94A3B8",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>Clear</button>}
+                        </div>
+                      </div>
+
+                      {/* Result */}
+                      {publishResult && (
+                        <div style={{marginBottom:10}}>
+                          {publishResult.published?.map((p,i)=>(
+                            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#E1F5EE",border:"1px solid #6EE7B7",marginBottom:5,fontSize:12.5,color:"#085041"}}>
+                              <i className={`ti ${SOCIAL_PLATFORMS.find(pl=>pl.id===p.platform)?.icon||"ti-check"}`} style={{fontSize:13}} aria-hidden="true"/>
+                              <span style={{flex:1}}>Published to {p.platform}</span>
+                              {p.url&&p.url!=="#"&&<a href={p.url} target="_blank" rel="noopener noreferrer" style={{color:"#085041",fontWeight:600,fontSize:11}}>View ↗</a>}
+                            </div>
+                          ))}
+                          {publishResult.failed?.map((f,i)=>(
+                            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:"#FEF2F2",border:"1px solid #FECACA",marginBottom:5,fontSize:12.5,color:"#991B1B"}}>
+                              <i className="ti ti-x" style={{fontSize:13}} aria-hidden="true"/>
+                              <span style={{flex:1}}>{f.platform}: {f.error}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Publish button */}
+                      <button onClick={publishToSocial}
+                        disabled={publishing||!selPlatforms.length}
+                        style={{width:"100%",padding:"10px",borderRadius:9,border:"none",fontFamily:"inherit",fontSize:13.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s",cursor:publishing||!selPlatforms.length?"not-allowed":"pointer",background:publishing||!selPlatforms.length?"#F1F5F9":N,color:publishing||!selPlatforms.length?"#94A3B8":CHALK}}>
+                        {publishing
+                          ? <><div style={{width:13,height:13,border:"2px solid rgba(245,245,240,.3)",borderTopColor:CHALK,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Publishing…</>
+                          : selPlatforms.length
+                            ? (scheduleAt ? `Schedule to ${selPlatforms.length} platform${selPlatforms.length!==1?"s":""}` : `Publish to ${selPlatforms.length} platform${selPlatforms.length!==1?"s":""} →`)
+                            : "Select a platform above"}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Push to leads */}
                   <div style={{padding:"11px 16px",borderTop:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",gap:8,alignItems:"center",fontSize:12.5,color:"#64748B"}}>
                     <i className="ti ti-arrow-right" aria-hidden="true"/>

@@ -7,6 +7,7 @@ const STATIC_ROUTES = [
   { path: "/niche-validator",priority: "0.9",  freq: "weekly"  },
   { path: "/orchestrator",   priority: "0.9",  freq: "weekly"  },
   { path: "/verticals",      priority: "0.85", freq: "weekly"  },
+  { path: "/social",  priority: "0.8", freq: "weekly" },
   { path: "/studio",   priority: "0.85", freq: "weekly"  },
   { path: "/leads",    priority: "0.85", freq: "weekly"  },
   { path: "/proposal", priority: "0.85", freq: "weekly"  },
