@@ -9,6 +9,7 @@ export const MODULES = [
   { label:"Optimise",   href:"/agents",          icon:"ti-briefcase",       color:"#378ADD" },
   { label:"Content Studio", href:"/studio",          icon:"ti-sparkles",        color:"#D4537E" },
   { label:"Social Hub",     href:"/social",          icon:"ti-share",           color:"#EF9F27" },
+  { label:"Calendar",      href:"/calendar",        icon:"ti-calendar-month",  color:"#EF9F27" },
   { label:"Lead Gen",       href:"/leads",           icon:"ti-user-search",     color:"#1D9E75" },
   { label:"Proposals",      href:"/proposal",        icon:"ti-file-text",       color:"#378ADD" },
   { label:"Scale",      href:"/crm",             icon:"ti-address-book",    color:"#7C3AED" },

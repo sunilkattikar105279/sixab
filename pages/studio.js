@@ -97,12 +97,19 @@ export default function StudioPage() {
   function addToCalendar() {
     if (!output) return
     const mainParam = params.topic || params.purpose || params.announcement || params.product
+    // Store draft to sessionStorage for calendar to pick up
+    try {
+      sessionStorage.setItem("sixxab_studio_draft", JSON.stringify({ content: output, type: activeType }))
+    } catch {}
+    // Also keep local studio calendar
     const day = ["Monday","Tuesday","Wednesday","Thursday","Friday"]
     const newItem = { id:Date.now(), type:activeType, label:ct.label, topic:mainParam, output, day:day[calendarItems.length%5], channel:ct.group, scheduled:false }
     const updated = [...calendarItems, newItem]
     setCalendarItems(updated)
     localStorage.setItem("sixxab_content_calendar", JSON.stringify(updated))
-    showToast("Added to content calendar")
+    // Open full calendar in new tab
+    window.open("/calendar", "_blank")
+    showToast("Opening calendar with content pre-loaded…")
   }
 
   // Load social connection status once
@@ -307,7 +314,7 @@ export default function StudioPage() {
                     <div style={{fontSize:13,fontWeight:600,color:N}}>Generated {ct.label}</div>
                     <div style={{display:"flex",gap:7}}>
                       <button onClick={addToCalendar} style={{padding:"5px 13px",borderRadius:7,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:12,fontWeight:500,color:"#1D4ED8",cursor:"pointer",fontFamily:"inherit"}}>
-                        📅 Add to calendar
+                        📅 Schedule
                       </button>
                       <button onClick={openInSocialHub} style={{padding:"5px 13px",borderRadius:7,background:"#0A0E1A",border:"none",fontSize:12,fontWeight:600,color:"#EF9F27",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
                         <i className="ti ti-share" style={{fontSize:11}} aria-hidden="true"/>Social Hub
@@ -498,36 +505,27 @@ export default function StudioPage() {
 
         {/* ══ CALENDAR TAB ══ */}
         {activeTab==="calendar" && (
-          <div className="fu">
-            {calendarItems.length===0 ? (
-              <div style={{textAlign:"center",padding:"40px",color:"#94A3B8"}}>
-                <div style={{fontSize:24,marginBottom:8}}>📅</div>
-                <div style={{fontSize:13}}>No content scheduled. Generate content and click "Add to calendar".</div>
-              </div>
-            ) : (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12}}>
-                {["Monday","Tuesday","Wednesday","Thursday","Friday"].map(day=>{
-                  const dayItems = calendarItems.filter(c=>c.day===day)
-                  return (
-                    <div key={day}>
-                      <div style={{fontSize:12,fontWeight:700,color:N,marginBottom:8,padding:"6px 0",borderBottom:"2px solid #E2E8F0"}}>{day}</div>
-                      {dayItems.length===0 && <div style={{fontSize:11.5,color:"#CBD5E1",padding:"8px 0"}}>Empty</div>}
-                      {dayItems.map(item=>(
-                        <div key={item.id} style={{background:"#fff",borderRadius:9,border:`1px solid ${PINK}33`,padding:"10px 11px",marginBottom:8}}>
-                          <div style={{fontSize:11,fontWeight:600,color:PINK,marginBottom:3}}>{item.label}</div>
-                          <div style={{fontSize:12,color:N,lineHeight:1.4,marginBottom:6}}>{item.topic}</div>
-                          <div style={{display:"flex",gap:5}}>
-                            <button onClick={()=>navigator.clipboard.writeText(item.output).then(()=>showToast("Copied!"))}
-                              style={{flex:1,padding:"4px",borderRadius:6,background:PINK,border:"none",fontSize:10.5,color:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>Copy</button>
-                            <button onClick={()=>setCalendarItems(c=>{const n=c.filter(x=>x.id!==item.id);localStorage.setItem("sixxab_content_calendar",JSON.stringify(n));return n})}
-                              style={{padding:"4px 8px",borderRadius:6,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:10.5,color:"#94A3B8",cursor:"pointer",fontFamily:"inherit"}}>✕</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
+          <div className="fu" style={{textAlign:"center",padding:"40px 20px"}}>
+            <div style={{width:64,height:64,borderRadius:16,background:"rgba(239,159,39,.12)",border:`2px solid ${AMBER}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,margin:"0 auto 16px"}}>
+              📅
+            </div>
+            <h3 style={{fontFamily:"Georgia,serif",fontSize:22,fontWeight:700,color:N,marginBottom:8}}>Content Publishing Calendar</h3>
+            <p style={{fontSize:14,color:"#64748B",lineHeight:1.75,maxWidth:400,margin:"0 auto 24px"}}>
+              Plan your entire content schedule — monthly and yearly views, direct publishing to all social platforms, status tracking and campaign management.
+            </p>
+            <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+              <button onClick={()=>{try{sessionStorage.setItem("sixxab_studio_draft",JSON.stringify({content:output,type:activeType}))}catch{}window.open("/calendar","_blank")}}
+                disabled={!output}
+                style={{padding:"12px 24px",borderRadius:10,background:output?N:"#F1F5F9",color:output?CHALK:"#94A3B8",border:"none",cursor:output?"pointer":"not-allowed",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",gap:8}}>
+                <i className="ti ti-calendar-plus" style={{fontSize:14}} aria-hidden="true"/>
+                {output?"Schedule this content":"Generate content first"}
+              </button>
+              <a href="/calendar" target="_blank" style={{padding:"12px 24px",borderRadius:10,border:"1.5px solid #E2E8F0",background:"#fff",color:N,textDecoration:"none",fontSize:14,fontWeight:500,display:"inline-flex",alignItems:"center",gap:8}}>
+                <i className="ti ti-calendar-month" style={{fontSize:14}} aria-hidden="true"/>Open full calendar
+              </a>
+            </div>
+            {calendarItems.length>0&&(
+              <p style={{fontSize:12,color:"#94A3B8",marginTop:16}}>{calendarItems.length} item{calendarItems.length!==1?"s":""} in your local draft queue</p>
             )}
           </div>
         )}

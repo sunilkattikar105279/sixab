@@ -234,7 +234,8 @@ export default function SocialHub() {
                 <div style={{fontSize:9.5,color:"rgba(245,245,240,.4)",textTransform:"uppercase",letterSpacing:".07em"}}>{l}</div>
               </div>
             ))}
-            <a href="/studio" style={{padding:"6px 14px",borderRadius:8,background:"rgba(212,83,126,.2)",border:"1px solid rgba(212,83,126,.4)",fontSize:12,fontWeight:500,color:"#F9A8D4",textDecoration:"none"}}>Content Studio →</a>
+<a href="/studio" style={{padding:"6px 14px",borderRadius:8,background:"rgba(212,83,126,.2)",border:"1px solid rgba(212,83,126,.4)",fontSize:12,fontWeight:500,color:"#F9A8D4",textDecoration:"none"}}>Content Studio →</a>
+            <a href="/calendar" style={{padding:"6px 14px",borderRadius:8,background:"rgba(239,159,39,.15)",border:"1px solid rgba(239,159,39,.35)",fontSize:12,fontWeight:500,color:AMBER,textDecoration:"none"}}>📅 Calendar →</a>
           </div>
         </div>
       </div>
