@@ -96,9 +96,17 @@ export default function SocialHub() {
     fetchStatus()
     try { setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY)||"[]")) } catch {}
     // Handle OAuth callback
-    const { connected, error } = router.query
-    if (connected) { showToast(`${connected} connected successfully!`); router.replace("/social", undefined, { shallow:true }) }
-    if (error)     { showToast(`Connection failed: ${error.replace(/_/g," ")}`, false); router.replace("/social", undefined, { shallow:true }) }
+    const { connected, error, desc } = router.query
+    if (connected) {
+      showToast(`${connected.charAt(0).toUpperCase()+connected.slice(1)} connected successfully!`)
+      router.replace("/social", undefined, { shallow:true })
+    }
+    if (error) {
+      const msg = desc ? decodeURIComponent(desc) : error.replace(/_/g," ")
+      showToast(msg, false)
+      setActiveTab("setup") // send them to setup so they can see what to fix
+      router.replace("/social", undefined, { shallow:true })
+    }
   }, [router.query])
 
   async function fetchStatus() {
