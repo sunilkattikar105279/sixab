@@ -1,9 +1,14 @@
 // pages/api/social/status.js — Returns connection status for all platforms
-import { parse } from "cookie"
 
 export default function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end()
-  const cookies = parse(req.headers.cookie || "")
+  // Parse cookies manually — no external package needed
+  const cookies = Object.fromEntries(
+    (req.headers.cookie || "").split(";").map(c => {
+      const idx = c.indexOf("=")
+      return [c.slice(0,idx).trim(), c.slice(idx+1).trim()]
+    }).filter(([k]) => k)
+  )
   const platforms = ["linkedin","twitter","facebook","instagram","youtube"]
 
   const status = {}

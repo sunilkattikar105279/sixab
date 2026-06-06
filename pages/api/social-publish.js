@@ -1,11 +1,16 @@
 // pages/api/social/publish.js — Unified multi-platform publish endpoint
 // Called from Content Studio — posts to any connected platform
-import { parse } from "cookie"
 
 // ── Token helpers ──────────────────────────────────────────────────────────────
 function getToken(req, platform) {
   try {
-    const cookies = parse(req.headers.cookie || "")
+    // Parse cookies manually — no external package needed
+    const cookies = Object.fromEntries(
+      (req.headers.cookie || "").split(";").map(c => {
+        const idx = c.indexOf("=")
+        return [c.slice(0,idx).trim(), c.slice(idx+1).trim()]
+      }).filter(([k]) => k)
+    )
     const raw = cookies[`sixxab_social_${platform}`]
     if (!raw) return null
     return JSON.parse(decodeURIComponent(raw))
