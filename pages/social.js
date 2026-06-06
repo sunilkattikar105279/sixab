@@ -111,7 +111,28 @@ export default function SocialHub() {
     setLoading(false)
   }
 
-  function connect(platformId) {
+  async function connect(platformId) {
+    // First probe the auth endpoint — if env vars are missing it returns JSON error
+    try {
+      const probe = await fetch(`/api/social/auth?platform=${platformId}&_probe=1`)
+      // If the route doesn't exist at all (404 HTML page) tell the user
+      if (probe.status === 404) {
+        showToast("API route not found — make sure pages/api/social/auth.js is pushed to GitHub", false)
+        setActiveTab("setup")
+        return
+      }
+      // If the route returns a JSON error (missing env var) show it
+      const ct = probe.headers.get("content-type") || ""
+      if (ct.includes("application/json")) {
+        const d = await probe.json()
+        if (d.error) {
+          showToast(d.error + " — see Setup tab", false)
+          setActiveTab("setup")
+          return
+        }
+      }
+    } catch {}
+    // All good — redirect to OAuth flow
     window.location.href = `/api/social/auth?platform=${platformId}&redirect=/social`
   }
 

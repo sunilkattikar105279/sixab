@@ -64,6 +64,8 @@ export default function handler(req, res) {
     },
   }
 
+  // Probe request — just check if route exists and env vars are set
+  const { _probe } = req.query
   const urlFn = OAUTH_URLS[platform]
   if (!urlFn) return res.status(400).json({ error: `Unknown platform: ${platform}` })
 
@@ -83,5 +85,7 @@ export default function handler(req, res) {
     })
   }
 
+  // If this was just a probe, confirm the route is alive
+  if (_probe) return res.status(200).json({ ok: true, platform })
   res.redirect(302, urlFn())
 }
