@@ -166,11 +166,18 @@ export default function SocialHub() {
     if (notConnected.length) { showToast(`Connect ${notConnected.join(", ")} first`, false); return }
     setPublishing(true); setResult(null)
     try {
-      const r = await fetch("/api/social/publish", {
+      // If scheduled — use schedule endpoint so it publishes at the right time
+      const endpoint = scheduleAt ? "/api/social/schedule" : "/api/social/publish"
+      const r = await fetch(endpoint, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ platforms:selected, content, mediaUrl, scheduleAt: scheduleAt||undefined })
       })
       const d = await r.json()
+      if (scheduleAt && d.scheduled) {
+        showToast(`Scheduled for ${new Date(scheduleAt).toLocaleString()}!`)
+        setResult({ success:true, published:[{platform:"scheduled",url:"#"}], summary:`Scheduled for ${new Date(scheduleAt).toLocaleString()}` })
+        setPublishing(false); return
+      }
       setResult(d)
       // Save to history
       const item = { id:Date.now(), content:content.slice(0,120), platforms:selected, result:d, timestamp:new Date().toISOString() }

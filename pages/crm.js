@@ -52,6 +52,8 @@ function loadContacts() {
   }
 }
 function saveContacts(list) {
+  if (!Array.isArray(list)) return
+  // Write to both primary and backup — if one fails, the other survives
   try {
     const json = JSON.stringify(list)
     localStorage.setItem(STORE_KEY, json)
