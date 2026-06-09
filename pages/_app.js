@@ -6,7 +6,7 @@ import SupportWidget            from "../components/SupportWidget"
 const PROTECTED = [
   "/coach", "/agents", "/agent", "/success",
   "/orchestrator", "/roadmap", "/crm",
-  "/niche-validator", "/verticals", "/investor", "/studio", "/leads", "/proposal", "/social", "/calendar", "/retention",
+  "/niche-validator", "/verticals", "/investor", "/studio", "/leads", "/proposal", "/social", "/calendar", "/retention", "/website-builder", "/seo", "/invoice", "/email-automator", "/analytics", "/reviews",
 ]
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || ""

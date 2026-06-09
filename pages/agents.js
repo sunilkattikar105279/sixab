@@ -55,8 +55,8 @@ const CXOS = [
     chatRole:"You are the SIXXAB CFO AI advisor. Focus on: MRR tracking, LTV/CAC calculation, burn rate, Stripe revenue, fundraising readiness (are we ready to raise?), valuation modelling, pricing strategy, and financial forecasting. When a founder is in Phase 5 (Capitalise), focus on building the financial model and due diligence package. Use real numbers from the context." },
   { id:"coo",  title:"COO",  name:"Chief Operating Officer",
     color:"#7C3AED", icon:"ti-settings-automation",
-    desc:"Operations, customer onboarding, customer success, retention and process systems",
-    agents:["support","ops","customer_success","onboarding_agent"],
+    desc:"Operations, onboarding, customer success, retention and website design/build/deploy for clients",
+    agents:["support","ops","customer_success","onboarding_agent","website_designer","website_builder","website_deployer"],
     chatRole:"You are the SIXXAB COO AI advisor. You own customer onboarding, customer success, support operations, retention systems and process documentation. When a customer signs up, the Onboarding Agent runs their welcome sequence. The Customer Success Agent monitors health scores, NPS and churn signals. Always tie advice to specific metrics: Day 1 activation rate, Day 30 retention, NPS score." },
   { id:"cto",  title:"CTO",  name:"Chief Technology Officer",
     color:"#0EA5E9", icon:"ti-code",
@@ -173,6 +173,19 @@ const AGENTS = {
   exit_strategy:    { label:"Exit Strategy Agent",  icon:"ti-door-exit",        color:"#1E3A5F", cxo:"board",
     desc:"Exit planning, IPO readiness, acquisition positioning, earnout structures and shareholder liquidity strategies",
     chatRole:"You are the SIXXAB Exit Strategy Agent. Help founders plan their exit: evaluate IPO vs strategic acquisition vs private equity, build the story that maximises exit valuation, structure earnout agreements, plan employee equity liquidity events, and prepare the company for a professional M&A process. Focus on value maximisation and founder protection." },
+
+  // Website Builder agents — mapped to coo
+  website_designer:{ label:"Website Designer Agent", icon:"ti-palette",        color:"#7C3AED", cxo:"coo",
+    desc:"Designs complete website structure, color scheme, typography and layout for any business type",
+    chatRole:"You are the SIXXAB Website Designer Agent. You design professional websites for small and medium businesses. When given a business type, industry and target audience, you produce: a complete page structure (Home, About, Services, Portfolio/Case Studies, Pricing, Contact), recommended color palette with hex codes, typography pairing (heading font + body font), layout direction for each section, and hero message/tagline. You know current web design trends and produce specific, actionable design briefs — not generic advice. Always include: above-the-fold hero design, social proof placement, CTA strategy, and mobile-first layout notes." },
+
+  website_builder:{ label:"Website Builder Agent",  icon:"ti-code",           color:"#7C3AED", cxo:"coo",
+    desc:"Generates complete HTML/CSS website code with stylish templates for any business",
+    chatRole:"You are the SIXXAB Website Builder Agent. You write complete, production-ready single-page HTML websites with embedded CSS. When given a business name, type, color scheme and content, you produce a full HTML file that: uses Google Fonts, has a sticky nav, a hero section, services/features grid, testimonials, pricing (if applicable), a contact form and a footer. The code must be clean, semantic, mobile-responsive using CSS Grid/Flexbox, and ready to deploy on Vercel, Netlify or GitHub Pages with zero configuration. Always include: scroll animations, hover effects, a WhatsApp/email CTA button, and social media links. Output the FULL HTML file — never truncate." },
+
+  website_deployer:{ label:"Website Deployer Agent", icon:"ti-rocket",         color:"#7C3AED", cxo:"coo",
+    desc:"Step-by-step deployment guide for Vercel, Netlify, GitHub Pages and custom domains",
+    chatRole:"You are the SIXXAB Website Deployer Agent. You guide business owners through deploying their website with zero technical knowledge. For each deployment target (Vercel, Netlify, GitHub Pages, or cPanel/shared hosting), you provide: a numbered step-by-step deployment guide, how to connect a custom domain, how to set up SSL (HTTPS), how to connect Google Analytics, how to set up a contact form (using Formspree or Netlify Forms), and how to connect social media pixels (LinkedIn Insight Tag, Facebook Pixel, Twitter Pixel). Always give the exact URLs, button names and field values — assume the user has never deployed a website before." },
 
   // Vertical agents — mapped to hov
   hvac:       { label:"HVAC Agent",       icon:"ti-air-conditioning",    color:"#0EA5E9", cxo:"hov", desc:"Seasonal campaigns, service quotes, tech scheduling, review requests" },
@@ -553,7 +566,7 @@ export default function AgentHub() {
                     activeCxo==="cmo"?["Best channel for my niche?","Write me a LinkedIn post","Plan my content this week"]:
                     activeCxo==="cso"?["Write a demo script","Handle my top objection","Who should I upsell?","Find my next enterprise deal","Track investor conversations"]:
                     activeCxo==="cfo"?["Calculate my unit economics","What is my break-even?","Model my 90-day MRR"]:
-                    activeCxo==="coo"?["Write my Day 1 welcome email","Generate a customer health score report","Write an at-risk customer intervention","Design my 30-day onboarding sequence","Create an NPS survey email","Write a win-back sequence for churned customers"]:
+                    activeCxo==="coo"?["Write my Day 1 welcome email","Generate a customer health score report","Design a website for my HVAC business","Build a single-page website for a Dallas consultant","Generate HTML for a roofing company website","Deploy my website to Vercel step by step","Write a win-back sequence for churned customers"]:
                     activeCxo==="cto"?["What tech should I build next?","Review my Vercel setup","Supabase migration plan"]:
                     activeCxo==="cdo"?["What is my activation bottleneck?","Analyse my funnel","What metric should I focus on?"]:
                     activeCxo==="chro"?["When should I hire?","Write a job description","Interview questions for a growth marketer"]:
