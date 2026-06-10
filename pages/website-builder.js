@@ -17,10 +17,11 @@ const TEMPLATES = [
 ]
 
 const STAGES = [
-  { id:"design",  n:"01", label:"Design",  icon:"ti-palette",  color:AMBER,    desc:"AI designs your site structure, colors and layout" },
-  { id:"build",   n:"02", label:"Build",   icon:"ti-code",     color:"#378ADD", desc:"AI generates your complete HTML/CSS website" },
-  { id:"deploy",  n:"03", label:"Deploy",  icon:"ti-rocket",   color:"#1D9E75", desc:"Step-by-step guide to go live with a custom domain" },
-  { id:"connect", n:"04", label:"Connect", icon:"ti-share",    color:"#EC4899", desc:"Wire up social media, Google Analytics and contact forms" },
+  { id:"design",  n:"01", label:"Design",  icon:"ti-palette",       color:AMBER,     desc:"AI designs your site structure, colors and layout" },
+  { id:"build",   n:"02", label:"Build",   icon:"ti-code",          color:"#378ADD", desc:"AI generates your complete HTML/CSS website code" },
+  { id:"deploy",  n:"03", label:"Deploy",  icon:"ti-brand-vercel",  color:"#1D9E75", desc:"One-click deploy to Vercel or step-by-step manual guide" },
+  { id:"social",  n:"04", label:"Social Pages", icon:"ti-share",   color:"#EC4899", desc:"Create LinkedIn, Facebook, Instagram and Twitter profiles" },
+  { id:"connect", n:"05", label:"Connect", icon:"ti-plug",         color:"#7C3AED", desc:"Wire Google Analytics, pixels and SIXXAB CRM to your site" },
 ]
 
 const DEPLOY_TARGETS = ["Vercel (recommended)", "Netlify", "GitHub Pages", "cPanel / Shared hosting", "Google Sites"]
@@ -33,6 +34,11 @@ export default function WebsiteBuilder() {
   const [generatedHtml,setGeneratedHtml]= useState("")
   const [copied,       setCopied]       = useState(false)
   const [previewing,   setPreviewing]   = useState(false)
+  const [deploying,    setDeploying]    = useState(false)
+  const [deployResult, setDeployResult] = useState(null)
+  const [socialPlatform, setSocialPlatform] = useState("linkedin")
+  const [socialOutput, setSocialOutput] = useState("")
+  const [socialLoading,setSocialLoading]= useState(false)
   const [toast,        setToast]        = useState(null)
 
   function showToast(msg, ok=true) { setToast({msg,ok}); setTimeout(()=>setToast(null),3500) }
@@ -162,6 +168,38 @@ How to run a first Google Search campaign targeting local customers for this ind
 
 ## SIXXAB AI INTEGRATION
 How to connect this website to: SIXXAB CRM (add contact form leads), Content Studio (schedule posts), Social Hub (publish content), Lead Gen (add prospects).`,
+  }
+
+  async function deployToVercel() {
+    if (!generatedHtml) { showToast("Build your website first (Step 02)", false); return }
+    setDeploying(true); setDeployResult(null)
+    try {
+      const slug = (form.bizName||"my-business").toLowerCase().replace(/[^a-z0-9]/g,"-").replace(/-+/g,"-")
+      const r = await fetch("/api/deploy-vercel", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ html: generatedHtml, projectName: slug })
+      })
+      const d = await r.json()
+      setDeployResult(d)
+      if (d.deployed) showToast("Deploying to Vercel — live in ~60 seconds!")
+      else if (d.message==="VERCEL_TOKEN not set") showToast("Add VERCEL_TOKEN to Vercel env vars to enable one-click deploy", false)
+      else showToast(d.error || "Deploy failed", false)
+    } catch(e) { showToast("Error: "+e.message, false) }
+    setDeploying(false)
+  }
+
+  async function createSocialPage() {
+    if (!form.bizName || !form.industry) { showToast("Fill in business name and industry first", false); return }
+    setSocialLoading(true); setSocialOutput("")
+    try {
+      const r = await fetch("/api/create-social-page", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ ...form, website: form.email ? undefined : "https://startupsinabox.com", platform: socialPlatform })
+      })
+      const d = await r.json()
+      setSocialOutput(d.result || d.error || "Error")
+    } catch(e) { setSocialOutput("Error: "+e.message) }
+    setSocialLoading(false)
   }
 
   async function generate() {
@@ -390,6 +428,25 @@ How to connect this website to: SIXXAB CRM (add contact form leads), Content Stu
                     </button>
                   </div>
                 </div>
+                {/* Vercel deploy result */}
+                {deployResult && (
+                  <div style={{padding:"12px 16px",borderBottom:"1px solid #E8ECF4",background:deployResult.deployed?"#F0FDF4":"#FFFBF2"}}>
+                    {deployResult.deployed ? (
+                      <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+                        <div style={{width:8,height:8,borderRadius:"50%",background:"#1D9E75",flexShrink:0}}/>
+                        <span style={{fontSize:13,fontWeight:600,color:"#085041"}}>Deploying to Vercel…</span>
+                        {deployResult.url&&<a href={deployResult.url} target="_blank" rel="noopener noreferrer" style={{fontSize:12.5,color:"#1D9E75",fontWeight:600,textDecoration:"none"}}>{deployResult.url} ↗</a>}
+                        <a href={deployResult.dashboard} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:"#64748B",textDecoration:"none"}}>Vercel dashboard ↗</a>
+                        <span style={{fontSize:11.5,color:"#94A3B8"}}>{deployResult.eta}</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{fontSize:13,fontWeight:600,color:"#92400E",marginBottom:4}}>{deployResult.message}</div>
+                        {deployResult.setup&&<div style={{fontSize:12,color:"#64748B",lineHeight:1.65}}>{deployResult.setup}</div>}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Preview iframe */}
                 {previewing&&generatedHtml&&(
@@ -407,16 +464,47 @@ How to connect this website to: SIXXAB CRM (add contact form leads), Content Stu
                   </div>
                 )}
 
+                {/* Social page creator (stage: social) */}
+                {stage==="social" && !output && (
+                  <div style={{padding:"16px 18px"}}>
+                    <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:12}}>Generate your social media page content</div>
+                    <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+                      {[["linkedin","LinkedIn","#0A66C2","ti-brand-linkedin"],["facebook","Facebook","#1877F2","ti-brand-facebook"],["instagram","Instagram","#E1306C","ti-brand-instagram"],["twitter","Twitter / X","#000","ti-brand-x"]].map(([id,label,color,icon])=>(
+                        <button key={id} onClick={()=>setSocialPlatform(id)}
+                          style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,border:`1.5px solid ${socialPlatform===id?color:"#E2E8F0"}`,background:socialPlatform===id?`${color}12`:"#fff",cursor:"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:socialPlatform===id?600:400,color:socialPlatform===id?color:N,transition:"all .14s"}}>
+                          <i className={`ti ${icon}`} style={{fontSize:13,color:socialPlatform===id?color:"#94A3B8"}} aria-hidden="true"/>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={createSocialPage} disabled={socialLoading||!form.bizName||!form.industry}
+                      style={{width:"100%",padding:"11px",borderRadius:10,background:socialLoading||!form.bizName||!form.industry?"#F1F5F9":"#EC4899",color:socialLoading||!form.bizName?"#94A3B8":"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      {socialLoading?<><div style={{width:14,height:14,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Creating {socialPlatform} page…</>:<><i className={`ti ti-brand-${socialPlatform}`} style={{fontSize:14}} aria-hidden="true"/>Create {socialPlatform} page content →</>}
+                    </button>
+                    {socialOutput&&(
+                      <div style={{marginTop:14,fontSize:13.5,lineHeight:1.85,whiteSpace:"pre-wrap",maxHeight:500,overflowY:"auto",color:N}}>{socialOutput}</div>
+                    )}
+                  </div>
+                )}
                 {/* Text output */}
+                {(stage!=="social" || output) && (
                 <div style={{padding:"18px 20px",fontSize:13.5,lineHeight:1.85,whiteSpace:"pre-wrap",maxHeight:600,overflowY:"auto",color:N,fontFamily:stage==="build"?"'DM Mono',monospace":"inherit",fontSize:stage==="build"?12:13.5}}>
                   {output}
                 </div>
+                )}
 
                 {/* Next step CTA */}
                 <div style={{padding:"12px 16px",borderTop:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
                   {stage==="design" && <button onClick={()=>{setStage("build");setOutput("")}} style={{padding:"7px 16px",borderRadius:8,background:N,color:CHALK,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:600}}>Next: Build website →</button>}
-                  {stage==="build"  && <button onClick={()=>{setStage("deploy");setOutput("")}} style={{padding:"7px 16px",borderRadius:8,background:"#1D9E75",color:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:600}}>Next: Deploy guide →</button>}
+                  {stage==="build" && generatedHtml && (
+                    <button onClick={deployToVercel} disabled={deploying}
+                      style={{padding:"7px 16px",borderRadius:8,background:deploying?"#F1F5F9":N,color:deploying?"#94A3B8":CHALK,border:"none",cursor:deploying?"not-allowed":"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+                      {deploying?<><div style={{width:12,height:12,border:"2px solid rgba(245,245,240,.3)",borderTopColor:CHALK,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Deploying…</>:<><i className="ti ti-brand-vercel" style={{fontSize:12}} aria-hidden="true"/>Deploy to Vercel</>}
+                    </button>
+                  )}
+                  {stage==="build" && <button onClick={()=>{setStage("deploy");setOutput("")}} style={{padding:"7px 16px",borderRadius:8,background:"#1D9E75",color:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:600}}>Manual deploy guide →</button>}
                   {stage==="deploy" && <button onClick={()=>{setStage("connect");setOutput("")}} style={{padding:"7px 16px",borderRadius:8,background:"#EC4899",color:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:600}}>Next: Connect social media →</button>}
+                  {stage==="social" && <a href="/social" style={{padding:"7px 16px",borderRadius:8,background:"#EC4899",color:"#fff",textDecoration:"none",fontSize:12.5,fontWeight:600}}>Manage in Social Hub →</a>}
                   {stage==="connect"&& <a href="/social" style={{padding:"7px 16px",borderRadius:8,background:AMBER,color:N,textDecoration:"none",fontSize:12.5,fontWeight:600}}>Open Social Hub →</a>}
                   <a href="/agents?cxo=coo" style={{fontSize:12,color:"#64748B",textDecoration:"none"}}>More in COO Suite →</a>
                 </div>

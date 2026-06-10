@@ -49,6 +49,14 @@ const TOOL_GROUPS = [
     { name:"Mental Model",  href:"/mindset",      desc:"12 laws of autonomous business" },
     { name:"Validate Ideas",href:"/validate",     desc:"Customer interview guide" },
   ]},
+  { label:"Automation & Ops",  color:"#0EA5E9", icon:"ti-settings-automation", tools:[
+    { name:"Website Builder",href:"/website-builder",desc:"Design, build & deploy client websites" },
+    { name:"Email Automator",href:"/email-automator",desc:"Welcome, nurture, sales & win-back sequences" },
+    { name:"Invoice Generator",href:"/invoice",   desc:"Professional invoices in seconds" },
+    { name:"SEO Analyzer",  href:"/seo",          desc:"Keywords, audit & 90-day action plan" },
+    { name:"Review Manager",href:"/reviews",      desc:"Respond, request & grow 5-star reviews" },
+    { name:"Analytics",     href:"/analytics",    desc:"MRR, churn, pipeline — live from CRM" },
+  ]},
 ]
 
 const PLANS = [
@@ -227,7 +235,7 @@ export default function Home() {
         <div style={{textAlign:"center",marginBottom:44}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:AMBER,marginBottom:10}}>The Platform</div>
           <h2 style={{fontSize:"clamp(26px,4vw,48px)",fontWeight:700,color:N,marginBottom:12}}>Everything your business needs.</h2>
-          <p style={{fontSize:15,color:"#64748B",maxWidth:480,margin:"0 auto"}}>36 AI agents across 5 functional areas. Every tool connects to every other tool.</p>
+          <p style={{fontSize:15,color:"#64748B",maxWidth:480,margin:"0 auto"}}>36 AI agents across 6 functional areas — including automation and delivery ops. Every tool connects to every other tool.</p>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14,maxWidth:1100,margin:"0 auto"}}>
           {TOOL_GROUPS.map((g,gi)=>(
@@ -270,6 +278,80 @@ export default function Home() {
                 <div style={{fontSize:24,marginBottom:7}}>{ico}</div>
                 <div style={{fontSize:12,fontWeight:600,color:CHALK,marginBottom:3}}>{l}</div>
                 <div style={{fontSize:11,color:c,fontWeight:600}}>{n}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DELIVERY SERVICES ── */}
+      <section style={{background:"#fff",padding:"72px 6%"}}>
+        <div style={{textAlign:"center",marginBottom:44}}>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:".12em",textTransform:"uppercase",color:"#0EA5E9",marginBottom:10}}>Platform Operations</div>
+          <h2 style={{fontSize:"clamp(26px,4vw,48px)",fontWeight:700,color:N,marginBottom:12}}>Delivery services included with every plan.</h2>
+          <p style={{fontSize:15,color:"#64748B",maxWidth:520,margin:"0 auto"}}>SIXXAB AI doesn't just advise — it delivers. Every tool generates production-ready output you can ship the same day.</p>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:14,maxWidth:1100,margin:"0 auto 40px"}}>
+          {[
+            { icon:"ti-device-desktop", color:"#7C3AED", title:"Website Design & Deployment",
+              items:["Complete HTML/CSS website generated in minutes","5 professional templates — local, bold, luxury, fresh, warm","One-click deploy to Vercel (live in 60 seconds)","Custom domain + SSL setup guide","Google Analytics and Facebook Pixel integration"],
+              href:"/website-builder", cta:"Build a website →" },
+            { icon:"ti-share", color:"#EC4899", title:"Social Media Page Creation",
+              items:["LinkedIn Company Page — bio, about, first 3 posts, specialties","Facebook Business Page — description, services, pinned post","Instagram Business Account — bio, content pillars, 9-post plan","Twitter/X — handle, bio, hashtag strategy, first 7 tweets"],
+              href:"/social", cta:"Open Social Hub →" },
+            { icon:"ti-mail-forward", color:"#D4537E", title:"Email Automation",
+              items:["Welcome, nurture, sales, onboarding and win-back sequences","3 to 10 emails per sequence — fully written","Subject lines, preview text, body and CTA per email","Loads directly into Mailchimp, ActiveCampaign, ConvertKit"],
+              href:"/email-automator", cta:"Create email sequence →" },
+            { icon:"ti-user-search", color:"#1D9E75", title:"Lead Generation & Outreach",
+              items:["15 scored, profiled prospects generated per industry","LinkedIn DMs — 3 personalised variations, 300-char limit","7-touchpoint multi-channel outreach sequence","Bulk outreach — personalised message per prospect"],
+              href:"/leads", cta:"Generate prospects →" },
+            { icon:"ti-file-text", color:"#378ADD", title:"Proposals & Sales Documents",
+              items:["Full proposal — problem, approach, ROI, timeline, milestones","Scope of Work with inclusions, exclusions, acceptance criteria","Case studies from bullet points — ready for website or pitch","Objection rebuttal documents — one per objection raised"],
+              href:"/proposal", cta:"Write a proposal →" },
+            { icon:"ti-chart-bar", color:"#EF9F27", title:"SEO & Review Management",
+              items:["10 keyword opportunities with estimated search volume","On-page SEO checklist — 12 items rated done/fix/unknown","Review responses in 30 seconds — positive and negative","Review-request email and SMS — non-pushy, conversion-optimised"],
+              href:"/seo", cta:"Run SEO audit →" },
+          ].map((service,i)=>(
+            <div key={i} className="card" style={{padding:"22px 22px",display:"flex",flexDirection:"column"}}>
+              <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:14}}>
+                <div style={{width:38,height:38,borderRadius:10,background:`${service.color}18`,border:`1px solid ${service.color}33`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <i className={`ti ${service.icon}`} style={{fontSize:18,color:service.color}} aria-hidden="true"/>
+                </div>
+                <div style={{fontSize:14,fontWeight:700,color:N,lineHeight:1.2}}>{service.title}</div>
+              </div>
+              <ul style={{listStyle:"none",flex:1,marginBottom:16,display:"flex",flexDirection:"column",gap:7}}>
+                {service.items.map((item,j)=>(
+                  <li key={j} style={{display:"flex",gap:8,fontSize:13,color:"#475569",alignItems:"flex-start",lineHeight:1.55}}>
+                    <span style={{color:service.color,fontSize:11,marginTop:3,flexShrink:0}}>✓</span>{item}
+                  </li>
+                ))}
+              </ul>
+              <a href={service.href} style={{display:"block",padding:"9px",borderRadius:9,background:`${service.color}10`,border:`1px solid ${service.color}33`,color:service.color,fontSize:13,fontWeight:600,textDecoration:"none",textAlign:"center",transition:"background .15s"}}
+                onMouseOver={e=>e.currentTarget.style.background=`${service.color}20`}
+                onMouseOut={e=>e.currentTarget.style.background=`${service.color}10`}>
+                {service.cta}
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {/* Vercel + social media logos strip */}
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:11,fontWeight:600,color:"#94A3B8",letterSpacing:".1em",textTransform:"uppercase",marginBottom:14}}>Integrated with</div>
+          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",alignItems:"center"}}>
+            {[
+              ["ti-brand-vercel","Vercel","#000"],
+              ["ti-brand-linkedin","LinkedIn","#0A66C2"],
+              ["ti-brand-facebook","Facebook","#1877F2"],
+              ["ti-brand-instagram","Instagram","#E1306C"],
+              ["ti-brand-x","Twitter / X","#000"],
+              ["ti-brand-youtube","YouTube","#FF0000"],
+              ["ti-brand-google","Google Analytics","#4285F4"],
+              ["ti-brand-github","GitHub","#24292F"],
+            ].map(([ico,label,color])=>(
+              <div key={label} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:20,border:"1px solid #E2E8F0",background:"#F8F9FA"}}>
+                <i className={`ti ${ico}`} style={{fontSize:14,color}} aria-hidden="true"/>
+                <span style={{fontSize:12,color:"#64748B"}}>{label}</span>
               </div>
             ))}
           </div>
