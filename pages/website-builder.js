@@ -398,19 +398,28 @@ export default function WebsiteBuilder() {
                           {/* Website ready badge */}
                           {m.html && (
                             <button
-                              onClick={() => { setHtml(m.html); setView("preview") }}
+                              onClick={() => {
+                                setHtml(m.html)
+                                setView("preview")
+                                // scroll right panel into view on mobile
+                                document.getElementById("wb-preview-panel")?.scrollIntoView({ behavior:"smooth" })
+                              }}
                               style={{
                                 display:"flex", alignItems:"center", gap:7, width:"100%",
-                                padding:"7px 11px", borderRadius:9, marginBottom:8,
-                                background:"rgba(29,158,117,.12)", border:"1px solid rgba(29,158,117,.3)",
+                                padding:"8px 12px", borderRadius:9, marginBottom:8,
+                                background:"rgba(29,158,117,.15)", border:"2px solid rgba(29,158,117,.4)",
                                 cursor:"pointer", fontFamily:"inherit", textAlign:"left",
-                              }}>
-                              <div style={{ width:7, height:7, borderRadius:"50%", background:GREEN, flexShrink:0 }}/>
-                              <span style={{ fontSize:12.5, color:"#6EE7B7", fontWeight:600 }}>
+                                transition:"all .15s",
+                              }}
+                              onMouseOver={e=>e.currentTarget.style.background="rgba(29,158,117,.25)"}
+                              onMouseOut={e=>e.currentTarget.style.background="rgba(29,158,117,.15)"}
+                            >
+                              <i className="ti ti-eye" style={{fontSize:14,color:"#6EE7B7",flexShrink:0}} aria-hidden="true"/>
+                              <span style={{ fontSize:13, color:"#6EE7B7", fontWeight:700 }}>
                                 ✓ Website ready — click to preview
                               </span>
-                              <span style={{ fontSize:11, color:"rgba(245,245,240,.3)", marginLeft:"auto" }}>
-                                {(m.html.length/1024).toFixed(0)}KB
+                              <span style={{ fontSize:11, color:"rgba(245,245,240,.4)", marginLeft:"auto", fontFamily:"monospace" }}>
+                                {(m.html.length/1024).toFixed(0)}KB ↗
                               </span>
                             </button>
                           )}
@@ -493,7 +502,7 @@ export default function WebsiteBuilder() {
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div className="main-panel" style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:"#111827" }}>
+        <div id="wb-preview-panel" className="main-panel" style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, background:"#111827" }}>
 
           {/* Toolbar */}
           <div style={{
@@ -533,15 +542,16 @@ export default function WebsiteBuilder() {
                   {/* Deploy */}
                   <button onClick={deploy} disabled={deploying}
                     style={{
-                      padding:"6px 16px", borderRadius:8, fontSize:12.5, fontWeight:700,
+                      padding:"7px 18px", borderRadius:9, fontSize:13, fontWeight:700,
                       border:"none", cursor: deploying ? "not-allowed" : "pointer",
-                      fontFamily:"inherit", display:"flex", alignItems:"center", gap:6,
-                      background: deploying ? "rgba(255,255,255,.06)" : "#fff",
+                      fontFamily:"inherit", display:"flex", alignItems:"center", gap:7,
+                      background: deploying ? "rgba(255,255,255,.06)" : AMBER,
                       color: deploying ? "rgba(245,245,240,.3)" : N,
+                      boxShadow: deploying ? "none" : "0 0 0 1px rgba(239,159,39,.4)",
                     }}>
                     {deploying
-                      ? <><div style={{ width:11, height:11, border:"1.5px solid rgba(245,245,240,.2)", borderTopColor:"#94A3B8", borderRadius:"50%", animation:"spin .8s linear infinite" }}/> Deploying…</>
-                      : <><i className="ti ti-brand-vercel" style={{ fontSize:13 }} aria-hidden="true"/> Deploy to Vercel</>
+                      ? <><div style={{ width:12, height:12, border:"2px solid rgba(10,14,26,.2)", borderTopColor:N, borderRadius:"50%", animation:"spin .8s linear infinite" }}/> Deploying…</>
+                      : <><i className="ti ti-brand-vercel" style={{ fontSize:14 }} aria-hidden="true"/> Deploy to Vercel</>
                     }
                   </button>
                 </>
@@ -659,9 +669,47 @@ export default function WebsiteBuilder() {
               </div>
             )}
           </div>
-        </div>
+          {/* ── Bottom action bar — always visible when site exists ── */}
+          {hasHtml && (
+            <div style={{
+              flexShrink:0, padding:"10px 16px",
+              borderTop:"1px solid rgba(255,255,255,.08)",
+              background:"#0D1117",
+              display:"flex", alignItems:"center", gap:10, flexWrap:"wrap",
+            }}>
+              <div style={{ fontSize:12, color:"rgba(245,245,240,.4)", display:"flex", alignItems:"center", gap:6 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:GREEN }}/>
+                Website ready · {(html.length/1024).toFixed(0)}KB
+              </div>
+              <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
+                <button onClick={download}
+                  style={{ padding:"7px 14px", borderRadius:8, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", fontSize:12.5, color:CHALK, cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ti ti-download" style={{ fontSize:12 }} aria-hidden="true"/> Download HTML
+                </button>
+                <button
+                  onClick={() => { const w=window.open("","_blank"); w.document.write(html); w.document.close() }}
+                  style={{ padding:"7px 14px", borderRadius:8, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.12)", fontSize:12.5, color:CHALK, cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", gap:6 }}>
+                  <i className="ti ti-external-link" style={{ fontSize:12 }} aria-hidden="true"/> Open full screen
+                </button>
+                <button onClick={deploy} disabled={deploying}
+                  style={{
+                    padding:"8px 20px", borderRadius:9, fontSize:13.5, fontWeight:700,
+                    border:"none", cursor: deploying?"not-allowed":"pointer", fontFamily:"inherit",
+                    display:"flex", alignItems:"center", gap:8,
+                    background: deploying ? "rgba(255,255,255,.06)" : AMBER,
+                    color: deploying ? "rgba(245,245,240,.3)" : N,
+                  }}>
+                  {deploying
+                    ? <><div style={{ width:14,height:14,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .8s linear infinite" }}/> Deploying to Vercel…</>
+                    : <><i className="ti ti-brand-vercel" style={{ fontSize:15 }} aria-hidden="true"/> Deploy to Vercel →</>
+                  }
+                </button>
+              </div>
+            </div>
+          )}
 
-      </div>
+        </div>{/* end right panel */}
+      </div>{/* end app shell */}
     </>
   )
 }
