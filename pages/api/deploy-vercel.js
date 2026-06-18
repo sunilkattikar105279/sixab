@@ -1,111 +1,105 @@
-// pages/api/deploy-vercel.js
-// Correctly deploys static HTML to Vercel REST API v13
-// Key fix: files need sha256 digest when using data field
+// pages/api/deploy-vercel.js — Deploy static HTML to Vercel
 import crypto from "crypto"
+
+export const config = { api: { bodyParser: { sizeLimit: "4mb" } } }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end()
 
-  const { html, projectName, bizName } = req.body ?? {}
+  const { html, projectName } = req.body ?? {}
   const TOKEN = process.env.VERCEL_TOKEN
 
   if (!TOKEN) {
     return res.status(200).json({
-      deployed:   false,
-      needsSetup: true,
+      deployed: false, needsSetup: true,
       setupSteps: [
-        "Go to vercel.com → click your avatar → Account Settings",
-        "Left sidebar: Tokens → Create Token",
-        "Name: SIXXAB Website Deployer · Expiry: 1 year",
-        "Copy the token immediately — shown once only",
-        "Your SIXXAB Vercel project → Settings → Environment Variables",
-        "Add: VERCEL_TOKEN = [token] → all environments → Save",
-        "Redeploy SIXXAB, then try again",
+        "Go to vercel.com → avatar (top-right) → Account Settings",
+        "Left sidebar → Tokens → Create Token",
+        "Name: SIXXAB Deployer · Expiry: 1 year · Copy immediately",
+        "Your SIXXAB project → Settings → Environment Variables",
+        "Add VERCEL_TOKEN = [your token] → all environments → Save",
+        "Redeploy SIXXAB → try Deploy again",
       ],
     })
   }
 
   if (!html) return res.status(400).json({ error: "HTML required" })
 
-  // Clean project slug
-  const slug = (projectName || bizName || "sixxab-site")
-    .toLowerCase().replace(/[^a-z0-9]/g,"-").replace(/-+/g,"-")
-    .replace(/^-|-$/g,"").slice(0,52) || "sixxab-site"
+  const slug = (projectName || "sixxab-site")
+    .toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")
+    .replace(/^-|-$/g, "").slice(0, 52) || "sixxab-site"
 
-  // Ensure full HTML document
-  const fullHtml = html.trimStart().startsWith("<!DOCTYPE")
-    ? html
-    : `<!DOCTYPE html>\n<html lang="en">${html}</html>`
+  const fullHtml = html.trimStart().startsWith("<!DOCTYPE") ? html
+    : `<!DOCTYPE html>\n<html lang="en"><head><meta charset="UTF-8"></head><body>${html}</body></html>`
 
-  // vercel.json — static output config
-  const vercelCfg = JSON.stringify({
-    version: 2,
-    builds:  [{ src:"index.html", use:"@vercel/static" }],
-    routes:  [{ src:"/(.*)", dest:"/index.html" }],
-  })
+  // Minimal vercel.json for plain static HTML — no builder, no framework
+  const vercelJson = `{"version":2,"routes":[{"src":"/","dest":"/index.html"},{"src":"/(.*)","dest":"/index.html"}]}`
 
-  // Compute SHA1 for each file (Vercel API requirement)
-  function sha1(str) {
-    return crypto.createHash("sha1").update(str,"utf8").digest("hex")
-  }
+  const sha1 = s => crypto.createHash("sha1").update(s, "utf8").digest("hex")
 
-  const files = [
-    { file:"index.html", sha:sha1(fullHtml),  size:Buffer.byteLength(fullHtml,"utf8") },
-    { file:"vercel.json", sha:sha1(vercelCfg), size:Buffer.byteLength(vercelCfg,"utf8") },
-  ]
+  const htmlSha  = sha1(fullHtml)
+  const vcfgSha  = sha1(vercelJson)
+  const htmlSize = Buffer.byteLength(fullHtml,  "utf8")
+  const vcfgSize = Buffer.byteLength(vercelJson, "utf8")
+
+  const headers = { Authorization: `Bearer ${TOKEN}` }
 
   try {
-    // Step 1: Upload file blobs
-    for (const f of [{ content:fullHtml, sha:files[0].sha }, { content:vercelCfg, sha:files[1].sha }]) {
-      const up = await fetch(`https://api.vercel.com/v2/files`, {
-        method:  "POST",
-        headers: {
-          Authorization:   `Bearer ${TOKEN}`,
-          "Content-Type":  "application/octet-stream",
-          "x-vercel-digest": f.sha,
-        },
-        body: f.content,
+    // Step 1 — upload blobs
+    for (const { content, sha } of [
+      { content: fullHtml,   sha: htmlSha },
+      { content: vercelJson, sha: vcfgSha },
+    ]) {
+      const up = await fetch("https://api.vercel.com/v2/files", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/octet-stream", "x-vercel-digest": sha },
+        body: content,
       })
-      // 200 = uploaded, 409 = already exists — both are fine
       if (!up.ok && up.status !== 409) {
-        const e = await up.text()
-        return res.status(400).json({ error:`File upload failed: ${e.slice(0,200)}` })
+        const t = await up.text()
+        return res.status(400).json({ error: "Upload failed: " + t.slice(0, 200) })
       }
     }
 
-    // Step 2: Create deployment
+    // Step 2 — create deployment (no framework, no builder — pure static)
     const deployRes = await fetch("https://api.vercel.com/v13/deployments", {
-      method:  "POST",
-      headers: { Authorization:`Bearer ${TOKEN}`, "Content-Type":"application/json" },
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({
-        name:   slug,
-        files,
-        projectSettings: { framework:null, buildCommand:null, outputDirectory:null, installCommand:null },
+        name: slug,
         target: "production",
+        files: [
+          { file: "index.html", sha: htmlSha,  size: htmlSize  },
+          { file: "vercel.json", sha: vcfgSha, size: vcfgSize  },
+        ],
+        projectSettings: {
+          framework: null,
+          buildCommand: null,
+          outputDirectory: null,
+          installCommand: null,
+          devCommand: null,
+        },
       }),
     })
 
     const deploy = await deployRes.json()
 
     if (!deployRes.ok) {
-      const msg = deploy.error?.message || deploy.message || JSON.stringify(deploy).slice(0,300)
-      if (msg.includes("rate limit")) return res.status(429).json({ error:"Vercel rate limit — wait 1 minute" })
-      if (deploy.error?.code==="forbidden") return res.status(401).json({ error:"Invalid token — regenerate at vercel.com/account/tokens" })
-      return res.status(400).json({ error:msg, raw:deploy })
+      const msg = deploy.error?.message || deploy.message || JSON.stringify(deploy).slice(0, 300)
+      return res.status(400).json({ error: msg, vercel_raw: deploy })
     }
 
-    const url = deploy.url ? `https://${deploy.url}` : `https://${slug}.vercel.app`
+    const liveUrl = deploy.url ? `https://${deploy.url}` : `https://${slug}.vercel.app`
 
     return res.status(200).json({
-      deployed:  true,
-      url,
-      id:        deploy.id,
-      status:    deploy.readyState || "BUILDING",
-      dashboard: "https://vercel.com/dashboard",
-      eta:       "60–90 seconds",
+      deployed: true,
+      url: liveUrl,
+      id: deploy.id,
+      status: deploy.readyState || "BUILDING",
+      eta: "30–60 seconds to go live",
     })
 
-  } catch(e) {
-    return res.status(500).json({ error:e.message })
+  } catch (e) {
+    return res.status(500).json({ error: e.message })
   }
 }

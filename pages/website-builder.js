@@ -454,13 +454,20 @@ export default function WebsiteBuilder() {
                     }}>
                       <div style={{ width:11, height:11, border:"2px solid rgba(167,139,250,.3)", borderTopColor:"#A78BFA", borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
                     </div>
-                    <div className="bubble-ai" style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      {[0,1,2].map(j => (
-                        <div key={j} style={{ width:5, height:5, borderRadius:"50%", background:"rgba(245,245,240,.4)", animation:`blink 1.2s ${j*0.2}s ease infinite` }}/>
-                      ))}
-                      <span style={{ fontSize:12, color:"rgba(245,245,240,.4)" }}>
-                        {messages.length <= 1 ? "Building your website — 30–60 seconds…" : "Updating website…"}
-                      </span>
+                    <div style={{ flex:1 }}>
+                      <div className="bubble-ai" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                        {[0,1,2].map(j => (
+                          <div key={j} style={{ width:5, height:5, borderRadius:"50%", background:"rgba(245,245,240,.4)", animation:`blink 1.2s ${j*0.2}s ease infinite` }}/>
+                        ))}
+                        <span style={{ fontSize:12, color:"rgba(245,245,240,.4)" }}>
+                          {messages.filter(m=>m.role==="user").length <= 1 ? "Building complete website — 30–60 seconds…" : "Updating website…"}
+                        </span>
+                      </div>
+                      {messages.filter(m=>m.role==="user").length <= 1 && (
+                        <div style={{ fontSize:11, color:"rgba(245,245,240,.25)", paddingLeft:2 }}>
+                          Generating: nav → hero → services → testimonials → contact → footer…
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -600,17 +607,33 @@ export default function WebsiteBuilder() {
           {/* Preview / Code area */}
           <div style={{ flex:1, overflow:"hidden", position:"relative" }}>
             {!hasHtml ? (
-              /* Empty preview state */
+              /* Empty / loading preview state */
               <div style={{ height:"100%", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:32, textAlign:"center" }}>
-                <div style={{ width:72, height:72, borderRadius:20, background:"rgba(124,58,237,.1)", border:"1px solid rgba(124,58,237,.2)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
-                  <i className="ti ti-device-desktop" style={{ fontSize:36, color:"rgba(167,139,250,.4)" }} aria-hidden="true"/>
-                </div>
-                <div style={{ fontSize:18, fontWeight:600, color:"rgba(245,245,240,.4)", marginBottom:8 }}>
-                  Your website will appear here
-                </div>
-                <div style={{ fontSize:14, color:"rgba(245,245,240,.2)", lineHeight:1.7, maxWidth:320 }}>
-                  Type a description in the chat panel on the left, or click one of the quick-start buttons to build instantly.
-                </div>
+                {loading ? (
+                  <>
+                    <div style={{ width:72, height:72, borderRadius:20, background:"rgba(37,99,235,.1)", border:"1px solid rgba(37,99,235,.2)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
+                      <div style={{ width:32, height:32, border:"3px solid rgba(37,99,235,.3)", borderTopColor:"#2563EB", borderRadius:"50%", animation:"spin .8s linear infinite" }}/>
+                    </div>
+                    <div style={{ fontSize:18, fontWeight:600, color:"rgba(245,245,240,.5)", marginBottom:8 }}>
+                      Building your website…
+                    </div>
+                    <div style={{ fontSize:13, color:"rgba(245,245,240,.25)", lineHeight:1.7, maxWidth:300 }}>
+                      Generating navigation, hero, services, testimonials, contact form and footer. Usually takes 30–60 seconds.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ width:72, height:72, borderRadius:20, background:"rgba(124,58,237,.1)", border:"1px solid rgba(124,58,237,.2)", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:20 }}>
+                      <i className="ti ti-device-desktop" style={{ fontSize:36, color:"rgba(167,139,250,.4)" }} aria-hidden="true"/>
+                    </div>
+                    <div style={{ fontSize:18, fontWeight:600, color:"rgba(245,245,240,.4)", marginBottom:8 }}>
+                      Your website will appear here
+                    </div>
+                    <div style={{ fontSize:14, color:"rgba(245,245,240,.2)", lineHeight:1.7, maxWidth:320 }}>
+                      Type a description in the chat panel, or click a quick-start button to build instantly.
+                    </div>
+                  </>
+                )}
               </div>
             ) : view === "code" ? (
               /* Code view */
@@ -623,7 +646,7 @@ export default function WebsiteBuilder() {
                 key={html.slice(0, 100)}
                 srcDoc={html}
                 style={{ width:"100%", height:"100%", border:"none", display:"block", background:"#fff" }}
-                sandbox="allow-scripts allow-same-origin allow-forms"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                 title="Website preview"
               />
             ) : (
@@ -633,7 +656,7 @@ export default function WebsiteBuilder() {
                   key={html.slice(0, 100)}
                   srcDoc={html}
                   style={{ flex:1, border:"none", borderRight:"1px solid rgba(255,255,255,.07)", background:"#fff", minWidth:0 }}
-                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                   title="Website preview"
                 />
                 {/* Quick edits panel */}

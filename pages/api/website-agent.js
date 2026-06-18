@@ -1,4 +1,6 @@
-// pages/api/website-agent.js
+// pages/api/website-agent.js — AI website building agent
+export const config = { api: { bodyParser: { sizeLimit: "4mb" } } }
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end()
 
@@ -7,38 +9,49 @@ export default async function handler(req, res) {
   if (!key) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set in Vercel environment variables" })
   if (!prompt) return res.status(400).json({ error: "prompt is required" })
 
-  const systemPrompt = `You are an expert web developer. You build complete, production-ready single-file HTML websites.
+  const systemPrompt = `You are an expert web developer. Build complete, production-ready single-file HTML websites.
 
-OUTPUT FORMAT — FOLLOW EXACTLY:
-1. Output the raw HTML file FIRST — starting with <!DOCTYPE html> and ending with </html>
-2. Then on a new line after </html>, write exactly 3 suggestions like this:
-   SUGGEST: Change the color scheme to dark and modern
-   SUGGEST: Add a pricing section with 3 tiers
-   SUGGEST: Make the hero more impactful
+STRICT OUTPUT FORMAT:
+- Output ONLY raw HTML. Start immediately with <!DOCTYPE html>
+- End with </html>
+- After </html> on a new line add exactly 3 suggestions:
+  SUGGEST: First suggestion here
+  SUGGEST: Second suggestion here  
+  SUGGEST: Third suggestion here
+- NEVER use markdown fences (no backticks)
+- NEVER add any text before <!DOCTYPE html>
+- NEVER add any explanation after the SUGGEST lines
 
-DO NOT wrap the HTML in backticks or code blocks. Output raw HTML directly.
-DO NOT add any explanation before the HTML.
+TECHNICAL REQUIREMENTS:
+- ALL CSS embedded in <style> tag inside <head>
+- Google Fonts loaded via <link> in <head> (2 fonts max)
+- No external CSS framework links (no Bootstrap, no Tailwind CDN)
+- Mobile responsive with CSS Grid/Flexbox
+- Dark background sections must have light text with sufficient contrast
+- All images: use CSS gradients or emoji — no <img> tags that will 404
+- Test every color combination for readability
 
-WEBSITE REQUIREMENTS:
-- Embed ALL CSS in a <style> tag in <head> — no external stylesheet links
-- Load 2 Google Fonts via CDN
-- Sticky navigation with logo, nav links, CTA button
-- Full-viewport hero with gradient background, headline, subheadline, 2 buttons, 3 animated stat numbers
-- Services grid — 6 cards with emoji icons, titles, 2-sentence descriptions
-- Why Us — 3 columns with specific differentiators
-- Testimonials — 3 cards with star ratings, quotes, names
-- 4-step process section
-- Contact section with form (name, email, phone, message, submit)
-- Footer with 3 columns
-- WhatsApp floating button bottom-right: href="https://wa.me/PHONENUMBER"
-- Fully mobile-responsive using CSS Grid/Flexbox
-- Hover animations on cards (translateY)
-- Smooth scroll
-- Write REAL specific content for the business — no Lorem ipsum`
+REQUIRED SECTIONS (all 8 must be present):
+1. Sticky nav: logo text left, 4-5 nav links, CTA button right
+2. Hero: full viewport height, gradient background, big headline, subheadline, 2 buttons, 3 stat counters
+3. Services: 6 cards in CSS grid (3 col desktop, 2 tablet, 1 mobile), each with emoji icon + title + 2-sentence description
+4. Why choose us: 3 columns, specific measurable claims, not generic
+5. Testimonials: 3 cards with ★★★★★, quote, name, company
+6. Process: 4 numbered steps with connecting line
+7. Contact: form (name email phone message submit) + address/phone/email info
+8. Footer: logo + tagline, services list, company links, contact info, copyright
+
+EXTRAS:
+- WhatsApp float button: <a href="https://wa.me/PHONE" style="position:fixed;bottom:20px;right:20px;...">💬</a>
+- Smooth scroll: html { scroll-behavior: smooth }
+- Card hover: transform translateY(-6px) with box-shadow transition
+- Counter animation via JS for stat numbers
+
+Write REAL content specific to the business — business name, actual services, real-sounding testimonials.`
 
   const userMessage = existingHtml
-    ? `Current website HTML:\n${existingHtml}\n\nUser request: ${prompt}\n\nReturn the complete updated HTML file (raw, no backticks), then 3 SUGGEST: lines.`
-    : `Build a complete professional website for: ${prompt}\n\nOutput raw HTML directly (no backticks), then 3 SUGGEST: lines.`
+    ? `Current website:\n${existingHtml}\n\nChange requested: ${prompt}\n\nReturn the complete updated HTML (raw, starting with <!DOCTYPE html>), then 3 SUGGEST: lines.`
+    : `Build a complete professional website for this business: ${prompt}\n\nOutput raw HTML starting with <!DOCTYPE html>, then 3 SUGGEST: lines.`
 
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -57,74 +70,56 @@ WEBSITE REQUIREMENTS:
     })
 
     const d = await r.json()
-    if (!r.ok) return res.status(500).json({ error: d.error?.message || "Anthropic API error" })
+    if (!r.ok) return res.status(500).json({ error: d.error?.message || "Anthropic API error", code: d.error?.type })
 
     const raw = d.content?.[0]?.text || ""
 
-    // ── Extract HTML ──────────────────────────────────────────────────────────
+    // ── Extract HTML (robust, handles all AI output patterns) ──────────────
     let html = null
 
-    // Try 1: fenced block with or without "html" language tag
-    const fenced = raw.match(/```(?:html)?\s*(<!DOCTYPE[\s\S]*?<\/html>)\s*```/i)
-    if (fenced) html = fenced[1].trim()
+    // Strip any markdown fences the AI added despite instructions
+    let cleaned = raw
+      .replace(/^```(?:html)?\s*/i, "")
+      .replace(/\s*```\s*$/i, "")
+      .trim()
 
-    // Try 2: extract DOCTYPE…/html (non-greedy up to last </html>)
-    if (!html) {
-      const idx = raw.lastIndexOf("</html>")
-      if (idx !== -1) {
-        const start = raw.indexOf("<!DOCTYPE")
-        if (start !== -1 && start < idx) {
-          html = raw.slice(start, idx + 7).trim()
-        }
-      }
-    }
+    // Find DOCTYPE start and last </html>
+    const doctypeIdx = cleaned.indexOf("<!DOCTYPE")
+    const htmlEndIdx = cleaned.lastIndexOf("</html>")
 
-    // Try 3: starts with DOCTYPE after stripping leading whitespace
-    if (!html) {
-      const stripped = raw.trimStart()
-      if (stripped.startsWith("<!DOCTYPE") || stripped.startsWith("<html")) {
-        // find end
-        const end = stripped.lastIndexOf("</html>")
-        html = end !== -1 ? stripped.slice(0, end + 7) : stripped
-      }
+    if (doctypeIdx !== -1 && htmlEndIdx !== -1 && doctypeIdx < htmlEndIdx) {
+      html = cleaned.slice(doctypeIdx, htmlEndIdx + 7)
+    } else if (doctypeIdx !== -1) {
+      // No closing tag found — use everything from DOCTYPE
+      html = cleaned.slice(doctypeIdx)
+      // Ensure it closes
+      if (!html.includes("</html>")) html += "\n</html>"
     }
 
     // ── Extract SUGGEST lines ──────────────────────────────────────────────
     const suggestions = raw
       .split("\n")
-      .filter(l => l.trim().startsWith("SUGGEST:"))
+      .filter(l => /^SUGGEST:/i.test(l.trim()))
       .map(l => l.replace(/^SUGGEST:\s*/i, "").trim())
       .filter(Boolean)
       .slice(0, 3)
 
-    if (suggestions.length === 0) {
-      suggestions.push(
-        "Change the color scheme to dark and modern",
-        "Add a pricing section with 3 tiers",
-        "Make the hero section more impactful"
-      )
+    if (suggestions.length < 3) {
+      const defaults = [
+        "Change the color scheme to dark navy and gold",
+        "Add a pricing section with 3 tiers — Starter, Pro, Enterprise",
+        "Make the hero headline more compelling and specific",
+      ]
+      while (suggestions.length < 3) suggestions.push(defaults[suggestions.length])
     }
 
-    // ── Build reply ────────────────────────────────────────────────────────
-    let reply
-    if (html) {
-      reply = existingHtml
-        ? "Done! Website updated with your changes."
-        : "Your website is built! Click the green badge above to preview it, or use the Deploy button below the preview."
-    } else {
-      // HTML extraction failed — tell the user and include raw for debugging
-      reply = "⚠️ The website was generated but could not be extracted. Raw response preview:\n\n" + raw.slice(0, 300) + "…"
-    }
+    const reply = html
+      ? (existingHtml
+          ? "Done! Your website has been updated. Click the green badge to see the changes."
+          : "Your website is built! Click the green badge above to preview it.")
+      : `⚠️ HTML extraction failed. The AI responded but we couldn't parse the HTML.\n\nRaw start: ${raw.slice(0, 150)}`
 
-    return res.status(200).json({
-      html,
-      reply,
-      suggestions,
-      tokens: d.usage?.output_tokens || 0,
-      // Send raw for debugging (truncated)
-      debug_raw_start: raw.slice(0, 200),
-      debug_raw_end: raw.slice(-200),
-    })
+    return res.status(200).json({ html, reply, suggestions, tokens: d.usage?.output_tokens || 0 })
 
   } catch (e) {
     return res.status(500).json({ error: e.message })
