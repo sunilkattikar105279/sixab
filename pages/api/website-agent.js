@@ -1,77 +1,39 @@
 // pages/api/website-agent.js
-// Agent-based website builder — iterative, conversational, streaming-compatible
-// Each message refines the website. The agent maintains context and improves the site.
+// Simple, reliable website building agent
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end()
 
-  const { messages, currentHtml, businessContext } = req.body ?? {}
+  const { prompt, html: existingHtml } = req.body ?? {}
   const key = process.env.ANTHROPIC_API_KEY
-  if (!key) return res.status(500).json({ error:"ANTHROPIC_API_KEY not set" })
+  if (!key) return res.status(500).json({ error: "ANTHROPIC_API_KEY not set in Vercel environment variables" })
+  if (!prompt) return res.status(400).json({ error: "prompt is required" })
 
-  const SYSTEM = `You are an expert web developer and designer working as an AI website building agent for SIXXAB AI.
+  const isRefine = !!existingHtml
 
-Your job: build and iteratively improve professional business websites based on natural language instructions.
+  const systemPrompt = `You are an expert web developer. You build complete, production-ready HTML websites.
 
-RULES:
-1. When building or updating a website, ALWAYS output the complete HTML file — never partial. Start with <!DOCTYPE html> and end with </html>.
-2. Every response that produces a website must contain EXACTLY ONE code block with the full HTML, wrapped in \`\`\`html ... \`\`\`
-3. If the user asks a question or needs clarification, respond conversationally WITHOUT code
-4. When refining an existing site, incorporate ALL existing content and improve/extend it
-5. Make every website production-ready: mobile-responsive, real content, modern CSS
+CRITICAL RULES:
+- Always output the COMPLETE HTML file from <!DOCTYPE html> to </html>
+- Embed ALL CSS inside a <style> tag — no external CSS files
+- Use Google Fonts via CDN link in <head>
+- Write REAL content — never use Lorem ipsum or placeholder text
+- Make it fully mobile-responsive
+- Include smooth animations and hover effects
+- After the HTML, write exactly 3 follow-up suggestions on separate lines starting with "SUGGEST:"
 
-WEBSITE QUALITY STANDARDS:
-- Embed ALL CSS in a <style> tag — no external CSS files
-- Use Google Fonts via CDN (2 fonts max)  
-- Write REAL, specific content for the business — no "Lorem ipsum" or placeholders
-- Every section must be complete and polished
-- Mobile-first responsive design using CSS Grid/Flexbox
-- Smooth scroll, hover effects, subtle animations
-- WhatsApp/email CTA buttons
-- Contact form using Formspree pattern
+QUALITY BAR: Every website must include:
+1. Sticky navigation with smooth scroll
+2. Hero section with headline, subheadline, and 2 CTA buttons
+3. Services/features section (6 items in grid)
+4. Social proof (testimonials or stats)
+5. Contact section with form
+6. Footer
+7. WhatsApp floating button
+8. Mobile-responsive at 768px breakpoint`
 
-SECTIONS TO INCLUDE (adapt based on business type):
-Nav, Hero (with stats), Services/Products, Why Us, Process (4 steps), Testimonials, FAQ (accordion), CTA banner, Contact, Footer
-
-DESIGN PHILOSOPHY:
-- Pick ONE bold design choice and commit to it
-- Typography must feel intentional (not default sans-serif everywhere)
-- Color palette: 2-3 colors max, used consistently
-- White space is your friend
-- Make it feel like a $5,000 custom website, not a template
-
-AFTER each website build, respond with:
-AGENT_RESPONSE: [one conversational sentence about what you just built/changed]
-AGENT_SUGGESTIONS: [3 specific follow-up prompts the user could try, as a JSON array of strings]`
-
-  // Build the message history with current HTML as context
-  const apiMessages = []
-
-  if (currentHtml) {
-    apiMessages.push({
-      role: "user",
-      content: `Here is the current website HTML I'm working on:\n\n\`\`\`html\n${currentHtml}\n\`\`\`\n\nPlease keep this as the base and apply my next instruction.`
-    })
-    apiMessages.push({
-      role: "assistant",
-      content: "Got it — I have the current website loaded. What would you like to change or add?"
-    })
-  }
-
-  if (businessContext) {
-    apiMessages.push({
-      role: "user",
-      content: `Business context: ${businessContext}`
-    })
-    apiMessages.push({
-      role: "assistant",
-      content: "Business context noted. Ready to build."
-    })
-  }
-
-  // Add actual conversation
-  for (const m of (messages || [])) {
-    apiMessages.push({ role: m.role, content: m.content })
-  }
+  const userMessage = isRefine
+    ? `Here is the current website:\n\n${existingHtml}\n\nUser request: ${prompt}\n\nApply this change and return the complete updated HTML file.`
+    : `Build a complete professional website: ${prompt}`
 
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
@@ -82,56 +44,61 @@ AGENT_SUGGESTIONS: [3 specific follow-up prompts the user could try, as a JSON a
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model:      "claude-sonnet-4-6",
+        model: "claude-sonnet-4-6",
         max_tokens: 8000,
-        system:     SYSTEM,
-        messages:   apiMessages,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
       }),
     })
 
     const d = await r.json()
-    if (!r.ok) return res.status(500).json({ error: d.error?.message || "API error" })
+    if (!r.ok) return res.status(500).json({ error: d.error?.message || "Anthropic API error" })
 
     const text = d.content?.[0]?.text || ""
 
-    // Extract HTML from code block
-    // Extract HTML — try fenced code block first, then bare DOCTYPE
+    // Extract HTML — multiple strategies
     let html = null
-    const fenced = text.match(/```html[\r\n]([\s\S]*?)```/)
-           || text.match(/```[\r\n]?(<!DOCTYPE[\s\S]*?<\/html>)/)
-    if (fenced) {
-      html = fenced[1].trim()
-    } else {
-      // AI sometimes outputs HTML without fences
-      const bare = text.match(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i)
+
+    // Strategy 1: fenced code block
+    const fenced = text.match(/```html\s*([\s\S]*?)```/i)
+    if (fenced) html = fenced[1].trim()
+
+    // Strategy 2: bare DOCTYPE
+    if (!html) {
+      const bare = text.match(/(<!DOCTYPE html>[\s\S]*<\/html>)/i)
       if (bare) html = bare[1].trim()
     }
 
-
-    // Extract agent response and suggestions
-    const agentResponseMatch = text.match(/AGENT_RESPONSE:\s*(.+?)(?=\nAGENT_SUGGESTIONS:|$)/s)
-    const agentSuggestionsMatch = text.match(/AGENT_SUGGESTIONS:\s*(\[[\s\S]*?\])/s)
-
-    let suggestions = []
-    if (agentSuggestionsMatch) {
-      try { suggestions = JSON.parse(agentSuggestionsMatch[1]) } catch {}
+    // Strategy 3: everything if it starts with DOCTYPE
+    if (!html && text.trim().startsWith("<!DOCTYPE")) {
+      html = text.trim()
     }
 
-    // If no HTML, it's a conversational response
-    const conversational = !html
-    const reply = conversational
-      ? text.replace(/AGENT_SUGGESTIONS:[\s\S]*$/, "").trim()
-      : (agentResponseMatch?.[1]?.trim() || "Website built and ready!")
+    // Extract suggestions
+    const suggestions = []
+    const lines = text.split("\n")
+    for (const line of lines) {
+      if (line.startsWith("SUGGEST:")) {
+        suggestions.push(line.replace("SUGGEST:", "").trim())
+      }
+    }
 
-    return res.status(200).json({
-      html,
-      reply,
-      suggestions,
-      conversational,
-      tokens: d.usage?.output_tokens || 0,
-    })
+    // Fallback suggestions
+    if (suggestions.length === 0) {
+      suggestions.push(
+        "Change the color scheme to dark and modern",
+        "Add a pricing section with 3 tiers",
+        "Make the hero section more impactful"
+      )
+    }
 
-  } catch(e) {
+    const reply = isRefine
+      ? "Done! I've updated the website with your changes."
+      : `Your website is ready! I've built a complete professional site with navigation, hero, services, testimonials, contact form and footer.`
+
+    return res.status(200).json({ html, reply, suggestions, tokens: d.usage?.output_tokens || 0 })
+
+  } catch (e) {
     return res.status(500).json({ error: e.message })
   }
 }
