@@ -125,6 +125,10 @@ export default function WebsiteBuilder() {
         setHtml(data.html)
         setView("preview")          // auto-switch to preview when site is ready
         upsertProject(data.html)
+      } else {
+        // HTML extraction failed — log what we got
+        console.warn("website-agent: html null. debug_raw_start:", data.debug_raw_start)
+        console.warn("website-agent: debug_raw_end:", data.debug_raw_end)
       }
 
     } catch (e) {
