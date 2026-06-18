@@ -1,511 +1,534 @@
-// pages/website-builder.js — SIXXAB AI · Website Builder MicroSaaS
-// Dedicated API (/api/website-build) with 8000 tokens — no truncation
+// pages/website-builder.js — SIXXAB AI Website Builder
+// Agent-based, conversational. Describe → Build → Refine → Deploy.
+// Like Emergent: natural language drives everything.
 import Head from "next/head"
 import SixxabNav from "../components/SixxabNav"
-import { useState, useEffect, useRef } from "react"
-const N="#0A0E1A",AMBER="#EF9F27",CHALK="#F5F5F0",GREEN="#1D9E75",BLUE="#378ADD",PINK="#EC4899",PURPLE="#7C3AED"
-const TEMPLATES=[
-  {id:"corporate",label:"Corporate",     accent:"#0EA5E9",bg:"#0F1B2D",desc:"Tech, Finance, Legal"},
-  {id:"bold",     label:"Bold & Modern", accent:"#EF9F27",bg:"#0A0E1A",desc:"Startups, SaaS, Agencies"},
-  {id:"warm",     label:"Warm & Local",  accent:"#F97316",bg:"#7C2D12",desc:"HVAC, Plumbing, Local"},
-  {id:"fresh",    label:"Fresh & Clean", accent:"#10B981",bg:"#064E3B",desc:"Health, Wellness"},
-  {id:"luxury",   label:"Luxury",        accent:"#D4AF37",bg:"#1F1F1F",desc:"Real Estate, Photography"},
+import { useState, useEffect, useRef, useCallback } from "react"
+
+const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
+const GREEN = "#1D9E75", BLUE = "#2563EB", PINK = "#EC4899"
+
+// ── Client storage ────────────────────────────────────────────────────────────
+const CL_KEY = "sixxab_wb_v2_clients"
+function loadClients() { try { return JSON.parse(localStorage.getItem(CL_KEY)||"[]") } catch { return [] } }
+function saveClients(l) { try { localStorage.setItem(CL_KEY, JSON.stringify(l.slice(0,20))) } catch {} }
+
+// ── Starter prompts shown on empty state ─────────────────────────────────────
+const STARTERS = [
+  { icon:"🏢", label:"Tech consulting firm", prompt:"Build a professional website for BigTech Consulting — an enterprise AI transformation and IT strategy consultancy based in Dallas, TX. Services: Digital Transformation, Cloud Migration, Cybersecurity, Data Analytics. Corporate blue and slate color scheme, authoritative typography." },
+  { icon:"🔧", label:"HVAC business", prompt:"Build a website for Dallas Pro HVAC — a local air conditioning and heating company serving DFW. Include emergency contact button, services (AC repair, installation, maintenance plans), trust badges, 5-star reviews, and a strong local SEO focus." },
+  { icon:"⚖️", label:"Law firm", prompt:"Create a website for Morrison & Associates — a Dallas family law and estate planning firm. Professional, trustworthy. Dark navy palette with gold accents. Include practice areas, attorney bio, consultation booking, FAQ, and client testimonials." },
+  { icon:"🏠", label:"Real estate agent", prompt:"Build a website for Sarah Johnson Realty — a luxury real estate agent specialising in Dallas upscale properties. Elegant, warm. Services: buyer representation, seller marketing, property valuations. Include featured listings section and market reports." },
+  { icon:"💪", label:"Personal trainer", prompt:"Create a website for Jake Morrison Fitness — an online and in-person personal training service in Dallas. Bold, energetic design. Programs: weight loss, muscle building, athlete training. Include before/after section, program pricing, and free consultation CTA." },
+  { icon:"🍕", label:"Restaurant", prompt:"Build a website for Rosario's Kitchen — an authentic Italian restaurant in Dallas. Warm, inviting. Include menu highlights, reservation system, chef story, gallery, and location/hours." },
 ]
-const INDUSTRIES=["Technology Consulting","IT Consulting & MSP","Digital Marketing Agency","HVAC & Air Conditioning","Real Estate","Legal Services","Business Consulting","Financial Planning","Health & Wellness","Roofing & Construction","Landscaping","Plumbing & Electrical","Auto Repair","Restaurant & Food","Retail & E-commerce","Photography","Cleaning Services","Other"]
-const STAGES=[
-  {id:"design",label:"Design Brief",  icon:"ti-palette",        color:AMBER, desc:"AI strategy, copy and structure"},
-  {id:"build", label:"Build Website", icon:"ti-code",           color:BLUE,  desc:"Complete HTML/CSS — 13 sections"},
-  {id:"deploy",label:"Deploy",        icon:"ti-brand-vercel",   color:GREEN, desc:"Vercel one-click or download"},
-  {id:"social",label:"Social Pages",  icon:"ti-share",          color:PINK,  desc:"LinkedIn, Facebook, Instagram, X"},
-]
-const CLIENTS_KEY="sixxab_wb_clients"
-const EMPTY={bizName:"",industry:"Technology Consulting",tagline:"",services:"",phone:"",email:"",address:"Dallas, TX",website:"",template:"corporate"}
 
 export default function WebsiteBuilder() {
-  const [clients,      setClients]      = useState([])
-  const [activeId,     setActiveId]     = useState(null)
-  const [form,         setForm]         = useState({...EMPTY})
-  const [stage,        setStage]        = useState("design")
-  const [loading,      setLoading]      = useState(false)
-  const [designOut,    setDesignOut]    = useState("")
-  const [htmlCode,     setHtmlCode]     = useState("")
-  const [progress,     setProgress]     = useState(0)
-  const [previewing,   setPreviewing]   = useState(false)
-  const [deploying,    setDeploying]    = useState(false)
-  const [deployResult, setDeployResult] = useState(null)
-  const [socialP,      setSocialP]      = useState("linkedin")
-  const [socialOut,    setSocialOut]    = useState("")
-  const [socialLoading,setSocialLoading]= useState(false)
-  const [copied,       setCopied]       = useState(false)
-  const [toast,        setToast]        = useState(null)
-  const [showClients,  setShowClients]  = useState(false)
-  const timer = useRef(null)
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [clients,       setClients]      = useState([])
+  const [activeId,      setActiveId]     = useState(null)
+  const [messages,      setMessages]     = useState([])    // [{role,content,html?,suggestions?,ts}]
+  const [currentHtml,   setCurrentHtml]  = useState("")
+  const [input,         setInput]        = useState("")
+  const [loading,       setLoading]      = useState(false)
+  const [view,          setView]         = useState("split") // split | preview | code
+  const [deploying,     setDeploying]    = useState(false)
+  const [deployResult,  setDeployResult] = useState(null)
+  const [showClients,   setShowClients]  = useState(false)
+  const [toast,         setToast]        = useState(null)
+  const [tokens,        setTokens]       = useState(0)
+  const [bizName,       setBizName]      = useState("")
+  const inputRef  = useRef(null)
+  const chatRef   = useRef(null)
+  const bottomRef = useRef(null)
 
-  useEffect(()=>{ try{setClients(JSON.parse(localStorage.getItem(CLIENTS_KEY)||"[]"))}catch{} },[])
+  useEffect(() => {
+    const saved = loadClients()
+    setClients(saved)
+  }, [])
 
-  function showToast(msg,ok=true){setToast({msg,ok});setTimeout(()=>setToast(null),4000)}
-  const set=(k,v)=>setForm(f=>({...f,[k]:v}))
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior:"smooth" })
+  }, [messages, loading])
 
-  function newClient(){
-    setForm({...EMPTY});setActiveId(null)
-    setDesignOut("");setHtmlCode("");setDeployResult(null);setSocialOut("")
-    setStage("design");setPreviewing(false)
+  function showToast(msg, ok=true) {
+    setToast({msg,ok}); setTimeout(()=>setToast(null),4000)
   }
 
-  function saveClient(){
-    const now=new Date().toISOString()
-    let updated
-    if(activeId){
-      updated=clients.map(c=>c.id===activeId?{...c,...form,updatedAt:now}:c)
-    } else {
-      const id=Date.now()
-      updated=[...clients,{...form,id,createdAt:now}]
-      setActiveId(id)
+  // ── Client management ─────────────────────────────────────────────────────
+  function newProject() {
+    setActiveId(null); setMessages([]); setCurrentHtml("")
+    setInput(""); setDeployResult(null); setBizName("")
+  }
+
+  function saveProject(html, msgs, name) {
+    const id = activeId || Date.now()
+    const proj = {
+      id, name: name||bizName||"Untitled project",
+      html, messages:msgs.slice(-10), // keep last 10
+      updatedAt: new Date().toISOString(),
+      preview: html.match(/<title>(.*?)<\/title>/i)?.[1] || name || "Website"
     }
-    setClients(updated)
-    try{localStorage.setItem(CLIENTS_KEY,JSON.stringify(updated))}catch{}
-    showToast(form.bizName+" saved")
+    const updated = activeId
+      ? clients.map(c => c.id===activeId ? proj : c)
+      : [proj, ...clients].slice(0,20)
+    setClients(updated); saveClients(updated)
+    if (!activeId) setActiveId(id)
   }
 
-  function loadClient(c){
-    setForm({...EMPTY,...c});setActiveId(c.id)
-    setDesignOut("");setHtmlCode("");setDeployResult(null);setSocialOut("")
-    setStage("design");setPreviewing(false);setShowClients(false)
-    showToast("Loaded "+c.bizName)
+  function loadProject(proj) {
+    setActiveId(proj.id)
+    setMessages(proj.messages || [])
+    setCurrentHtml(proj.html || "")
+    setBizName(proj.name)
+    setDeployResult(null)
+    setShowClients(false)
+    showToast(`Loaded: ${proj.name}`)
   }
 
-  function deleteClient(id){
-    const updated=clients.filter(c=>c.id!==id)
-    setClients(updated)
-    try{localStorage.setItem(CLIENTS_KEY,JSON.stringify(updated))}catch{}
-    if(activeId===id)newClient()
+  function deleteProject(id) {
+    const updated = clients.filter(c=>c.id!==id)
+    setClients(updated); saveClients(updated)
+    if (activeId===id) newProject()
     showToast("Deleted")
   }
 
-  async function generate(action){
-    if(!form.bizName||!form.industry){showToast("Enter business name and industry",false);return}
-    setLoading(true)
-    if(action==="design")setDesignOut("")
-    if(action==="build"){setHtmlCode("");setPreviewing(false);setProgress(0);timer.current=setInterval(()=>setProgress(p=>p<88?p+(p<50?3:p<75?2:1):p),900)}
-    try{
-      const r=await fetch("/api/website-build",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,bizData:form})})
-      const d=await r.json()
-      if(action==="build"){clearInterval(timer.current);setProgress(100)}
-      if(!r.ok||d.error){showToast(d.error||action+" failed",false);setLoading(false);return}
-      if(action==="design"){
-        setDesignOut(d.result||"")
-        saveClient()
-      } else {
-        const raw=d.result||""
-        const match=raw.match(/<!DOCTYPE html>[\s\S]*<\/html>/i)
-        const clean=match?match[0]:"<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><title>"+form.bizName+"</title></head><body>"+raw+"</body></html>"
-        setHtmlCode(clean)
-        showToast("Built! Preview below → deploy when ready")
-        // Save html to client record
-        if(activeId){
-          const updated=clients.map(c=>c.id===activeId?{...c,...form,html:clean,builtAt:new Date().toISOString()}:c)
-          setClients(updated);try{localStorage.setItem(CLIENTS_KEY,JSON.stringify(updated))}catch{}
-        }
-      }
-    } catch(e){clearInterval(timer.current);showToast("Error: "+e.message,false)}
-    setLoading(false)
-  }
+  // ── Send message to agent ─────────────────────────────────────────────────
+  const send = useCallback(async (text) => {
+    const msg = (text || input).trim()
+    if (!msg || loading) return
+    setInput("")
 
-  async function deployToVercel(){
-    if(!htmlCode){showToast("Build the website first",false);setStage("build");return}
-    setDeploying(true);setDeployResult(null)
-    try{
-      const slug=form.bizName.toLowerCase().replace(/[^a-z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")
-      const r=await fetch("/api/deploy-vercel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({html:htmlCode,projectName:slug,bizName:form.bizName})})
-      const d=await r.json()
-      setDeployResult(d)
-      if(d.deployed){
-        showToast("Deploying "+form.bizName+" — live in ~60s!")
-        if(activeId){
-          const updated=clients.map(c=>c.id===activeId?{...c,vercelUrl:d.url,deployedAt:new Date().toISOString(),status:"deployed"}:c)
-          setClients(updated);try{localStorage.setItem(CLIENTS_KEY,JSON.stringify(updated))}catch{}
-        }
-      } else if(d.needsSetup){
-        showToast("Add VERCEL_TOKEN to Vercel env vars — guide below",false)
-      } else {
-        showToast(d.error||"Deploy failed",false)
+    const userMsg = { role:"user", content:msg, ts:Date.now() }
+    const next = [...messages, userMsg]
+    setMessages(next)
+    setLoading(true)
+
+    // Extract business name from first message
+    if (!bizName && messages.length === 0) {
+      const nameMatch = msg.match(/for ([A-Z][A-Za-z\s&']+?)[\s,—–]|called ([A-Z][A-Za-z\s&']+)/i)
+      if (nameMatch) setBizName((nameMatch[1]||nameMatch[2]).trim())
+    }
+
+    try {
+      const r = await fetch("/api/website-agent", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({
+          messages: next.map(m=>({role:m.role, content:m.content})),
+          currentHtml: currentHtml || undefined,
+          businessContext: bizName ? `Business name: ${bizName}` : undefined,
+        })
+      })
+
+      const d = await r.json()
+      if (!r.ok || d.error) {
+        setMessages(m=>[...m,{ role:"assistant", content:`Error: ${d.error||"API call failed"}`, ts:Date.now() }])
+        setLoading(false); return
       }
-    } catch(e){showToast("Error: "+e.message,false)}
+
+      const assistantMsg = {
+        role: "assistant",
+        content: d.reply || "Done!",
+        html: d.html || null,
+        suggestions: d.suggestions || [],
+        conversational: d.conversational,
+        ts: Date.now(),
+      }
+
+      const final = [...next, assistantMsg]
+      setMessages(final)
+      setTokens(t=>t+(d.tokens||0))
+
+      if (d.html) {
+        setCurrentHtml(d.html)
+        saveProject(d.html, final, bizName)
+      }
+
+    } catch(e) {
+      setMessages(m=>[...m,{ role:"assistant", content:`Network error: ${e.message}`, ts:Date.now() }])
+    }
+
+    setLoading(false)
+    setTimeout(()=>inputRef.current?.focus(), 100)
+  }, [input, messages, currentHtml, bizName, loading])
+
+  // ── Deploy to Vercel ──────────────────────────────────────────────────────
+  async function deploy() {
+    if (!currentHtml) { showToast("Build a website first", false); return }
+    setDeploying(true); setDeployResult(null)
+    try {
+      const slug = (bizName||"sixxab-site").toLowerCase().replace(/[^a-z0-9]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"")
+      const r = await fetch("/api/deploy-vercel", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ html:currentHtml, projectName:slug, bizName })
+      })
+      const d = await r.json()
+      setDeployResult(d)
+      if (d.deployed) showToast("Deploying! Live in ~60 seconds 🚀")
+      else if (d.needsSetup) showToast("Add VERCEL_TOKEN to deploy", false)
+      else showToast(d.error||"Deploy failed",false)
+    } catch(e) { showToast("Error: "+e.message,false) }
     setDeploying(false)
   }
 
-  async function generateSocial(){
-    if(!form.bizName){showToast("Enter business name",false);return}
-    setSocialLoading(true);setSocialOut("")
-    try{
-      const r=await fetch("/api/create-social-page",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...form,platform:socialP})})
-      const d=await r.json()
-      setSocialOut(d.result||d.error||"Error")
-    } catch(e){setSocialOut("Error: "+e.message)}
-    setSocialLoading(false)
+  // ── Download HTML ─────────────────────────────────────────────────────────
+  function download() {
+    if (!currentHtml) return
+    const a = document.createElement("a")
+    a.href = URL.createObjectURL(new Blob([currentHtml],{type:"text/html"}))
+    a.download = `${(bizName||"website").toLowerCase().replace(/\s+/g,"-")}.html`
+    a.click(); showToast("Downloaded!")
   }
 
-  function downloadHtml(){
-    if(!htmlCode)return
-    const a=document.createElement("a")
-    a.href=URL.createObjectURL(new Blob([htmlCode],{type:"text/html"}))
-    a.download=form.bizName.toLowerCase().replace(/\s+/g,"-")+".html"
-    a.click();showToast("Downloaded!")
-  }
+  const hasWebsite = !!currentHtml
+  const htmlSize   = currentHtml ? `${(currentHtml.length/1024).toFixed(0)}KB` : ""
 
-  const tmpl=TEMPLATES.find(t=>t.id===form.template)||TEMPLATES[0]
-  const curStage=STAGES.find(s=>s.id===stage)||STAGES[0]
-
-  return(
+  return (
     <>
-      <Head><title>SIXXAB AI — Website Builder MicroSaaS</title></Head>
+      <Head>
+        <title>SIXXAB AI — Website Builder · Agent-based</title>
+        <meta name="description" content="Describe your business in plain language. AI builds your complete website instantly. Refine with conversation. Deploy to Vercel in one click."/>
+      </Head>
+
       <style>{`
-        body{background:#F4F4F0;font-family:'Inter',system-ui,sans-serif}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#0A0E1A;font-family:'Inter',system-ui,sans-serif;height:100vh;overflow:hidden}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .fu{animation:fadeUp .3s ease both}
-        .card{background:#fff;border-radius:13px;border:1px solid #E2E8F0;overflow:hidden}
-        .inp{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:9px;font-size:13px;color:${N};background:#fff;font-family:inherit;outline:none;transition:border .15s}
-        .inp:focus{border-color:${AMBER}}
-        select.inp{cursor:pointer}
-        textarea.inp{resize:vertical;line-height:1.65}
-        .lbl{font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.09em;display:block;margin-bottom:5px}
-        .stab{display:flex;align-items:center;gap:6px;padding:10px 16px;cursor:pointer;border:none;background:transparent;font-family:inherit;font-size:12.5px;font-weight:500;color:#64748B;border-bottom:2px solid transparent;transition:all .14s;white-space:nowrap}
-        .stab.on{color:var(--sc);border-bottom-color:var(--sc);font-weight:700}
-        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${AMBER};border-radius:2px}
-        @media(max-width:900px){.wbg{grid-template-columns:1fr!important}}
+        @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+        .fu{animation:fadeUp .25s ease both}
+        /* Scrollbar */
+        ::-webkit-scrollbar{width:3px;height:3px}
+        ::-webkit-scrollbar-thumb{background:rgba(239,159,39,.4);border-radius:2px}
+        /* Input */
+        .chat-inp{
+          flex:1;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);
+          border-radius:12px;padding:12px 16px;font-size:14px;color:#F5F5F0;
+          font-family:inherit;outline:none;resize:none;line-height:1.55;
+          transition:border .15s;max-height:120px;
+        }
+        .chat-inp:focus{border-color:rgba(239,159,39,.6)}
+        .chat-inp::placeholder{color:rgba(245,245,240,.3)}
+        /* Suggestion pill */
+        .sugg{
+          padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.12);
+          background:rgba(255,255,255,.05);color:rgba(245,245,240,.6);
+          font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;
+          white-space:nowrap;text-align:left;
+        }
+        .sugg:hover{background:rgba(239,159,39,.12);border-color:rgba(239,159,39,.4);color:#EF9F27}
+        /* View toggle */
+        .vtab{
+          padding:5px 12px;border-radius:7px;border:none;cursor:pointer;
+          font-family:inherit;font-size:12px;font-weight:500;transition:all .14s;
+        }
+        .vtab.on{background:rgba(255,255,255,.12);color:#F5F5F0}
+        .vtab.off{background:transparent;color:rgba(245,245,240,.4)}
+        /* Project card */
+        .proj-card{
+          display:flex;align-items:center;gap:10px;padding:10px 14px;
+          cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);
+          transition:background .12s;
+        }
+        .proj-card:hover{background:rgba(255,255,255,.04)}
+        .proj-card.active{background:rgba(239,159,39,.08);border-left:2px solid #EF9F27}
       `}</style>
 
       <SixxabNav active="/website-builder"/>
-      {toast&&<div style={{position:"fixed",bottom:20,right:16,left:16,maxWidth:380,marginLeft:"auto",zIndex:999,padding:"11px 16px",borderRadius:11,background:toast.ok?"#E1F5EE":"#FEF2F2",border:`1px solid ${toast.ok?"#6EE7B7":"#FECACA"}`,fontSize:13,fontWeight:500,color:toast.ok?"#085041":"#991B1B",boxShadow:"0 4px 20px rgba(0,0,0,.15)",animation:"fadeUp .3s ease"}}>{toast.ok?"✓":"✗"} {toast.msg}</div>}
 
-      {/* Header */}
-      <div style={{background:N,padding:"13px 4%",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:44,height:44,borderRadius:11,background:"rgba(124,58,237,.18)",border:"1.5px solid rgba(124,58,237,.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <i className="ti ti-device-desktop" style={{fontSize:22,color:"#A78BFA"}} aria-hidden="true"/>
-            </div>
-            <div>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:2}}>
-                <h1 style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,color:CHALK,letterSpacing:.3}}>SIXXAB <span style={{color:"#A78BFA",fontStyle:"italic"}}>Website Builder</span></h1>
-                <span style={{padding:"2px 9px",borderRadius:20,background:"rgba(124,58,237,.15)",border:"1px solid rgba(124,58,237,.35)",fontSize:10,fontWeight:600,color:"#C4B5FD"}}>MicroSaaS · COO Suite</span>
+      {/* Toast */}
+      {toast&&<div style={{position:"fixed",bottom:20,right:16,left:16,maxWidth:360,marginLeft:"auto",zIndex:999,padding:"10px 16px",borderRadius:10,background:toast.ok?"#E1F5EE":"#FEF2F2",border:`1px solid ${toast.ok?"#6EE7B7":"#FECACA"}`,fontSize:13,fontWeight:500,color:toast.ok?"#085041":"#991B1B",boxShadow:"0 4px 24px rgba(0,0,0,.3)",animation:"fadeUp .25s ease"}}>{toast.ok?"✓":"✗"} {toast.msg}</div>}
+
+      {/* Main layout */}
+      <div style={{display:"flex",height:"calc(100vh - 52px)"}}>
+
+        {/* ── LEFT SIDEBAR: Projects + Chat ── */}
+        <div style={{width:380,flexShrink:0,display:"flex",flexDirection:"column",borderRight:"1px solid rgba(255,255,255,.07)",background:"#0D1117"}}>
+
+          {/* Sidebar header */}
+          <div style={{padding:"12px 14px",borderBottom:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:28,height:28,borderRadius:8,background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <i className="ti ti-device-desktop" style={{fontSize:14,color:"#A78BFA"}} aria-hidden="true"/>
               </div>
-              <p style={{fontSize:11.5,color:"rgba(245,245,240,.4)"}}>Design → Build → Preview → Deploy Vercel → Social Media Pages</p>
+              <div>
+                <div style={{fontSize:13,fontWeight:700,color:CHALK}}>Website Builder</div>
+                <div style={{fontSize:10.5,color:"rgba(245,245,240,.35)"}}>AI agent · describe → build → deploy</div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>setShowClients(s=>!s)}
+                style={{padding:"4px 10px",borderRadius:7,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",fontSize:11.5,color:"rgba(245,245,240,.5)",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                <i className="ti ti-folders" style={{fontSize:11}} aria-hidden="true"/>
+                {clients.length}
+              </button>
+              <button onClick={newProject}
+                style={{padding:"4px 10px",borderRadius:7,background:AMBER,color:N,border:"none",fontSize:11.5,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                + New
+              </button>
             </div>
           </div>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <button onClick={()=>setShowClients(s=>!s)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",borderRadius:8,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",cursor:"pointer",fontFamily:"inherit",color:CHALK,fontSize:12}}>
-              <i className="ti ti-users" style={{fontSize:12,color:AMBER}} aria-hidden="true"/>{clients.length} clients
-            </button>
-            <button onClick={newClient} style={{padding:"7px 14px",borderRadius:8,background:AMBER,color:N,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
-              <i className="ti ti-plus" style={{fontSize:11}} aria-hidden="true"/>New client
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Client panel */}
-      {showClients&&(
-        <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"14px 4%"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontSize:13,fontWeight:600,color:N}}>Client websites ({clients.length})</div>
-            <button onClick={()=>setShowClients(false)} style={{background:"none",border:"none",cursor:"pointer",color:"#94A3B8",fontSize:20}}>×</button>
-          </div>
-          {clients.length===0?<div style={{fontSize:13,color:"#94A3B8"}}>No clients yet. Add details below and click Save.</div>:(
-            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {clients.map(c=>(
-                <div key={c.id} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 13px",borderRadius:10,border:`1px solid ${activeId===c.id?AMBER:"#E2E8F0"}`,background:activeId===c.id?"#FFFBF2":"#F8F9FA",cursor:"pointer"}} onClick={()=>loadClient(c)}>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:N}}>{c.bizName}</div>
-                    <div style={{fontSize:11,color:"#94A3B8"}}>{c.industry}</div>
-                    {c.vercelUrl&&<a href={c.vercelUrl} target="_blank" rel="noopener noreferrer" style={{fontSize:10.5,color:GREEN,textDecoration:"none"}} onClick={e=>e.stopPropagation()}>Live site ↗</a>}
+          {/* Projects drawer */}
+          {showClients&&(
+            <div style={{borderBottom:"1px solid rgba(255,255,255,.07)",maxHeight:200,overflowY:"auto",flexShrink:0}}>
+              {clients.length===0 ? (
+                <div style={{padding:"16px 14px",fontSize:12.5,color:"rgba(245,245,240,.3)"}}>No projects yet. Start building below.</div>
+              ) : clients.map(c=>(
+                <div key={c.id} className={`proj-card${activeId===c.id?" active":""}`} onClick={()=>loadProject(c)}>
+                  <div style={{width:32,height:24,borderRadius:5,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.08)",flexShrink:0,overflow:"hidden",fontSize:6,color:"rgba(245,245,240,.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    {c.html?"HTML":"···"}
                   </div>
-                  <button onClick={e=>{e.stopPropagation();deleteClient(c.id)}} style={{background:"none",border:"none",cursor:"pointer",color:"#FECACA",fontSize:16}}>×</button>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12.5,fontWeight:500,color:CHALK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.name||c.preview||"Untitled"}</div>
+                    <div style={{fontSize:10.5,color:"rgba(245,245,240,.3)"}}>{new Date(c.updatedAt||Date.now()).toLocaleDateString()}</div>
+                  </div>
+                  <button onClick={e=>{e.stopPropagation();deleteProject(c.id)}} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(245,245,240,.2)",fontSize:15,padding:"0 2px"}}>×</button>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Stage tabs */}
-      <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"0 4%",display:"flex",overflowX:"auto"}}>
-        {STAGES.map(s=>(
-          <button key={s.id} className={`stab${stage===s.id?" on":""}`} style={{"--sc":s.color}} onClick={()=>{setStage(s.id);setPreviewing(false)}}>
-            <i className={`ti ${s.icon}`} style={{fontSize:12,color:stage===s.id?s.color:"#94A3B8"}} aria-hidden="true"/>
-            {s.label}
-            {s.id==="build"&&htmlCode&&<span style={{width:7,height:7,borderRadius:"50%",background:GREEN,display:"inline-block",marginLeft:2}}/>}
-            {s.id==="deploy"&&deployResult?.deployed&&<span style={{width:7,height:7,borderRadius:"50%",background:GREEN,display:"inline-block",marginLeft:2}}/>}
-          </button>
-        ))}
-      </div>
-
-      {/* Build progress */}
-      {loading&&stage==="build"&&progress>0&&progress<100&&(
-        <div style={{background:"#fff",padding:"8px 4% 10px",borderBottom:"1px solid #E8ECF4"}}>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:11.5,color:"#64748B",marginBottom:4}}><span>Building {form.bizName||"website"} — 13 sections, full HTML/CSS…</span><span>{progress}%</span></div>
-          <div style={{height:5,borderRadius:3,background:"#F1F5F9",overflow:"hidden"}}><div style={{height:"100%",width:progress+"%",background:BLUE,borderRadius:3,transition:"width .8s ease"}}/></div>
-        </div>
-      )}
-
-      <div style={{maxWidth:1280,margin:"0 auto",padding:"16px 16px 60px"}}>
-        <div className="wbg" style={{display:"grid",gridTemplateColumns:"270px 1fr",gap:14,alignItems:"start"}}>
-
-          {/* LEFT: form */}
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <div className="card">
-              <div style={{padding:"10px 13px",borderBottom:"1px solid #F1F5F9",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div style={{fontSize:12,fontWeight:700,color:N}}>{activeId?"Edit client":"New client"}</div>
-                <button onClick={saveClient} style={{padding:"4px 11px",borderRadius:7,background:AMBER,color:N,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:11.5,fontWeight:700}}>Save</button>
+          {/* Chat history */}
+          <div ref={chatRef} style={{flex:1,overflowY:"auto",padding:"14px"}}>
+            {messages.length===0 ? (
+              // Empty state — starter prompts
+              <div>
+                <div style={{fontSize:13.5,fontWeight:600,color:CHALK,marginBottom:4}}>Describe your website</div>
+                <div style={{fontSize:12.5,color:"rgba(245,245,240,.4)",lineHeight:1.6,marginBottom:16}}>Tell me about your business — name, industry, services, vibe. I'll build a complete professional website from your description.</div>
+                <div style={{fontSize:10.5,fontWeight:700,color:"rgba(245,245,240,.25)",textTransform:"uppercase",letterSpacing:".1em",marginBottom:10}}>Quick start</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {STARTERS.map((s,i)=>(
+                    <button key={i} onClick={()=>send(s.prompt)}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,.07)",background:"rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .14s"}}
+                      onMouseOver={e=>{e.currentTarget.style.background="rgba(255,255,255,.06)";e.currentTarget.style.borderColor="rgba(255,255,255,.12)"}}
+                      onMouseOut={e=>{e.currentTarget.style.background="rgba(255,255,255,.03)";e.currentTarget.style.borderColor="rgba(255,255,255,.07)"}}>
+                      <span style={{fontSize:18,flexShrink:0}}>{s.icon}</span>
+                      <div>
+                        <div style={{fontSize:12.5,fontWeight:500,color:CHALK}}>{s.label}</div>
+                        <div style={{fontSize:11,color:"rgba(245,245,240,.3)",lineHeight:1.4,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{s.prompt.slice(0,80)}…</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div style={{padding:"12px 13px",display:"flex",flexDirection:"column",gap:8}}>
-                {[["bizName","Business name *","BigTech Consulting"],["tagline","Tagline","Transforming businesses through technology"],["phone","Phone","+1 (972) 000-0000"],["email","Email","info@business.com"],["address","Location","Dallas, TX"],["website","Website URL","https://"]].map(([k,l,ph])=>(
-                  <div key={k}>
-                    <label className="lbl">{l}</label>
-                    <input className="inp" value={form[k]||""} onChange={e=>set(k,e.target.value)} placeholder={ph}/>
+            ) : (
+              // Messages
+              <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                {messages.map((m,i)=>(
+                  <div key={i} className="fu" style={{animationDelay:`${Math.min(i*0.04,0.3)}s`}}>
+                    {m.role==="user" ? (
+                      <div style={{display:"flex",justifyContent:"flex-end"}}>
+                        <div style={{maxWidth:"85%",padding:"9px 13px",borderRadius:"13px 13px 3px 13px",background:"rgba(239,159,39,.15)",border:"1px solid rgba(239,159,39,.25)",fontSize:13,color:CHALK,lineHeight:1.6,whiteSpace:"pre-wrap",wordBreak:"break-word"}}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{display:"flex",gap:9,alignItems:"flex-start"}}>
+                        <div style={{width:26,height:26,borderRadius:7,background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}}>
+                          <i className="ti ti-robot" style={{fontSize:12,color:"#A78BFA"}} aria-hidden="true"/>
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          {m.html&&(
+                            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 10px",borderRadius:8,background:"rgba(29,158,117,.12)",border:"1px solid rgba(29,158,117,.25)",marginBottom:6}}>
+                              <div style={{width:7,height:7,borderRadius:"50%",background:GREEN}}/>
+                              <span style={{fontSize:12,color:"#6EE7B7",fontWeight:500}}>Website built</span>
+                              <span style={{fontSize:11,color:"rgba(245,245,240,.3)",marginLeft:"auto"}}>{((m.html.length)/1024).toFixed(0)}KB</span>
+                            </div>
+                          )}
+                          <div style={{fontSize:13,color:"rgba(245,245,240,.75)",lineHeight:1.65}}>{m.content}</div>
+                          {m.suggestions?.length>0&&(
+                            <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:5}}>
+                              {m.suggestions.map((s,j)=>(
+                                <button key={j} className="sugg" onClick={()=>send(s)}>{s}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
-                <div>
-                  <label className="lbl">Industry *</label>
-                  <select className="inp" value={form.industry} onChange={e=>set("industry",e.target.value)}>
-                    {INDUSTRIES.map(i=><option key={i}>{i}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="lbl">Services (comma-separated)</label>
-                  <textarea className="inp" rows={2} value={form.services||""} onChange={e=>set("services",e.target.value)} placeholder="Digital Transformation, IT Strategy, Cloud..."/>
-                </div>
+                {loading&&(
+                  <div style={{display:"flex",gap:9,alignItems:"flex-start"}}>
+                    <div style={{width:26,height:26,borderRadius:7,background:"rgba(124,58,237,.25)",border:"1px solid rgba(124,58,237,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <div style={{width:10,height:10,border:"2px solid rgba(167,139,250,.3)",borderTopColor:"#A78BFA",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
+                    </div>
+                    <div style={{padding:"9px 13px",borderRadius:"13px 13px 13px 3px",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.08)"}}>
+                      <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                        {[0,1,2].map(j=>(
+                          <div key={j} style={{width:5,height:5,borderRadius:"50%",background:"rgba(245,245,240,.4)",animation:`pulse 1.2s ease ${j*0.2}s infinite`}}/>
+                        ))}
+                        <span style={{fontSize:12,color:"rgba(245,245,240,.4)",marginLeft:6}}>Building your website…</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={bottomRef}/>
               </div>
+            )}
+          </div>
+
+          {/* Chat input */}
+          <div style={{padding:"12px 14px",borderTop:"1px solid rgba(255,255,255,.07)",flexShrink:0}}>
+            <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+              <textarea
+                ref={inputRef}
+                className="chat-inp"
+                placeholder={hasWebsite?"Refine: change colors, add a section, update copy…":"Describe your business and website…"}
+                value={input}
+                rows={1}
+                onChange={e=>{
+                  setInput(e.target.value)
+                  e.target.style.height="auto"
+                  e.target.style.height=Math.min(e.target.scrollHeight,120)+"px"
+                }}
+                onKeyDown={e=>{
+                  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}
+                }}
+              />
+              <button
+                onClick={()=>send()}
+                disabled={!input.trim()||loading}
+                style={{width:40,height:40,borderRadius:10,background:input.trim()&&!loading?AMBER:"rgba(255,255,255,.06)",color:input.trim()&&!loading?N:"rgba(245,245,240,.3)",border:"none",cursor:input.trim()&&!loading?"pointer":"not-allowed",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}}>
+                <i className="ti ti-send" style={{fontSize:16}} aria-hidden="true"/>
+              </button>
+            </div>
+            {tokens>0&&<div style={{fontSize:10,color:"rgba(245,245,240,.2)",marginTop:5,textAlign:"right"}}>{tokens.toLocaleString()} tokens used this session</div>}
+          </div>
+        </div>
+
+        {/* ── RIGHT: Preview + Code ── */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+
+          {/* Preview toolbar */}
+          <div style={{height:44,background:"#111827",borderBottom:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",padding:"0 14px",gap:10,flexShrink:0}}>
+            {/* View tabs */}
+            <div style={{display:"flex",gap:3,background:"rgba(255,255,255,.05)",borderRadius:8,padding:3}}>
+              {[["split","Split"],["preview","Preview"],["code","Code"]].map(([v,l])=>(
+                <button key={v} className={`vtab ${view===v?"on":"off"}`} onClick={()=>setView(v)}>{l}</button>
+              ))}
             </div>
 
-            {/* Template */}
-            <div className="card" style={{padding:"12px 13px"}}>
-              <div style={{fontSize:12,fontWeight:700,color:N,marginBottom:8}}>Template</div>
-              {TEMPLATES.map(t=>(
-                <div key={t.id} onClick={()=>set("template",t.id)}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"7px 9px",borderRadius:9,border:`1.5px solid ${form.template===t.id?t.accent:"#E2E8F0"}`,background:form.template===t.id?`${t.accent}10`:"#F8F9FA",cursor:"pointer",marginBottom:5,transition:"all .13s"}}>
-                  <div style={{width:32,height:20,borderRadius:4,background:t.bg,flexShrink:0,border:"1px solid rgba(0,0,0,.08)",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,height:6,background:t.accent}}/>
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:12.5,fontWeight:form.template===t.id?700:400,color:N}}>{t.label}</div>
-                    <div style={{fontSize:10.5,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.desc}</div>
-                  </div>
-                  {form.template===t.id&&<div style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0}}/>}
-                </div>
-              ))}
+            {hasWebsite&&(
+              <>
+                <div style={{height:18,width:1,background:"rgba(255,255,255,.08)"}}/>
+                <span style={{fontSize:11,color:"rgba(245,245,240,.3)"}}>{htmlSize}</span>
+                {bizName&&<span style={{fontSize:12,color:"rgba(245,245,240,.4)",maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{bizName}</span>}
+              </>
+            )}
+
+            <div style={{marginLeft:"auto",display:"flex",gap:7}}>
+              {hasWebsite&&(
+                <>
+                  <button onClick={()=>{const w=window.open("","_blank");w.document.write(currentHtml);w.document.close()}}
+                    style={{padding:"5px 11px",borderRadius:7,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",fontSize:12,color:"rgba(245,245,240,.6)",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                    <i className="ti ti-external-link" style={{fontSize:11}} aria-hidden="true"/>Open
+                  </button>
+                  <button onClick={download}
+                    style={{padding:"5px 11px",borderRadius:7,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",fontSize:12,color:"rgba(245,245,240,.6)",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                    <i className="ti ti-download" style={{fontSize:11}} aria-hidden="true"/>HTML
+                  </button>
+                  <button onClick={deploy} disabled={deploying}
+                    style={{padding:"5px 14px",borderRadius:7,background:deploying?"rgba(255,255,255,.06)":N,border:`1px solid ${deploying?"rgba(255,255,255,.1)":"rgba(255,255,255,.2)"}`,fontSize:12,fontWeight:600,color:deploying?"rgba(245,245,240,.3)":CHALK,cursor:deploying?"not-allowed":"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:6}}>
+                    {deploying?<><div style={{width:10,height:10,border:"1.5px solid rgba(245,245,240,.2)",borderTopColor:CHALK,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Deploying…</>:<><i className="ti ti-brand-vercel" style={{fontSize:11}} aria-hidden="true"/>Deploy</>}
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
-          {/* RIGHT: stage content */}
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Deploy result bar */}
+          {deployResult&&(
+            <div style={{padding:"9px 16px",background:deployResult.deployed?"rgba(29,158,117,.12)":deployResult.needsSetup?"rgba(239,159,39,.08)":"rgba(220,38,38,.1)",borderBottom:`1px solid ${deployResult.deployed?"rgba(29,158,117,.25)":deployResult.needsSetup?"rgba(239,159,39,.2)":"rgba(220,38,38,.2)"}`,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+              {deployResult.deployed ? (
+                <>
+                  <div style={{width:7,height:7,borderRadius:"50%",background:GREEN}}/>
+                  <span style={{fontSize:13,color:"#6EE7B7",fontWeight:500}}>Deploying to Vercel — live in ~60 seconds</span>
+                  <a href={deployResult.url} target="_blank" rel="noopener noreferrer"
+                    style={{fontSize:12.5,color:GREEN,fontWeight:600,textDecoration:"none",marginLeft:"auto"}}>{deployResult.url} ↗</a>
+                </>
+              ) : deployResult.needsSetup ? (
+                <>
+                  <span style={{fontSize:12.5,color:AMBER,fontWeight:500}}>⚙️ Add VERCEL_TOKEN to Vercel env vars to enable one-click deploy</span>
+                  <button onClick={download} style={{marginLeft:"auto",padding:"4px 11px",borderRadius:7,background:AMBER,color:N,border:"none",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Download HTML instead →</button>
+                </>
+              ) : (
+                <span style={{fontSize:12.5,color:"#FCA5A5"}}>{deployResult.error}</span>
+              )}
+              <button onClick={()=>setDeployResult(null)} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(245,245,240,.3)",fontSize:16,marginLeft:deployResult.deployed?8:"auto",padding:0}}>×</button>
+            </div>
+          )}
 
-            {/* DESIGN */}
-            {stage==="design"&&(
-              <div>
-                <button onClick={()=>generate("design")} disabled={loading||!form.bizName}
-                  style={{width:"100%",padding:13,borderRadius:11,background:loading||!form.bizName?"#F1F5F9":AMBER,color:loading||!form.bizName?"#94A3B8":N,border:"none",cursor:loading||!form.bizName?"not-allowed":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:9,marginBottom:12}}>
-                  {loading?<><div style={{width:15,height:15,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Generating design strategy…</>:<><i className="ti ti-palette" style={{fontSize:14}} aria-hidden="true"/>Generate design brief & strategy →</>}
-                </button>
-                {designOut?(
-                  <div className="card fu">
-                    <div style={{padding:"11px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <span style={{fontSize:13,fontWeight:600,color:N}}>Design brief — {form.bizName}</span>
-                      <div style={{display:"flex",gap:7}}>
-                        <button onClick={()=>navigator.clipboard.writeText(designOut).then(()=>showToast("Copied!"))} style={{padding:"5px 12px",borderRadius:7,background:"#F1F5F9",border:"1px solid #E2E8F0",fontSize:12,cursor:"pointer",fontFamily:"inherit",color:"#64748B"}}>Copy</button>
-                        <button onClick={()=>setStage("build")} style={{padding:"5px 14px",borderRadius:7,background:BLUE,color:"#fff",border:"none",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Build website →</button>
-                      </div>
-                    </div>
-                    <div style={{padding:"16px 20px",fontSize:13.5,lineHeight:1.9,whiteSpace:"pre-wrap",maxHeight:600,overflowY:"auto",color:N}}>{designOut}</div>
-                  </div>
-                ):(
-                  <div className="card" style={{padding:"52px 24px",textAlign:"center",color:"#94A3B8"}}>
-                    <i className="ti ti-palette" style={{fontSize:44,color:"rgba(239,159,39,.25)",display:"block",marginBottom:14}} aria-hidden="true"/>
-                    <div style={{fontSize:15,fontWeight:600,color:"#64748B",marginBottom:8}}>Design Brief</div>
-                    <div style={{fontSize:13,lineHeight:1.7,maxWidth:360,margin:"0 auto"}}>AI generates a complete website strategy: brand positioning, site structure, all copy, SEO keywords and content for every section — specific to {form.bizName||"your business"} in {form.industry}.</div>
-                  </div>
-                )}
+          {/* Preview / Code area */}
+          <div style={{flex:1,overflow:"hidden",display:"flex"}}>
+            {!hasWebsite ? (
+              // No website yet
+              <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"rgba(245,245,240,.2)"}}>
+                <i className="ti ti-device-desktop" style={{fontSize:56,marginBottom:16,opacity:.3}} aria-hidden="true"/>
+                <div style={{fontSize:16,fontWeight:500,color:"rgba(245,245,240,.4)",marginBottom:8}}>Your website will appear here</div>
+                <div style={{fontSize:13,color:"rgba(245,245,240,.2)",maxWidth:340,textAlign:"center",lineHeight:1.65}}>
+                  Describe your business in the chat panel. The AI agent will build a complete professional website in seconds.
+                </div>
               </div>
-            )}
-
-            {/* BUILD */}
-            {stage==="build"&&(
-              <div>
-                <button onClick={()=>generate("build")} disabled={loading||!form.bizName}
-                  style={{width:"100%",padding:13,borderRadius:11,background:loading||!form.bizName?"#F1F5F9":BLUE,color:loading||!form.bizName?"#94A3B8":"#fff",border:"none",cursor:loading||!form.bizName?"not-allowed":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:9,marginBottom:12}}>
-                  {loading?<><div style={{width:15,height:15,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Building complete website — 30–60 seconds…</>:<><i className="ti ti-code" style={{fontSize:14}} aria-hidden="true"/>Build complete HTML/CSS website →</>}
-                </button>
-
-                {!htmlCode&&!loading&&(
-                  <div className="card" style={{marginBottom:12}}>
-                    <div style={{padding:"12px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA"}}>
-                      <div style={{fontSize:13,fontWeight:700,color:N}}>What gets built for {form.bizName||"your business"}</div>
-                      <div style={{fontSize:12,color:"#64748B"}}>Complete single-file HTML/CSS — 13 sections, real content, fully mobile-responsive</div>
-                    </div>
-                    <div style={{padding:"14px 16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
-                      {[["ti-layout-navbar","Sticky navigation + CTA"],["ti-stars","Full-viewport hero + animated stats"],["ti-grid-dots","6-card services grid"],["ti-quote","3 client testimonials"],["ti-list-numbers","4-step process section"],["ti-phone","Contact form + WhatsApp button"],["ti-device-mobile","100% mobile responsive"],["ti-brand-google","Google Analytics ready"],["ti-bolt","Scroll animations + hover effects"],["ti-receipt","Formspree contact form"]].map(([ico,label])=>(
-                        <div key={label} style={{display:"flex",alignItems:"center",gap:7,fontSize:12.5,color:"#475569"}}>
-                          <i className={`ti ${ico}`} style={{fontSize:12,color:GREEN,flexShrink:0}} aria-hidden="true"/>{label}
-                        </div>
+            ) : view==="code" ? (
+              // Code view
+              <div style={{flex:1,overflowY:"auto",padding:"16px",fontFamily:"'DM Mono',monospace",fontSize:11.5,lineHeight:1.6,color:"rgba(245,245,240,.6)",whiteSpace:"pre-wrap",wordBreak:"break-word",background:"#0D1117"}}>
+                {currentHtml}
+              </div>
+            ) : view==="preview" ? (
+              // Full preview
+              <iframe
+                key={currentHtml.length}
+                srcDoc={currentHtml}
+                style={{flex:1,border:"none",background:"#fff"}}
+                sandbox="allow-scripts allow-same-origin"
+                title="Website preview"
+              />
+            ) : (
+              // Split view
+              <div style={{flex:1,display:"flex"}}>
+                <iframe
+                  key={currentHtml.length}
+                  srcDoc={currentHtml}
+                  style={{flex:1,border:"none",borderRight:"1px solid rgba(255,255,255,.07)",background:"#fff",minWidth:0}}
+                  sandbox="allow-scripts allow-same-origin"
+                  title="Website preview"
+                />
+                <div style={{width:280,overflowY:"auto",padding:"14px",flexShrink:0}}>
+                  <div style={{fontSize:10.5,fontWeight:700,color:"rgba(245,245,240,.25)",textTransform:"uppercase",letterSpacing:".1em",marginBottom:12}}>Quick edits</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {[
+                      "Change the color scheme to dark navy and gold",
+                      "Make the hero section more impactful with a stronger headline",
+                      "Add a pricing section with 3 tiers",
+                      "Add more social proof and client logos",
+                      "Make the contact form more prominent",
+                      "Add an FAQ section with 6 questions",
+                      "Change the font to something more modern",
+                      "Add a team section with 3 bios",
+                      "Make it more mobile-friendly",
+                      "Add a video embed section",
+                    ].map((s,i)=>(
+                      <button key={i} className="sugg" onClick={()=>send(s)} style={{textAlign:"left"}}>{s}</button>
+                    ))}
+                  </div>
+                  {hasWebsite&&(
+                    <div style={{marginTop:16,padding:"12px",borderRadius:10,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)"}}>
+                      <div style={{fontSize:11,fontWeight:600,color:"rgba(245,245,240,.4)",marginBottom:8}}>Connect to SIXXAB</div>
+                      {[["📅","/calendar","Schedule posts"],["💬","/leads","Generate leads"],["📊","/social","Social pages"]].map(([ico,href,l])=>(
+                        <a key={href} href={href} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",textDecoration:"none",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
+                          <span>{ico}</span>
+                          <span style={{fontSize:12,color:"rgba(245,245,240,.5)"}}>{l}</span>
+                          <span style={{marginLeft:"auto",fontSize:11,color:"rgba(245,245,240,.2)"}}>→</span>
+                        </a>
                       ))}
                     </div>
-                    <div style={{padding:"9px 14px",borderTop:"1px solid #E8ECF4",background:"#FFFBF2",fontSize:12,color:"#92400E",display:"flex",gap:6,alignItems:"center"}}>
-                      <i className="ti ti-info-circle" style={{fontSize:12}} aria-hidden="true"/>
-                      Uses dedicated /api/website-build with 8,000 token limit — full HTML always generated, no truncation.
-                    </div>
-                  </div>
-                )}
-
-                {htmlCode&&(
-                  <div className="card fu">
-                    <div style={{padding:"11px 16px",borderBottom:"1px solid #E8ECF4",background:"#F0FDF4",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <div style={{width:8,height:8,borderRadius:"50%",background:GREEN}}/>
-                        <span style={{fontSize:13,fontWeight:700,color:"#085041"}}>{form.bizName} — website ready</span>
-                        <span style={{fontSize:11,color:"#64748B"}}>{(htmlCode.length/1024).toFixed(0)}KB</span>
-                      </div>
-                      <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-                        <button onClick={()=>setPreviewing(p=>!p)} style={{padding:"5px 12px",borderRadius:7,background:previewing?"#0A0E1A":"#EFF6FF",color:previewing?"#fff":"#1D4ED8",border:previewing?"none":"1px solid #BFDBFE",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>{previewing?"Hide":"👁 Preview"}</button>
-                        <button onClick={downloadHtml} style={{padding:"5px 12px",borderRadius:7,background:"#F0FDF4",border:"1px solid #BBF7D0",color:"#085041",fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit"}}>↓ Download</button>
-                        <button onClick={()=>navigator.clipboard.writeText(htmlCode).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500)})} style={{padding:"5px 12px",borderRadius:7,background:copied?GREEN:BLUE,color:"#fff",border:"none",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",transition:"background .2s"}}>{copied?"✓ Copied":"Copy HTML"}</button>
-                        <button onClick={()=>setStage("deploy")} style={{padding:"5px 14px",borderRadius:7,background:N,color:CHALK,border:"none",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}><i className="ti ti-brand-vercel" style={{fontSize:11}} aria-hidden="true"/>Deploy →</button>
-                      </div>
-                    </div>
-                    {previewing&&(
-                      <div style={{borderBottom:"1px solid #E8ECF4"}}>
-                        <div style={{padding:"6px 14px",background:"#F1F5F9",fontSize:11,color:"#64748B",display:"flex",alignItems:"center",gap:6}}>
-                          <i className="ti ti-device-desktop" style={{fontSize:11}} aria-hidden="true"/>Live preview — scroll to see all 13 sections
-                          <button onClick={()=>{const w=window.open("","_blank");w.document.write(htmlCode);w.document.close()}} style={{marginLeft:"auto",padding:"3px 8px",borderRadius:5,background:BLUE,color:"#fff",border:"none",fontSize:10.5,cursor:"pointer",fontFamily:"inherit"}}>Full screen ↗</button>
-                        </div>
-                        <iframe srcDoc={htmlCode} style={{width:"100%",height:580,border:"none",display:"block"}} sandbox="allow-scripts allow-same-origin" title="Website preview"/>
-                      </div>
-                    )}
-                    {!previewing&&(
-                      <div style={{padding:"12px 16px",fontSize:11,lineHeight:1.6,whiteSpace:"pre-wrap",maxHeight:380,overflowY:"auto",color:"#334155",fontFamily:"'DM Mono',monospace",background:"#F8FAFB"}}>
-                        {htmlCode.slice(0,2500)}{htmlCode.length>2500&&"\n\n... ["+((htmlCode.length-2500)/1024).toFixed(0)+"KB more — click Preview or Copy HTML for full code] ..."}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* DEPLOY */}
-            {stage==="deploy"&&(
-              <div className="fu" style={{display:"flex",flexDirection:"column",gap:12}}>
-                {!htmlCode&&(
-                  <div style={{padding:"14px 18px",borderRadius:12,background:"#FEF3C7",border:"1px solid #FCD34D",fontSize:13,color:"#92400E",display:"flex",gap:10,alignItems:"center"}}>
-                    <i className="ti ti-alert-triangle" style={{fontSize:16,flexShrink:0}} aria-hidden="true"/>
-                    Build the website first (Step 02) before deploying.
-                    <button onClick={()=>setStage("build")} style={{marginLeft:"auto",padding:"6px 14px",borderRadius:8,background:"#92400E",color:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12.5,fontWeight:600,whiteSpace:"nowrap"}}>Go to Build →</button>
-                  </div>
-                )}
-
-                <div className="card">
-                  <div style={{padding:"13px 16px",borderBottom:"1px solid #E8ECF4",background:"#F8F9FA",display:"flex",alignItems:"center",gap:10}}>
-                    <i className="ti ti-brand-vercel" style={{fontSize:20,color:N}} aria-hidden="true"/>
-                    <div>
-                      <div style={{fontSize:14,fontWeight:700,color:N}}>Deploy to Vercel</div>
-                      <div style={{fontSize:12,color:"#64748B"}}>One-click · Free · Auto HTTPS · Global CDN · Live in 60s</div>
-                    </div>
-                    {deployResult?.deployed&&<span style={{marginLeft:"auto",padding:"3px 10px",borderRadius:20,background:"#E1F5EE",border:"1px solid #6EE7B7",fontSize:11,fontWeight:700,color:"#085041"}}>Live ✓</span>}
-                  </div>
-                  <div style={{padding:"16px"}}>
-                    <button onClick={deployToVercel} disabled={deploying||!htmlCode}
-                      style={{width:"100%",padding:13,borderRadius:10,background:deploying||!htmlCode?"#F1F5F9":N,color:deploying||!htmlCode?"#94A3B8":CHALK,border:"none",cursor:deploying||!htmlCode?"not-allowed":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:9,marginBottom:12}}>
-                      {deploying?<><div style={{width:15,height:15,border:"2px solid rgba(245,245,240,.3)",borderTopColor:CHALK,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Deploying…</>:<><i className="ti ti-brand-vercel" style={{fontSize:14}} aria-hidden="true"/>{htmlCode?"Deploy to Vercel now →":"Build website first (Step 02)"}</>}
-                    </button>
-                    {deployResult&&(
-                      <div style={{padding:"14px",borderRadius:10,background:deployResult.deployed?"#F0FDF4":deployResult.needsSetup?"#FFFBF2":"#FEF2F2",border:`1px solid ${deployResult.deployed?"#BBF7D0":deployResult.needsSetup?"#FCD34D":"#FECACA"}`,marginBottom:12}}>
-                        {deployResult.deployed?(
-                          <div>
-                            <div style={{fontSize:14,fontWeight:700,color:"#085041",marginBottom:10}}>🚀 Live in ~60 seconds</div>
-                            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
-                              <a href={deployResult.url} target="_blank" rel="noopener noreferrer" style={{padding:"8px 18px",borderRadius:9,background:GREEN,color:"#fff",fontSize:13,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:6}}><i className="ti ti-external-link" style={{fontSize:12}} aria-hidden="true"/>Open live site ↗</a>
-                              <a href={deployResult.dashboard} target="_blank" rel="noopener noreferrer" style={{padding:"8px 14px",borderRadius:9,background:"#fff",border:"1px solid #BBF7D0",color:"#085041",fontSize:13,textDecoration:"none"}}>Vercel dashboard</a>
-                            </div>
-                            <div style={{fontSize:12,color:"#64748B",marginBottom:4}}>{deployResult.url}</div>
-                            <div style={{fontSize:12,color:"#94A3B8"}}>Custom domain: Vercel dashboard → project → Settings → Domains → add yourdomain.com</div>
-                          </div>
-                        ):deployResult.needsSetup?(
-                          <div>
-                            <div style={{fontSize:13,fontWeight:700,color:"#92400E",marginBottom:8}}>⚙️ Add VERCEL_TOKEN to enable one-click deploy</div>
-                            {deployResult.setupSteps?.map((step,i)=>(
-                              <div key={i} style={{display:"flex",gap:8,fontSize:12,color:"#475569",lineHeight:1.55,marginBottom:4}}>
-                                <span style={{color:AMBER,fontWeight:700,flexShrink:0,width:16}}>{i+1}.</span>
-                                {step.replace(/^\d+\.\s*/,"")}
-                              </div>
-                            ))}
-                          </div>
-                        ):(
-                          <div style={{fontSize:13,color:"#991B1B"}}><strong>Error:</strong> {deployResult.error}</div>
-                        )}
-                      </div>
-                    )}
-                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      {[
-                        {label:"Netlify (drag & drop)",color:"#00AD9F",icon:"ti-cloud-upload",desc:"Go to app.netlify.com/drop → drag HTML file → live in 30 seconds. Free.",action:()=>window.open("https://app.netlify.com/drop","_blank"),btn:"Open Netlify ↗"},
-                        {label:"Download HTML",       color:BLUE,        icon:"ti-download",  desc:"Download index.html → upload to any hosting (cPanel, SiteGround, Hostinger).",action:downloadHtml,btn:htmlCode?"Download →":"Build first"},
-                      ].map((opt,i)=>(
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:11,padding:"10px 12px",borderRadius:10,border:"1px solid #E2E8F0",background:"#F8F9FA"}}>
-                          <i className={`ti ${opt.icon}`} style={{fontSize:16,color:opt.color,flexShrink:0}} aria-hidden="true"/>
-                          <div style={{flex:1}}>
-                            <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:2}}>{opt.label}</div>
-                            <div style={{fontSize:11.5,color:"#64748B",lineHeight:1.5}}>{opt.desc}</div>
-                          </div>
-                          <button onClick={opt.action} style={{padding:"7px 13px",borderRadius:8,background:opt.color,color:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:12,fontWeight:600,whiteSpace:"nowrap"}}>{opt.btn}</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
-
-            {/* SOCIAL */}
-            {stage==="social"&&(
-              <div className="fu" style={{display:"flex",flexDirection:"column",gap:12}}>
-                <div className="card">
-                  <div style={{padding:"13px 16px",borderBottom:"1px solid #E8ECF4",background:"#FDF0F5"}}>
-                    <div style={{fontSize:14,fontWeight:700,color:N}}>Create social media pages</div>
-                    <div style={{fontSize:12,color:"#64748B"}}>Complete profile content — ready to copy and paste into each platform</div>
-                  </div>
-                  <div style={{padding:"16px"}}>
-                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-                      {[{id:"linkedin",label:"LinkedIn",icon:"ti-brand-linkedin",color:"#0A66C2"},{id:"facebook",label:"Facebook",icon:"ti-brand-facebook",color:"#1877F2"},{id:"instagram",label:"Instagram",icon:"ti-brand-instagram",color:"#E1306C"},{id:"twitter",label:"X / Twitter",icon:"ti-brand-x",color:"#000"}].map(p=>(
-                        <button key={p.id} onClick={()=>{setSocialP(p.id);setSocialOut("")}}
-                          style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:9,border:`1.5px solid ${socialP===p.id?p.color:"#E2E8F0"}`,background:socialP===p.id?`${p.color}10`:"#fff",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:socialP===p.id?700:400,color:socialP===p.id?p.color:N,transition:"all .14s"}}>
-                          <i className={`ti ${p.icon}`} style={{fontSize:14,color:socialP===p.id?p.color:"#94A3B8"}} aria-hidden="true"/>{p.label}
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={generateSocial} disabled={socialLoading||!form.bizName}
-                      style={{width:"100%",padding:12,borderRadius:10,background:socialLoading?"#F1F5F9":PINK,color:socialLoading?"#94A3B8":"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      {socialLoading?<><div style={{width:14,height:14,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Creating {socialP} content…</>:<><i className={`ti ti-brand-${socialP}`} style={{fontSize:14}} aria-hidden="true"/>Generate {socialP} page content →</>}
-                    </button>
-                  </div>
-                </div>
-                {socialOut&&(
-                  <div className="card fu">
-                    <div style={{padding:"11px 16px",borderBottom:"1px solid #E8ECF4",background:"#FDF0F5",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                      <span style={{fontSize:13,fontWeight:700,color:N}}>{({linkedin:"LinkedIn Company Page",facebook:"Facebook Business Page",instagram:"Instagram Business",twitter:"Twitter / X Profile"})[socialP]} — {form.bizName}</span>
-                      <div style={{display:"flex",gap:7}}>
-                        <button onClick={()=>navigator.clipboard.writeText(socialOut).then(()=>showToast("Copied!"))} style={{padding:"5px 12px",borderRadius:7,background:PINK,color:"#fff",border:"none",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Copy all</button>
-                        <a href="/social" style={{padding:"5px 12px",borderRadius:7,background:N,color:CHALK,fontSize:12,fontWeight:500,textDecoration:"none"}}>Connect & publish →</a>
-                      </div>
-                    </div>
-                    <div style={{padding:"16px 20px",fontSize:13.5,lineHeight:1.9,whiteSpace:"pre-wrap",maxHeight:560,overflowY:"auto",color:N}}>{socialOut}</div>
-                    <div style={{padding:"10px 16px",borderTop:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",gap:8,flexWrap:"wrap"}}>
-                      <a href="/social" style={{padding:"7px 14px",borderRadius:8,background:"#0A66C2",color:"#fff",fontSize:12.5,fontWeight:600,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}><i className="ti ti-send" style={{fontSize:11}} aria-hidden="true"/>Social Hub</a>
-                      <a href="/calendar" style={{padding:"7px 14px",borderRadius:8,background:"#FFFBF2",border:"1px solid rgba(239,159,39,.3)",color:AMBER,fontSize:12.5,fontWeight:500,textDecoration:"none"}}>📅 Schedule posts</a>
-                      <a href="/studio" style={{padding:"7px 14px",borderRadius:8,background:"#FDF0F5",border:"1px solid rgba(212,83,126,.3)",color:PINK,fontSize:12.5,fontWeight:500,textDecoration:"none"}}>✦ Content Studio</a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
           </div>
         </div>
       </div>
