@@ -40,7 +40,18 @@ export default function WebsiteBuilder() {
   const [bizName,       setBizName]      = useState("")
   const inputRef  = useRef(null)
   const chatRef   = useRef(null)
-  const bottomRef = useRef(null)
+  const bottomRef  = useRef(null)
+  // Refs to always access fresh state inside the send callback
+  const inputRef2      = useRef(input)
+  const messagesRef    = useRef(messages)
+  const currentHtmlRef = useRef(currentHtml)
+  const bizNameRef     = useRef(bizName)
+  const loadingRef     = useRef(loading)
+  useEffect(() => { inputRef2.current      = input      }, [input])
+  useEffect(() => { messagesRef.current    = messages   }, [messages])
+  useEffect(() => { currentHtmlRef.current = currentHtml}, [currentHtml])
+  useEffect(() => { bizNameRef.current     = bizName    }, [bizName])
+  useEffect(() => { loadingRef.current     = loading    }, [loading])
 
   useEffect(() => {
     const saved = loadClients()
@@ -95,17 +106,20 @@ export default function WebsiteBuilder() {
 
   // ── Send message to agent ─────────────────────────────────────────────────
   const send = useCallback(async (text) => {
-    const msg = (text || input).trim()
-    if (!msg || loading) return
+    const msg     = (text || inputRef2.current).trim()
+    const curMsgs = messagesRef.current
+    const curHtml = currentHtmlRef.current
+    const curBiz  = bizNameRef.current
+    if (!msg || loadingRef.current) return
     setInput("")
 
     const userMsg = { role:"user", content:msg, ts:Date.now() }
-    const next = [...messages, userMsg]
+    const next = [...curMsgs, userMsg]
     setMessages(next)
     setLoading(true)
 
     // Extract business name from first message
-    if (!bizName && messages.length === 0) {
+    if (!curBiz && curMsgs.length === 0) {
       const nameMatch = msg.match(/for ([A-Z][A-Za-z\s&']+?)[\s,—–]|called ([A-Z][A-Za-z\s&']+)/i)
       if (nameMatch) setBizName((nameMatch[1]||nameMatch[2]).trim())
     }
@@ -116,14 +130,16 @@ export default function WebsiteBuilder() {
         headers: { "Content-Type":"application/json" },
         body: JSON.stringify({
           messages: next.map(m=>({role:m.role, content:m.content})),
-          currentHtml: currentHtml || undefined,
-          businessContext: bizName ? `Business name: ${bizName}` : undefined,
+          currentHtml: curHtml || undefined,
+          businessContext: curBiz ? `Business name: ${curBiz}` : undefined,
         })
       })
 
       const d = await r.json()
       if (!r.ok || d.error) {
-        setMessages(m=>[...m,{ role:"assistant", content:`Error: ${d.error||"API call failed"}`, ts:Date.now() }])
+        const errMsg = d.error || "API call failed"
+        console.error("website-agent error:", errMsg, d)
+        setMessages(m=>[...m,{ role:"assistant", content:`⚠️ ${errMsg}\n\nCheck that ANTHROPIC_API_KEY is set in Vercel environment variables.`, ts:Date.now() }])
         setLoading(false); return
       }
 
@@ -142,7 +158,11 @@ export default function WebsiteBuilder() {
 
       if (d.html) {
         setCurrentHtml(d.html)
-        saveProject(d.html, final, bizName)
+        // Auto-detect project name from HTML title if not set
+        const titleMatch = d.html.match(/<title>(.*?)<\/title>/i)
+        const detectedName = bizNameRef.current || (titleMatch?.[1]?.replace(/\s*[|·-].*$/,"").trim()) || "Website"
+        if (!bizNameRef.current && detectedName) setBizName(detectedName)
+        saveProject(d.html, final, detectedName)
       }
 
     } catch(e) {
@@ -151,7 +171,8 @@ export default function WebsiteBuilder() {
 
     setLoading(false)
     setTimeout(()=>inputRef.current?.focus(), 100)
-  }, [input, messages, currentHtml, bizName, loading])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Deploy to Vercel ──────────────────────────────────────────────────────
   async function deploy() {
@@ -331,10 +352,10 @@ export default function WebsiteBuilder() {
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           {m.html&&(
-                            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 10px",borderRadius:8,background:"rgba(29,158,117,.12)",border:"1px solid rgba(29,158,117,.25)",marginBottom:6}}>
+                            <div style={{display:"flex",alignItems:"center",gap:7,padding:"6px 10px",borderRadius:8,background:"rgba(29,158,117,.12)",border:"1px solid rgba(29,158,117,.25)",marginBottom:6,cursor:"pointer"}} onClick={()=>setView("preview")}>
                               <div style={{width:7,height:7,borderRadius:"50%",background:GREEN}}/>
-                              <span style={{fontSize:12,color:"#6EE7B7",fontWeight:500}}>Website built</span>
-                              <span style={{fontSize:11,color:"rgba(245,245,240,.3)",marginLeft:"auto"}}>{((m.html.length)/1024).toFixed(0)}KB</span>
+                              <span style={{fontSize:12,color:"#6EE7B7",fontWeight:500}}>✓ Website built — click to preview</span>
+                              <span style={{fontSize:11,color:"rgba(245,245,240,.3)",marginLeft:"auto"}}>{((m.html.length)/1024).toFixed(0)}KB ↗</span>
                             </div>
                           )}
                           <div style={{fontSize:13,color:"rgba(245,245,240,.75)",lineHeight:1.65}}>{m.content}</div>
@@ -360,7 +381,7 @@ export default function WebsiteBuilder() {
                         {[0,1,2].map(j=>(
                           <div key={j} style={{width:5,height:5,borderRadius:"50%",background:"rgba(245,245,240,.4)",animation:`pulse 1.2s ease ${j*0.2}s infinite`}}/>
                         ))}
-                        <span style={{fontSize:12,color:"rgba(245,245,240,.4)",marginLeft:6}}>Building your website…</span>
+                        <span style={{fontSize:12,color:"rgba(245,245,240,.4)",marginLeft:6}}>{messagesRef.current.length===1?"Building your website — this takes 30–60 seconds…":"Updating your website…"}</span>
                       </div>
                     </div>
                   </div>

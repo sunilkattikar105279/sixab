@@ -95,8 +95,18 @@ AGENT_SUGGESTIONS: [3 specific follow-up prompts the user could try, as a JSON a
     const text = d.content?.[0]?.text || ""
 
     // Extract HTML from code block
-    const htmlMatch = text.match(/```html\n([\s\S]*?)```/)
-    const html = htmlMatch ? htmlMatch[1].trim() : null
+    // Extract HTML — try fenced code block first, then bare DOCTYPE
+    let html = null
+    const fenced = text.match(/```html[\r\n]([\s\S]*?)```/)
+           || text.match(/```[\r\n]?(<!DOCTYPE[\s\S]*?<\/html>)/)
+    if (fenced) {
+      html = fenced[1].trim()
+    } else {
+      // AI sometimes outputs HTML without fences
+      const bare = text.match(/(<!DOCTYPE html>[\s\S]*?<\/html>)/i)
+      if (bare) html = bare[1].trim()
+    }
+
 
     // Extract agent response and suggestions
     const agentResponseMatch = text.match(/AGENT_RESPONSE:\s*(.+?)(?=\nAGENT_SUGGESTIONS:|$)/s)
@@ -110,8 +120,8 @@ AGENT_SUGGESTIONS: [3 specific follow-up prompts the user could try, as a JSON a
     // If no HTML, it's a conversational response
     const conversational = !html
     const reply = conversational
-      ? text
-      : (agentResponseMatch?.[1]?.trim() || "Website updated!")
+      ? text.replace(/AGENT_SUGGESTIONS:[\s\S]*$/, "").trim()
+      : (agentResponseMatch?.[1]?.trim() || "Website built and ready!")
 
     return res.status(200).json({
       html,
