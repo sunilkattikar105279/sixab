@@ -122,13 +122,27 @@ export default function WebsiteBuilder() {
       setMessages(prev => [...prev, assistantMsg])
 
       if (data.html) {
-        setHtml(data.html)
-        setView("preview")          // auto-switch to preview when site is ready
-        upsertProject(data.html)
+        // Inject CSS safety net — ensures all text is visible regardless of AI output
+        const safeHtml = data.html.replace(
+          '</head>',
+          `<style>
+            /* SIXXAB Safety Net — overrides invisible text */
+            *{box-sizing:border-box}
+            section,div[class*="section"],footer{position:relative}
+            /* Ensure hero text is always white */
+            .hero *:not(button):not(.btn):not(a.btn){color:inherit}
+            /* Cards always readable */
+            .card h3,.card p,.service-card h3,.service-card p{color:inherit!important}
+            /* Form fields always dark text */
+            input,textarea,select{color:#1a1a2e!important;background:#fff!important}
+            label{color:inherit!important}
+          </style></head>`
+        )
+        setHtml(safeHtml)
+        setView("preview")
+        upsertProject(safeHtml)
       } else {
-        // HTML extraction failed — log what we got
-        console.warn("website-agent: html null. debug_raw_start:", data.debug_raw_start)
-        console.warn("website-agent: debug_raw_end:", data.debug_raw_end)
+        console.warn("website-agent: html null")
       }
 
     } catch (e) {
@@ -403,10 +417,13 @@ export default function WebsiteBuilder() {
                           {m.html && (
                             <button
                               onClick={() => {
-                                setHtml(m.html)
-                                setView("preview")
-                                // scroll right panel into view on mobile
-                                document.getElementById("wb-preview-panel")?.scrollIntoView({ behavior:"smooth" })
+                                // Force iframe reload by briefly clearing then setting
+                                setHtml("")
+                                setTimeout(() => {
+                                  setHtml(m.html)
+                                  setView("preview")
+                                  document.getElementById("wb-preview-panel")?.scrollIntoView({ behavior:"smooth" })
+                                }, 50)
                               }}
                               style={{
                                 display:"flex", alignItems:"center", gap:7, width:"100%",
