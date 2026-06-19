@@ -99,7 +99,7 @@ export default function WebsiteBuilder(){
       })
       const cd=await cr.json()
       if(!cr.ok||cd.error){
-        setMessages(prev=>[...prev,{role:"assistant",content:"⚠️ "+（cd.error||"Content generation failed"),error:true,ts:Date.now()}])
+        setMessages(prev=>[...prev,{role:"assistant",content:"⚠️ "+(cd.error||"Content generation failed"),error:true,ts:Date.now()}])
         setLoading(false);return
       }
       const newContent=cd.content
