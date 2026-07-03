@@ -1,7 +1,27 @@
 // pages/api/orchestrate.js — Master orchestration engine
 // Connects business profile + all agents into one strategy + execution plan
 export const config = { api: { bodyParser: { sizeLimit: '2mb' } } }
-import { supabaseAdmin, getUserFromRequest } from '../../lib/supabase'
+
+let _admin = null
+function getAdmin() {
+  if (_admin) return _admin
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  const { createClient } = require('@supabase/supabase-js')
+  _admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+  return _admin
+}
+async function getUser(req) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return null
+  const { createClient } = require('@supabase/supabase-js')
+  const { data: { user } } = await createClient(url, key).auth.getUser(token)
+  return user
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
@@ -9,8 +29,8 @@ export default async function handler(req, res) {
   const key = process.env.ANTHROPIC_API_KEY
   if (!key) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' })
 
-  const user = await getUserFromRequest(req)
-  const db = supabaseAdmin
+  const user = await getUser(req)
+  const db = getAdmin()
 
   const { goal, mode = 'full', context = {} } = req.body ?? {}
 
