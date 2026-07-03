@@ -1,49 +1,24 @@
-// pages/api/db-business.js — Business profile CRUD
-
-// ── Inline Supabase (no lib/ dependency) ─────────────────────
-let _admin = null
-function getAdmin() {
-  if (_admin) return _admin
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return null
-  const { createClient } = require('@supabase/supabase-js')
-  _admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
-  return _admin
-}
-async function getUser(req) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  const { createClient } = require('@supabase/supabase-js')
-  const client = createClient(url, key)
-  const { data: { user } } = await client.auth.getUser(token)
-  return user
-}
-// ─────────────────────────────────────────────────────────────
-
 export default async function handler(req, res) {
-  const user = await getUser(req)
-  if (!user) return res.status(401).json({ error: 'Unauthorized' })
-  const db = getAdmin()
-  if (!db) return res.status(500).json({ error: 'Database not configured — add SUPABASE env vars to Vercel' })
+  const { createClient } = require('@supabase/supabase-js')
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !svc || !anon) return res.status(500).json({ error: 'Supabase env vars not set' })
+  const token = req.headers.authorization?.replace('Bearer ', '')
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+  const { data: { user } } = await createClient(url, anon).auth.getUser(token)
+  if (!user) return res.status(401).json({ error: 'Invalid token' })
+  const db = createClient(url, svc, { auth: { autoRefreshToken: false, persistSession: false } })
   const uid = user.id
-  switch (req.method) {
-    case 'GET': {
-      const { data, error } = await db.from('business_profiles').select('*').eq('user_id', uid).maybeSingle()
-      if (error) return res.status(500).json({ error: error.message })
-      return res.status(200).json({ business: data })
-    }
-    case 'POST':
-    case 'PUT': {
-      const { data, error } = await db.from('business_profiles')
-        .upsert({ ...req.body, user_id: uid, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
-        .select().single()
-      if (error) return res.status(500).json({ error: error.message })
-      return res.status(200).json({ business: data })
-    }
-    default: return res.status(405).end()
+  if (req.method === 'GET') {
+    const { data, error } = await db.from('business_profiles').select('*').eq('user_id', uid).maybeSingle()
+    if (error) return res.status(500).json({ error: error.message })
+    return res.status(200).json({ business: data })
   }
+  if (req.method === 'POST' || req.method === 'PUT') {
+    const { data, error } = await db.from('business_profiles').upsert({ ...req.body, user_id: uid, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }).select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    return res.status(200).json({ business: data })
+  }
+  res.status(405).end()
 }
