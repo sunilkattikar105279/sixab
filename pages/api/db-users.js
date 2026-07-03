@@ -1,6 +1,6 @@
 // pages/api/db/users.js — User + profile management (admin/operator/customer)
-import { supabaseAdmin } from '../../../lib/supabase'
-import { requireRole } from '../../../lib/auth'
+import { supabaseAdmin } from '../../lib/supabase'
+import { requireRole } from '../../lib/auth'
 
 export default async function handler(req, res) {
   const { user, profile, error, status } = await requireRole(req, ['admin','operator','customer'])

@@ -1,5 +1,5 @@
 // pages/api/db/business.js — Business profile (strategy context for agents)
-import { supabaseAdmin, getUserFromRequest } from '../../../lib/supabase'
+import { supabaseAdmin, getUserFromRequest } from '../../lib/supabase'
 
 export default async function handler(req, res) {
   const user = await getUserFromRequest(req)
