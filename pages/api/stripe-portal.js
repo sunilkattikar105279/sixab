@@ -1,33 +1,44 @@
-import Stripe from 'stripe'
+// pages/api/stripe-portal.js — Stripe customer portal
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end()
 
-let _admin = null
-function getAdmin() {
-  if (_admin) return _admin
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return null
-  const { createClient } = require('@supabase/supabase-js')
-  _admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
-  return _admin
-}
-async function getUser(req) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return null
-  const token = req.headers.authorization?.replace('Bearer ', '')
-  if (!token) return null
-  const { createClient } = require('@supabase/supabase-js')
-  const { data: { user } } = await createClient(url, key).auth.getUser(token)
-  return user
-}
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY||'',{apiVersion:'2024-04-10'})
-export default async function handler(req,res) {
-  if(req.method!=='POST') return res.status(405).end()
-  const user=await getUser(req)
-  if(!user) return res.status(401).json({error:'Login required'})
-  const {data:profile}=await getAdmin().from('profiles').select('stripe_customer_id').eq('id',user.id).single()
-  if(!profile?.stripe_customer_id) return res.status(400).json({error:'No subscription found'})
-  const BASE=process.env.NEXT_PUBLIC_APP_URL||'https://www.startupsinabox.com'
-  const s=await stripe.billingPortal.sessions.create({customer:profile.stripe_customer_id,return_url:`${BASE}/billing`})
-  return res.status(200).json({url:s.url})
+  const SK = process.env.STRIPE_SECRET_KEY
+  if (!SK) return res.status(500).json({ error: "STRIPE_SECRET_KEY not set" })
+
+  const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://www.startupsinabox.com"
+
+  // Get stripe_customer_id from Supabase
+  let customerId = null
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "")
+    const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const SB_SVC  = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (token && SB_URL && SB_ANON) {
+      const ur = await fetch(`${SB_URL}/auth/v1/user`, { headers: { apikey: SB_ANON, Authorization: `Bearer ${token}` } })
+      if (ur.ok) {
+        const user = await ur.json()
+        const pr = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${user.id}&select=stripe_customer_id&limit=1`, {
+          headers: { apikey: SB_SVC || SB_ANON, Authorization: `Bearer ${SB_SVC || token}` }
+        })
+        if (pr.ok) { const [p] = await pr.json(); customerId = p?.stripe_customer_id }
+      }
+    }
+  } catch {}
+
+  if (!customerId) {
+    return res.status(400).json({ error: "No subscription found. Please subscribe to a plan first." })
+  }
+
+  try {
+    const Stripe = require("stripe")
+    const stripe = Stripe(SK)
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${BASE}/billing`,
+    })
+    return res.status(200).json({ url: session.url })
+  } catch(e) {
+    return res.status(500).json({ error: e.message })
+  }
 }
