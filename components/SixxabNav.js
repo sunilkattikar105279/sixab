@@ -2,6 +2,7 @@
 // Grouped drop-down nav with phase structure
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/router"
 
 const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0"
 
@@ -168,12 +169,85 @@ export default function SixxabNav({ active = "" }) {
           <Link href="/crm" style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:7,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",fontSize:12,color:"rgba(245,245,240,.6)",textDecoration:"none"}}>
             <i className="ti ti-address-book" style={{fontSize:11}} aria-hidden="true"/>CRM
           </Link>
-          <Link href="/orchestrator" style={{padding:"6px 14px",borderRadius:8,background:AMBER,color:N,fontSize:12.5,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}>
+          <Link href="/agents" style={{padding:"6px 14px",borderRadius:8,background:AMBER,color:N,fontSize:12.5,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:5}}>
             <i className="ti ti-crown" style={{fontSize:11}} aria-hidden="true"/>Launch
           </Link>
-          <Link href="/login" style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,.15)",color:"rgba(245,245,240,.55)",fontSize:12,textDecoration:"none"}}>
-            Sign out
-          </Link>
+
+          {/* User profile dropdown */}
+          <div ref={userRef} style={{position:"relative"}}>
+            <button
+              onClick={()=>setShowUser(s=>!s)}
+              style={{display:"flex",alignItems:"center",gap:8,padding:"4px 10px 4px 4px",borderRadius:10,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",cursor:"pointer",transition:"all .15s"}}
+              onMouseOver={e=>e.currentTarget.style.background="rgba(255,255,255,.12)"}
+              onMouseOut={e=>e.currentTarget.style.background="rgba(255,255,255,.07)"}
+            >
+              {/* Avatar */}
+              <div style={{width:28,height:28,borderRadius:8,background:`${AMBER}22`,border:`1.5px solid ${AMBER}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:AMBER,flexShrink:0}}>
+                {initials}
+              </div>
+              <div style={{textAlign:"left",maxWidth:120}}>
+                <div style={{fontSize:12,fontWeight:600,color:CHALK,lineHeight:1.2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{displayName}</div>
+                <div style={{fontSize:9.5,color:"rgba(245,245,240,.35)",lineHeight:1,textTransform:"capitalize"}}>{role}</div>
+              </div>
+              <i className={`ti ti-chevron-${showUser?"up":"down"}`} style={{fontSize:10,color:"rgba(245,245,240,.4)",flexShrink:0}} aria-hidden="true"/>
+            </button>
+
+            {/* Dropdown */}
+            {showUser && (
+              <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:220,background:"#fff",borderRadius:13,border:"1px solid #E2E8F0",boxShadow:"0 8px 32px rgba(0,0,0,.18)",zIndex:200,overflow:"hidden"}}>
+                {/* User info header */}
+                <div style={{padding:"14px 16px",borderBottom:"1px solid #F1F5F9",background:"#FAFAFA"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:`${AMBER}18`,border:`2px solid ${AMBER}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:AMBER}}>
+                      {initials}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#0A0E1A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{displayName}</div>
+                      <div style={{fontSize:11,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email}</div>
+                    </div>
+                  </div>
+                  {/* Role badge */}
+                  <div style={{marginTop:8}}>
+                    {{
+                      admin:    <span style={{padding:"2px 10px",borderRadius:20,background:"#FEF2F2",border:"1px solid #FECACA",fontSize:10.5,fontWeight:700,color:"#DC2626"}}>Admin</span>,
+                      operator: <span style={{padding:"2px 10px",borderRadius:20,background:"#F5F3FF",border:"1px solid #DDD6FE",fontSize:10.5,fontWeight:700,color:"#7C3AED"}}>Operator</span>,
+                      customer: <span style={{padding:"2px 10px",borderRadius:20,background:"#F0FDF4",border:"1px solid #BBF7D0",fontSize:10.5,fontWeight:700,color:"#1D9E75"}}>Customer</span>,
+                    }[role] || <span style={{padding:"2px 10px",borderRadius:20,background:"#F1F5F9",fontSize:10.5,color:"#64748B"}}>Customer</span>}
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div style={{padding:"6px"}}>
+                  {[
+                    { href:"/profile",  icon:"ti-user-circle", label:"My Profile" },
+                    { href:"/billing",  icon:"ti-credit-card",  label:"Billing & Plans" },
+                    ...(role==="admin"    ? [{ href:"/admin",   icon:"ti-shield-lock", label:"Admin Dashboard", color:"#DC2626" }] : []),
+                    ...(role==="operator" ? [{ href:"/admin",   icon:"ti-users",       label:"Manage Customers", color:"#7C3AED" }] : []),
+                  ].map(item => (
+                    <Link key={item.href} href={item.href}
+                      onClick={()=>setShowUser(false)}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,textDecoration:"none",color:item.color||"#0A0E1A",fontSize:13.5,fontWeight:500,transition:"background .12s"}}
+                      onMouseOver={e=>e.currentTarget.style.background="#F8F9FA"}
+                      onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                      <i className={`ti ${item.icon}`} style={{fontSize:14,color:item.color||"#64748B",width:18,textAlign:"center"}} aria-hidden="true"/>
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Sign out */}
+                <div style={{padding:"6px",borderTop:"1px solid #F1F5F9"}}>
+                  <button onClick={signOut}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:9,background:"transparent",border:"none",cursor:"pointer",color:"#DC2626",fontSize:13.5,fontWeight:500,width:"100%",fontFamily:"inherit",transition:"background .12s"}}
+                    onMouseOver={e=>e.currentTarget.style.background="#FEF2F2"}
+                    onMouseOut={e=>e.currentTarget.style.background="transparent"}>
+                    <i className="ti ti-logout" style={{fontSize:14,width:18,textAlign:"center"}} aria-hidden="true"/>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile hamburger */}
@@ -204,9 +278,23 @@ export default function SixxabNav({ active = "" }) {
               ))}
             </div>
           ))}
-          <div style={{padding:"16px 20px",borderTop:"1px solid rgba(255,255,255,.07)",marginTop:8,display:"flex",gap:10}}>
-            <Link href="/crm" onClick={()=>setMobileOpen(false)} style={{flex:1,padding:"10px",borderRadius:9,background:"rgba(255,255,255,.07)",color:CHALK,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center"}}>CRM</Link>
-            <Link href="/login" onClick={()=>setMobileOpen(false)} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid rgba(255,255,255,.15)",color:"rgba(245,245,240,.5)",fontSize:13,textDecoration:"none",textAlign:"center"}}>Sign out</Link>
+          <div style={{padding:"16px 20px",borderTop:"1px solid rgba(255,255,255,.07)",marginTop:8}}>
+            {/* Mobile user card */}
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px",borderRadius:10,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",marginBottom:10}}>
+              <div style={{width:36,height:36,borderRadius:9,background:`${AMBER}22`,border:`1.5px solid ${AMBER}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:AMBER}}>
+                {initials}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:600,color:CHALK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{displayName}</div>
+                <div style={{fontSize:11,color:"rgba(245,245,240,.35)"}}>{user?.email}</div>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <Link href="/profile" onClick={()=>setMobileOpen(false)} style={{flex:1,padding:"10px",borderRadius:9,background:"rgba(255,255,255,.07)",color:CHALK,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center",minWidth:80}}>Profile</Link>
+              <Link href="/billing" onClick={()=>setMobileOpen(false)} style={{flex:1,padding:"10px",borderRadius:9,background:"rgba(255,255,255,.07)",color:CHALK,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center",minWidth:80}}>Billing</Link>
+              <button onClick={()=>{setMobileOpen(false);signOut()}} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid rgba(220,38,38,.3)",background:"rgba(220,38,38,.1)",color:"#FCA5A5",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"inherit",minWidth:80}}>Sign out</button>
+            </div>
+            {role==="admin"&&<Link href="/admin" onClick={()=>setMobileOpen(false)} style={{display:"block",marginTop:8,padding:"10px",borderRadius:9,background:"rgba(220,38,38,.1)",border:"1px solid rgba(220,38,38,.2)",color:"#FCA5A5",fontSize:13,fontWeight:600,textDecoration:"none",textAlign:"center"}}>⚙️ Admin Dashboard</Link>}
           </div>
         </div>
       )}
