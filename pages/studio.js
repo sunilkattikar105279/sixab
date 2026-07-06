@@ -96,13 +96,13 @@ export default function StudioPage() {
     setLoading(true); setOutput(""); setPublishResult(null)
     try {
       const brandCtx = brand.name ? `\nBrand: ${brand.name} | Industry: ${brand.industry} | Audience: ${brand.audience} | Tone: ${brand.tone} | USP: ${brand.usp}` : ""
-      const r = await fetch("/api/chat", {
+      const r = await fetch("/api/studio", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ messages:[{ role:"user", content: buildPrompt(ct, params, brandCtx) }] })
+        body: JSON.stringify({ type: activeType, prompt: buildPrompt(ct, params, brandCtx), brand, params })
       })
       const d = await r.json()
       if(!r.ok || d.error) { showToast(d.error||"Generation failed",false); setLoading(false); return }
-      const text = d.reply || ""
+      const text = d.output || d.reply || d.content || ""
       setOutput(text)
       // Save to history
       const item = { id:Date.now(), type:activeType, label:ct.label, topic:params.topic||params.objective||"Generated", output:text, createdAt:new Date().toISOString() }

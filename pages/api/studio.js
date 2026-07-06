@@ -2,7 +2,7 @@
 // Handles all content generation: social posts, emails, blogs, video scripts, ads
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" })
-  const { type, params, crmContacts = [], brand = {} } = req.body ?? {}
+  const { type, params, prompt: customPrompt, crmContacts = [], brand = {} } = req.body ?? {}
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" })
 
@@ -36,8 +36,8 @@ export default async function handler(req, res) {
     brand_story: `${brandCtx}\n\nWrite the SIXXAB AI brand story in 3 versions:\n\n1. ELEVATOR (30 seconds spoken): One paragraph, conversational\n2. SOCIAL BIO (Twitter/LinkedIn): Under 160 characters  \n3. FULL STORY (2 minutes): Origin, problem, mission, vision — for About page\n\nLabel each clearly.`,
   }
 
-  const prompt = PROMPTS[type]
-  if (!prompt) return res.status(400).json({ error: `Unknown content type: ${type}` })
+  const prompt = customPrompt || PROMPTS[type]
+  if (!prompt) return res.status(400).json({ error: `Unknown content type: ${type}. Provide a custom prompt or use a known type.` })
 
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
