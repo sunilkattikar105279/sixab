@@ -1,535 +1,564 @@
 // pages/studio.js — SIXXAB AI Content Studio
-// CMO-owned: brand kit, social posts, emails, blogs, video scripts, ads
-// Syncs with CRM contacts for personalised content
+// Unified with Calendar + Social Hub via shared sixxab_social_posts store
 import Head from "next/head"
 import SixxabNav from "../components/SixxabNav"
 import { useState, useEffect, useRef } from "react"
 
-const N = "#0A0E1A", AMBER = "#EF9F27", CHALK = "#F5F5F0", PINK = "#D4537E"
+const N="#0A0E1A", AMBER="#EF9F27", CHALK="#F5F5F0", GREEN="#1D9E75", PINK="#D4537E"
 
+// ── Shared store (same key as calendar + social hub) ─────────────
+const STORE_KEY  = "sixxab_social_posts"
+const DRAFT_KEY  = "sixxab_studio_draft"
+const HIST_KEY   = "sixxab_studio_history"
+const BRAND_KEY  = "sixxab_brand"
+
+function loadPosts()      { try { return JSON.parse(localStorage.getItem(STORE_KEY)||"[]") } catch { return [] } }
+function savePosts(p)     { try { localStorage.setItem(STORE_KEY,JSON.stringify(p.slice(0,500))); window.dispatchEvent(new Event("sixxab_posts_updated")) } catch {} }
+function loadHistory()    { try { return JSON.parse(localStorage.getItem(HIST_KEY)||"[]") } catch { return [] } }
+function saveHistory(h)   { try { localStorage.setItem(HIST_KEY,JSON.stringify(h.slice(0,100))) } catch {} }
+
+// ── Content types ─────────────────────────────────────────────────
 const CONTENT_TYPES = [
-  { id:"linkedin_post",     label:"LinkedIn Post",       icon:"ti-brand-linkedin",     color:"#0A66C2", group:"Social",   desc:"High-engagement LinkedIn post with hook, body and CTA" },
-  { id:"twitter_thread",    label:"Twitter / X Thread",  icon:"ti-brand-x",            color:"#1DA1F2", group:"Social",   desc:"6–8 tweet thread that builds authority and drives traffic" },
-  { id:"instagram_carousel",label:"Instagram Carousel",  icon:"ti-brand-instagram",    color:"#E1306C", group:"Social",   desc:"7-slide carousel script with visual notes and hooks" },
-  { id:"email_campaign",    label:"Cold Email",          icon:"ti-mail",               color:"#EF9F27", group:"Email",    desc:"Cold outreach email with subject line — 4 sentences max" },
-  { id:"email_sequence",    label:"Email Sequence",      icon:"ti-mail-forward",       color:"#EF9F27", group:"Email",    desc:"5-email nurture sequence — Day 1, 3, 7, 14, 21" },
-  { id:"blog_post",         label:"Blog Post",           icon:"ti-file-text",          color:"#7C3AED", group:"Written",  desc:"600–800 word SEO-optimised blog post" },
-  { id:"video_script",      label:"Video Script",        icon:"ti-video",              color:"#DC2626", group:"Video",    desc:"YouTube/TikTok script with hooks, B-roll and CTA notes" },
-  { id:"ad_copy",           label:"Ad Copy",             icon:"ti-ad",                 color:"#378ADD", group:"Paid",     desc:"3 ad variations with headlines, body and CTA" },
-  { id:"press_release",     label:"Press Release",       icon:"ti-news",               color:"#6B7280", group:"PR",       desc:"Full press release — announcement ready to publish" },
-  { id:"brand_story",       label:"Brand Story",         icon:"ti-sparkles",           color:"#EC4899", group:"Brand",    desc:"3-format brand story: elevator, social bio, full narrative" },
+  { id:"linkedin_post",     label:"LinkedIn Post",    icon:"ti-brand-linkedin", color:"#0A66C2", group:"Social",  desc:"High-engagement post with hook, insight and CTA" },
+  { id:"twitter_thread",    label:"Twitter Thread",   icon:"ti-brand-x",        color:"#000000", group:"Social",  desc:"7-tweet thread with numbered insights" },
+  { id:"instagram_caption", label:"Instagram Caption",icon:"ti-brand-instagram",color:"#E1306C", group:"Social",  desc:"Visual caption with hashtags and CTA" },
+  { id:"facebook_post",     label:"Facebook Post",    icon:"ti-brand-facebook", color:"#1877F2", group:"Social",  desc:"Engaging community post" },
+  { id:"blog_post",         label:"Blog Article",     icon:"ti-article",        color:"#6366F1", group:"Content", desc:"SEO-optimised 1000-word article" },
+  { id:"email_newsletter",  label:"Email Newsletter", icon:"ti-mail",           color:"#059669", group:"Content", desc:"Weekly newsletter with 5 sections" },
+  { id:"press_release",     label:"Press Release",    icon:"ti-news",           color:"#6B7280", group:"Content", desc:"Professional announcement format" },
+  { id:"case_study",        label:"Case Study",       icon:"ti-chart-bar",      color:"#D97706", group:"Content", desc:"Problem → solution → results story" },
+  { id:"video_script",      label:"Video Script",     icon:"ti-video",          color:"#DC2626", group:"Content", desc:"YouTube/Reel script with hooks" },
+  { id:"sales_email",       label:"Sales Email",      icon:"ti-send",           color:"#7C3AED", group:"Sales",   desc:"Cold outreach with pain-point focus" },
+  { id:"weekly_plan",       label:"Weekly Content Plan",icon:"ti-calendar-week",color:"#0891B2", group:"Special", desc:"7-day content calendar with 5 posts per day" },
+  { id:"topic_ideas",       label:"Topic Ideas",      icon:"ti-bulb",           color:"#F59E0B", group:"Special", desc:"30 content ideas tailored to your business" },
 ]
 
-const CONTENT_GROUPS = ["Social","Email","Written","Video","Paid","PR","Brand"]
+const SOCIAL_PLATFORMS = [
+  { id:"linkedin",  label:"LinkedIn",  icon:"ti-brand-linkedin",  color:"#0A66C2" },
+  { id:"twitter",   label:"Twitter/X", icon:"ti-brand-x",         color:"#000000" },
+  { id:"instagram", label:"Instagram", icon:"ti-brand-instagram", color:"#E1306C" },
+  { id:"facebook",  label:"Facebook",  icon:"ti-brand-facebook",  color:"#1877F2" },
+]
 
-const CHANNELS = ["LinkedIn","Twitter / X","Instagram","Email","WhatsApp","SMS","YouTube","TikTok","Facebook"]
+const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
 
-const DEFAULT_BRAND = {
-  name: "SIXXAB AI",
-  tone: "direct, confident, founder-to-founder",
-  target: "founders, entrepreneurs and SMB owners",
-  cta: "Start at startupsinabox.com",
-  tagline: "Your business runs itself.",
-  colours: { primary:"#EF9F27", dark:"#0A0E1A", light:"#F5F5F0" }
-}
+const DEFAULT_BRAND = { name:"", industry:"", audience:"", tone:"Professional", usp:"", voice:"First person" }
 
 export default function StudioPage() {
-  const [activeType,    setActiveType]    = useState("linkedin_post")
-  const [activeGroup,   setActiveGroup]   = useState("Social")
-  const [params,        setParams]        = useState({ topic:"", keyword:"", platform:"", length:"", audience:"", objective:"", purpose:"", recipientRole:"", announcement:"", wordCount:"600-800", stage:"warm prospect", product:"SIXXAB AI" })
-  const [brand,         setBrand]         = useState(DEFAULT_BRAND)
-  const [crmContacts,   setCrmContacts]   = useState([])
-  const [useCrm,        setUseCrm]        = useState(false)
-  const [loading,       setLoading]       = useState(false)
-  const [output,        setOutput]        = useState("")
-  const [history,       setHistory]       = useState([]) // {type, label, output, timestamp}
-  const [activeTab,     setActiveTab]     = useState("create") // create | brand | history | calendar
-  const [toast,         setToast]         = useState(null)
-  const [calendarItems, setCalendarItems] = useState([])
-  const [publishing,    setPublishing]    = useState(false)
-  const [publishResult, setPublishResult] = useState(null)
-  const [showPublish,   setShowPublish]   = useState(false)
-  const [socialStatus,  setSocialStatus]  = useState({}) // connected platforms
-  const [selPlatforms,  setSelPlatforms]  = useState([]) // selected for publish
-  const [scheduleAt,    setScheduleAt]    = useState("") // ISO datetime
-  const [statusLoaded,  setStatusLoaded]  = useState(false)
+  const [activeType,   setActiveType]   = useState("linkedin_post")
+  const [activeTab,    setActiveTab]    = useState("create") // create | weekly | topics | history | calendar
+  const [params,       setParams]       = useState({ topic:"", keyword:"", platform:"", audience:"", objective:"", product:"SIXXAB AI", wordCount:"600-800" })
+  const [output,       setOutput]       = useState("")
+  const [loading,      setLoading]      = useState(false)
+  const [brand,        setBrand]        = useState(DEFAULT_BRAND)
+  const [history,      setHistory]      = useState([])
+  const [calPosts,     setCalPosts]     = useState([])
+  const [socialStatus, setSocialStatus] = useState({})
+  const [selPlatforms, setSelPlatforms] = useState([])
+  const [scheduleDate, setScheduleDate] = useState("")
+  const [scheduleTime, setScheduleTime] = useState("09:00")
+  const [publishing,   setPublishing]   = useState(false)
+  const [publishResult,setPublishResult]= useState(null)
+  const [toast,        setToast]        = useState(null)
+  const [weeklyPlan,   setWeeklyPlan]   = useState(null)
+  const [topicIdeas,   setTopicIdeas]   = useState([])
+  const [copied,       setCopied]       = useState(false)
   const outputRef = useRef(null)
 
   useEffect(() => {
-    try { setCrmContacts(JSON.parse(localStorage.getItem("sixxab_crm_contacts")||"[]")) } catch {}
-    try { setHistory(JSON.parse(localStorage.getItem("sixxab_studio_history")||"[]")) } catch {}
-    try { const b = JSON.parse(localStorage.getItem("sixxab_brand")||"{}"); if(b.name) setBrand({...DEFAULT_BRAND,...b}) } catch {}
-    try { setCalendarItems(JSON.parse(localStorage.getItem("sixxab_content_calendar")||"[]")) } catch {}
-    // Sync with CRM updates
-    const onUpdate = () => { try { setCrmContacts(JSON.parse(localStorage.getItem("sixxab_crm_contacts")||"[]")) } catch {} }
-    window.addEventListener("sixxab_crm_updated", onUpdate)
-    return () => window.removeEventListener("sixxab_crm_updated", onUpdate)
-  }, [])
-
-  function showToast(msg, ok=true) { setToast({msg,ok}); setTimeout(()=>setToast(null),3500) }
-  const setP = (k,v) => setParams(f=>({...f,[k]:v}))
-  const setBrandField = (k,v) => { const nb = {...brand,[k]:v}; setBrand(nb); localStorage.setItem("sixxab_brand", JSON.stringify(nb)) }
-
-  const ct = CONTENT_TYPES.find(c=>c.id===activeType) || CONTENT_TYPES[0]
-
-  async function generate() {
-    const mainParam = params.topic || params.purpose || params.announcement || params.product
-    if (!mainParam) { showToast("Fill in the content topic or subject first", false); return }
-    setLoading(true); setOutput("")
+    try { const b=JSON.parse(localStorage.getItem(BRAND_KEY)||"{}"); if(b.name) setBrand({...DEFAULT_BRAND,...b}) } catch {}
+    setHistory(loadHistory())
+    setCalPosts(loadPosts())
+    // Load status
+    fetchStatus()
+    // Load draft passed from calendar/social
     try {
-      const r = await fetch("/api/studio", {
+      const d=sessionStorage.getItem(DRAFT_KEY)
+      if(d){ const {content}=JSON.parse(d); setOutput(content); setActiveTab("create"); sessionStorage.removeItem(DRAFT_KEY) }
+    } catch {}
+    // Listen for cross-page updates
+    const onUpdate=()=>setCalPosts(loadPosts())
+    window.addEventListener("sixxab_posts_updated",onUpdate)
+    return ()=>window.removeEventListener("sixxab_posts_updated",onUpdate)
+  },[])
+
+  async function fetchStatus() {
+    try { const r=await fetch("/api/social/status"); const d=await r.json(); setSocialStatus(d.status||{}) } catch {}
+  }
+
+  function saveBrand(b) { setBrand(b); try{localStorage.setItem(BRAND_KEY,JSON.stringify(b))}catch{} }
+  function p(k,v) { setParams(prev=>({...prev,[k]:v})) }
+  function showToast(msg,ok=true){ setToast({msg,ok}); setTimeout(()=>setToast(null),4000) }
+
+  // ── Generate content ──────────────────────────────────────────
+  async function generate() {
+    const ct = CONTENT_TYPES.find(t=>t.id===activeType)
+    setLoading(true); setOutput(""); setPublishResult(null)
+    try {
+      const brandCtx = brand.name ? `\nBrand: ${brand.name} | Industry: ${brand.industry} | Audience: ${brand.audience} | Tone: ${brand.tone} | USP: ${brand.usp}` : ""
+      const r = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ type:activeType, params, crmContacts: useCrm ? crmContacts.slice(0,10) : [], brand })
+        body: JSON.stringify({ messages:[{ role:"user", content: buildPrompt(ct, params, brandCtx) }] })
       })
       const d = await r.json()
-      if (!r.ok || d.error) { showToast(d.error||"Generation failed", false); setLoading(false); return }
-      setOutput(d.content)
+      if(!r.ok || d.error) { showToast(d.error||"Generation failed",false); setLoading(false); return }
+      const text = d.reply || ""
+      setOutput(text)
       // Save to history
-      const newItem = { id:Date.now(), type:activeType, label:ct.label, topic:mainParam, output:d.content, timestamp:new Date().toISOString() }
-      const newHistory = [newItem, ...history].slice(0,50)
-      setHistory(newHistory)
-      localStorage.setItem("sixxab_studio_history", JSON.stringify(newHistory))
-      outputRef.current?.scrollIntoView({ behavior:"smooth" })
-    } catch { showToast("Network error", false) }
+      const item = { id:Date.now(), type:activeType, label:ct.label, topic:params.topic||params.objective||"Generated", output:text, createdAt:new Date().toISOString() }
+      const nh = [item,...history].slice(0,100)
+      setHistory(nh); saveHistory(nh)
+      // Parse weekly plan or topic ideas
+      if(activeType==="weekly_plan") parseWeeklyPlan(text)
+      if(activeType==="topic_ideas") parseTopicIdeas(text)
+    } catch(e){ showToast("Error: "+e.message,false) }
     setLoading(false)
   }
 
-  function addToCalendar() {
-    if (!output) return
-    const mainParam = params.topic || params.purpose || params.announcement || params.product
-    // Store draft to sessionStorage for calendar to pick up
-    try {
-      sessionStorage.setItem("sixxab_studio_draft", JSON.stringify({ content: output, type: activeType }))
-    } catch {}
-    // Also keep local studio calendar
-    const day = ["Monday","Tuesday","Wednesday","Thursday","Friday"]
-    const newItem = { id:Date.now(), type:activeType, label:ct.label, topic:mainParam, output, day:day[calendarItems.length%5], channel:ct.group, scheduled:false }
-    const updated = [...calendarItems, newItem]
-    setCalendarItems(updated)
-    localStorage.setItem("sixxab_content_calendar", JSON.stringify(updated))
-    // Open full calendar in new tab
-    window.open("/calendar", "_blank")
-    showToast("Opening calendar with content pre-loaded…")
+  function buildPrompt(ct, params, brandCtx) {
+    const base = `You are an expert content strategist and copywriter for ${brand.name||"a business"}.${brandCtx}\n\n`
+    switch(ct.id) {
+      case "weekly_plan": return `${base}Create a complete 7-day social media content plan for this week.\nBusiness: ${brand.name||params.topic} | Industry: ${brand.industry} | Audience: ${brand.audience}\n\nFor each day Mon-Sun, provide 3 post ideas:\n- Platform (LinkedIn/Twitter/Instagram)\n- Topic/Hook (first line)\n- Content type (educational/promotional/personal/engagement)\n- Best posting time\n\nFormat as:\n## MONDAY\n**Post 1:** [Platform] | [Time] | [Type]\nHook: [First line]\nContent: [2-3 sentence description]\n\nMake every post specific to ${brand.industry||"business"} and highly engaging. Include mix of educational (60%), promotional (20%), personal (20%).`
+      case "topic_ideas": return `${base}Generate 30 content topic ideas for ${brand.name||"a business"} in ${brand.industry||"business"}.\n\nTarget audience: ${brand.audience||"entrepreneurs and business owners"}\nBusiness USP: ${brand.usp||"AI-powered business automation"}\n\nFormat as numbered list:\n1. [Topic] — [Platform] — [Why this works]\n\nInclude:\n- 10 LinkedIn thought leadership topics\n- 8 Twitter/X thread ideas\n- 6 Instagram content ideas\n- 4 video script topics\n- 2 newsletter topic ideas\n\nMake topics specific, timely and optimised for the ${new Date().getFullYear()} algorithm.`
+      case "linkedin_post": return `${base}Write a high-engagement LinkedIn post about: ${params.topic}\nObjective: ${params.objective||"grow audience and generate leads"}\nTone: ${brand.tone||"Professional"}\n\nStructure:\n- Hook (controversial/surprising/question — 1 line)\n- 3-5 short paragraphs with insights\n- Practical takeaway\n- Call to action\n- 3-5 relevant hashtags\n\nKeep under 700 words. Use line breaks. No em dashes. Personal voice.`
+      case "twitter_thread": return `${base}Write a Twitter thread (7-10 tweets) about: ${params.topic}\n\nFormat:\n1/ Hook tweet (makes people want to read more)\n2/ through 9/ — insights, stats, examples\n10/ CTA tweet\n\nEach tweet max 280 chars. Numbered format. Punchy and shareable.`
+      case "email_newsletter": return `${base}Write a weekly email newsletter.\nTopic: ${params.topic}\nWord count: ${params.wordCount||"600-800"}\n\nStructure:\n- Subject line (5 options)\n- Preview text\n- Opening hook\n- Main insight (3 sections)\n- Quick win tip\n- Resource recommendation\n- Closing CTA\n\nTone: ${brand.tone||"conversational and professional"}`
+      case "blog_post": return `${base}Write a comprehensive blog article.\nTopic: ${params.topic}\nKeyword: ${params.keyword||params.topic}\nWord count: ${params.wordCount||"1000-1200"}\n\nInclude: SEO title, meta description, introduction, 5 H2 sections with content, conclusion, internal link suggestions.`
+      default: return `${base}Create ${ct.label} content about: ${params.topic||params.objective}\nObjective: ${params.objective}\nTone: ${brand.tone||"Professional"}\nAudience: ${brand.audience||"business professionals"}\n\nMake it highly engaging, specific and actionable.`
+    }
   }
 
-  // Load social connection status once
-  useEffect(() => {
-    if (statusLoaded) return
-    fetch("/api/social/status").then(r=>r.json()).then(d=>{ setSocialStatus(d.status||{}); setStatusLoaded(true) }).catch(()=>{})
-  }, [statusLoaded])
+  function parseWeeklyPlan(text) {
+    const days = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"]
+    const plan = {}
+    days.forEach(day => {
+      const idx = text.indexOf(`## ${day}`)
+      const nextIdx = days.map(d=>`## ${d}`).find((s,i) => i > days.indexOf(`## ${day}`) && text.includes(s))
+      if(idx !== -1) {
+        const chunk = text.slice(idx, nextIdx ? text.indexOf(nextIdx) : undefined)
+        plan[day] = chunk
+      }
+    })
+    setWeeklyPlan(plan)
+  }
 
-  const SOCIAL_PLATFORMS = [
-    {id:"linkedin",  label:"LinkedIn",  icon:"ti-brand-linkedin",  color:"#0A66C2"},
-    {id:"twitter",   label:"X",         icon:"ti-brand-x",         color:"#000000"},
-    {id:"facebook",  label:"Facebook",  icon:"ti-brand-facebook",  color:"#1877F2"},
-    {id:"instagram", label:"Instagram", icon:"ti-brand-instagram", color:"#E1306C"},
-    {id:"youtube",   label:"YouTube",   icon:"ti-brand-youtube",   color:"#FF0000"},
-  ]
+  function parseTopicIdeas(text) {
+    const lines = text.split("\n").filter(l => /^\d+\./.test(l.trim()))
+    setTopicIdeas(lines.map((l,i)=>({ id:i+1, text:l.replace(/^\d+\.\s*/,""), selected:false })))
+  }
 
-  async function publishToSocial() {
-    if (!output) return
-    if (!selPlatforms.length) { showToast("Select at least one platform", false); return }
-    const notConnected = selPlatforms.filter(p => !socialStatus[p]?.connected)
-    if (notConnected.length) {
-      showToast(`Connect ${notConnected.join(", ")} first — go to Social Hub`, false)
-      return
+  // ── Send to calendar ──────────────────────────────────────────
+  function sendToCalendar(content, type, platform) {
+    const post = {
+      id:       Date.now() + Math.random(),
+      title:    params.topic || params.objective || type || "Content Studio Post",
+      content,
+      platforms: platform ? [platform] : selPlatforms.length ? selPlatforms : ["linkedin"],
+      date:     scheduleDate || getTodayDate(),
+      time:     scheduleTime || "09:00",
+      status:   scheduleDate ? "scheduled" : "draft",
+      type:     activeType,
+      source:   "studio",
+      createdAt: new Date().toISOString(),
     }
+    const updated = [post, ...loadPosts()]
+    savePosts(updated)
+    setCalPosts(updated)
+    // Pass to calendar via sessionStorage too
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ content, type: activeType }))
+    showToast(scheduleDate ? `Scheduled for ${scheduleDate} at ${scheduleTime}` : "Saved to Calendar as draft!")
+    window.open("/calendar","_blank")
+  }
+
+  // ── Publish now ───────────────────────────────────────────────
+  async function publishNow() {
+    if(!output||!selPlatforms.length){ showToast("Select platforms first",false); return }
+    const notConn = selPlatforms.filter(p=>!socialStatus[p]?.connected)
+    if(notConn.length){ showToast(`Connect ${notConn.join(", ")} in Social Hub first`,false); return }
     setPublishing(true); setPublishResult(null)
     try {
-      const r = await fetch("/api/social/publish", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platforms: selPlatforms, content: output, scheduleAt: scheduleAt||undefined })
+      const r = await fetch("/api/social/publish",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ platforms:selPlatforms, content:output })
       })
       const d = await r.json()
-      if (!r.ok && !d.published) { showToast(d.error||"Publish failed", false); setPublishing(false); return }
       setPublishResult(d)
-      const n = d.published?.length || 0
-      showToast(n > 0 ? `Published to ${n} platform${n!==1?"s":""}!` : "Publish failed — check results", n>0)
-    } catch { showToast("Network error — check connection", false) }
+      if(d.published?.length>0){
+        showToast(`Published to ${d.published.length} platform${d.published.length!==1?"s":""}! 🎉`)
+        // Mark in calendar
+        const post={ id:Date.now(), title:params.topic||"Studio Post", content:output, platforms:selPlatforms, date:getTodayDate(), time:new Date().toTimeString().slice(0,5), status:"published", publishedAt:new Date().toISOString(), source:"studio" }
+        const updated=[post,...loadPosts()]
+        savePosts(updated); setCalPosts(updated)
+      } else { showToast(`Failed: ${d.failed?.[0]?.error||"Unknown error"}`,false) }
+    } catch(e){ showToast("Network error: "+e.message,false) }
     setPublishing(false)
   }
 
-  function openInSocialHub() {
-    if (!output) return
-    try {
-      sessionStorage.setItem("sixxab_studio_draft", JSON.stringify({ content: output, type: activeType }))
-    } catch {}
-    window.open("/social", "_blank")
-  }
+  function getTodayDate(){ return new Date().toISOString().slice(0,10) }
 
-  function exportMd() {
-    if (!output) return
-    const blob = new Blob([`# ${ct.label}: ${params.topic||params.purpose||""}\n\n${output}`], {type:"text/markdown"})
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob)
-    a.download = `sixxab-${activeType}-${Date.now()}.md`; a.click()
-  }
+  function copy(text=output){ navigator.clipboard?.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),2000); showToast("Copied!") }
 
-  // Field definitions per content type
-  const FIELDS = {
-    linkedin_post:     [["topic","What is this post about? *","e.g. How I got 10 customers in 48 hours using SIXXAB AI"]],
-    twitter_thread:    [["topic","Thread topic *","e.g. 7 things solo founders waste time on that AI can automate"]],
-    instagram_carousel:[["topic","Carousel topic *","e.g. 5 signs you need an autonomous business platform"]],
-    email_campaign:    [["purpose","Email purpose *","e.g. Introduce SIXXAB AI to HVAC contractors in Dallas"],["recipientRole","Recipient role","e.g. HVAC business owner, Dallas TX"]],
-    email_sequence:    [["purpose","Sequence goal *","e.g. Nurture warm leads toward booking a discovery call"],["stage","Audience stage","e.g. Engaged with LinkedIn post, not yet booked a call"]],
-    blog_post:         [["topic","Blog topic *","e.g. Why HVAC businesses in Texas need AI automation in 2025"],["keyword","SEO keyword","e.g. HVAC business automation Texas"],["wordCount","Word count","600–800"]],
-    video_script:      [["topic","Video topic *","e.g. How to validate your business idea in 90 seconds"],["platform","Platform","YouTube / TikTok / Instagram Reels"],["length","Video length","3–5 minutes"]],
-    ad_copy:           [["product","Product/offer *","SIXXAB AI — Autonomous Business Platform"],["platform","Ad platform","LinkedIn / Meta / Google"],["audience","Target audience","Founders and SMB owners, 25–55"],["objective","Campaign objective","Trial signups / demo bookings"]],
-    press_release:     [["announcement","Announcement *","e.g. SIXXAB AI launches 30 vertical agent packs for US and European markets"]],
-    brand_story:       [["product","Your brand name *","SIXXAB AI"]],
-  }
+  const connectedPlatforms = SOCIAL_PLATFORMS.filter(p=>socialStatus[p.id]?.connected)
+  const CT = CONTENT_TYPES.find(t=>t.id===activeType)
 
-  const fields = FIELDS[activeType] || [["topic","Content topic *",""]]
+  return(<>
+    <Head><title>SIXXAB AI — Content Studio</title></Head>
+    <style>{`
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{background:#F4F4F0;font-family:'Inter',system-ui,sans-serif}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      .fu{animation:fadeUp .25s ease}
+      .card{background:#fff;border-radius:13px;border:1px solid #E2E8F0;overflow:hidden}
+      .inp{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:9px;font-size:13.5px;color:${N};font-family:inherit;outline:none;transition:border .15s;background:#fff}
+      .inp:focus{border-color:${AMBER}}
+      textarea.inp{resize:vertical;line-height:1.65}
+      .tab{padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;transition:all .14s}
+      .ton{background:#fff;color:${N};box-shadow:0 1px 4px rgba(0,0,0,.1)}
+      .toff{background:transparent;color:#64748B}
+      .type-btn{padding:10px 14px;border-radius:10px;border:1.5px solid;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:500;transition:all .14s;text-align:left;display:flex;align-items:center;gap:8px}
+      .plat-btn{padding:7px 14px;border-radius:8px;border:1.5px solid;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;transition:all .14s}
+      .btn-amber{padding:10px 20px;border-radius:10px;background:${AMBER};color:${N};border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;transition:all .15s}
+      .btn-amber:disabled{opacity:.55;cursor:not-allowed}
+      .btn-outline{padding:9px 16px;border-radius:9px;background:transparent;border:1.5px solid #E2E8F0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:${N};display:flex;align-items:center;gap:6px;transition:all .14s}
+      .btn-outline:hover{background:#F8F9FA;border-color:#CBD5E1}
+      ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(239,159,39,.35);border-radius:2px}
+    `}</style>
+    <SixxabNav active="/studio"/>
 
-  return (
-    <>
-      <Head>
-        <title>SIXXAB AI — Content Studio · CMO Suite</title>
-        <meta name="description" content="AI Content Studio — generate LinkedIn posts, email campaigns, blog posts, video scripts, ad copy and more. Powered by CMO advisor."/>
-      </Head>
-      <style>{`
-        body{background:#F4F4F0}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        .fu{animation:fadeUp .3s ease both}
-        .card{background:#fff;border-radius:13px;border:1px solid #E2E8F0;overflow:hidden}
-        .inp{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:9px;font-size:13px;color:${N};background:#fff;transition:border .15s;font-family:inherit}
-        .inp:focus{border-color:${PINK};outline:none}
-        textarea.inp{resize:vertical;line-height:1.6}
-        .tab-btn{padding:7px 14px;border-radius:8px;border:none;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;background:transparent;color:#64748B;transition:all .14s}
-        .tab-btn.on{background:#fff;color:${N};box-shadow:0 1px 4px rgba(0,0,0,.08)}
-        .type-btn{display:flex;align-items:center;gap:7px;width:100%;padding:9px 11px;border:none;background:transparent;cursor:pointer;font-family:inherit;border-radius:9px;transition:all .14s;border-left:3px solid transparent;text-align:left}
-        .type-btn:hover{background:#F8F9FA}
-        .type-btn.on{background:#F8F9FA;border-left-color:var(--tc)}
-        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:${PINK};border-radius:2px}
-      `}</style>
+    {toast&&<div className="fu" style={{position:"fixed",bottom:20,right:16,zIndex:999,padding:"11px 18px",borderRadius:11,background:toast.ok?"#E1F5EE":"#FEF2F2",border:`1px solid ${toast.ok?"#6EE7B7":"#FECACA"}`,fontSize:13,fontWeight:500,color:toast.ok?"#085041":"#991B1B",boxShadow:"0 4px 16px rgba(0,0,0,.12)"}}>{toast.ok?"✓":"✗"} {toast.msg}</div>}
 
-      <SixxabNav active="/studio"/>
-
-      {/* Toast */}
-      {toast && <div style={{position:"fixed",bottom:24,right:24,zIndex:999,padding:"10px 18px",borderRadius:10,background:toast.ok?"#E1F5EE":"#FEF2F2",border:`1px solid ${toast.ok?"#6EE7B7":"#FECACA"}`,fontSize:13,fontWeight:500,color:toast.ok?"#085041":"#991B1B",boxShadow:"0 4px 16px rgba(0,0,0,.1)",animation:"fadeUp .3s ease"}}>
-        {toast.ok?"✓":"✗"} {toast.msg}
-      </div>}
-
-      {/* Header */}
-      <div style={{background:N,padding:"16px 4%",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:44,height:44,borderRadius:11,background:"rgba(212,83,126,.18)",border:"1.5px solid rgba(212,83,126,.4)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <i className="ti ti-sparkles" style={{fontSize:22,color:PINK}} aria-hidden="true"/>
-            </div>
-            <div>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:2}}>
-                <h1 style={{fontFamily:"Georgia,serif",fontSize:18,fontWeight:700,color:CHALK,letterSpacing:.5}}>
-                  SIXXAB <span style={{color:PINK,fontStyle:"italic"}}>Content Studio</span>
-                </h1>
-                <span style={{padding:"2px 9px",borderRadius:20,background:"rgba(212,83,126,.15)",border:"1px solid rgba(212,83,126,.35)",fontSize:10,fontWeight:600,color:"#F9A8D4"}}>CMO Suite</span>
-              </div>
-              <p style={{fontSize:12,color:"rgba(245,245,240,.45)"}}>10 content types · Social · Email · Blog · Video · Ads · PR · Brand story · CRM-synced</p>
-            </div>
-          </div>
-          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-            {[["CRM",crmContacts.length,"#1D9E75"],["History",history.length,PINK],["Calendar",calendarItems.length,"#EF9F27"]].map(([l,v,c])=>(
-              <div key={l} style={{textAlign:"center",padding:"5px 12px",borderRadius:8,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)"}}>
-                <div style={{fontFamily:"Georgia",fontSize:18,color:c,letterSpacing:.5}}>{v}</div>
-                <div style={{fontSize:9.5,color:"rgba(245,245,240,.4)",textTransform:"uppercase",letterSpacing:".07em"}}>{l}</div>
-              </div>
-            ))}
-            <a href="/leads" style={{padding:"6px 14px",borderRadius:8,background:"rgba(29,158,117,.2)",border:"1px solid rgba(29,158,117,.4)",fontSize:12,fontWeight:500,color:"#6EE7B7",textDecoration:"none"}}>Lead Gen →</a>
-            <a href="/proposal" style={{padding:"6px 14px",borderRadius:8,background:"rgba(55,138,221,.2)",border:"1px solid rgba(55,138,221,.4)",fontSize:12,fontWeight:500,color:"#93C5FD",textDecoration:"none"}}>Proposals →</a>
-          </div>
+    {/* Header */}
+    <div style={{background:N,padding:"14px 5%",borderBottom:"1px solid rgba(255,255,255,.07)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+        <div>
+          <h1 style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:CHALK,marginBottom:2}}>Content <span style={{color:AMBER,fontStyle:"italic"}}>Studio</span></h1>
+          <p style={{fontSize:11.5,color:"rgba(245,245,240,.4)"}}>Generate · Schedule · Publish · Sync with Calendar & Social Hub</p>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <a href="/calendar" style={{padding:"6px 14px",borderRadius:8,background:"rgba(239,159,39,.15)",border:"1px solid rgba(239,159,39,.3)",fontSize:12.5,color:AMBER,textDecoration:"none",fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+            <i className="ti ti-calendar" style={{fontSize:12}} aria-hidden="true"/> Calendar {calPosts.length>0&&<span style={{background:AMBER,color:N,borderRadius:10,padding:"1px 6px",fontSize:10,fontWeight:700}}>{calPosts.length}</span>}
+          </a>
+          <a href="/social" style={{padding:"6px 14px",borderRadius:8,background:"rgba(212,83,126,.15)",border:"1px solid rgba(212,83,126,.3)",fontSize:12.5,color:PINK,textDecoration:"none",fontWeight:600,display:"flex",alignItems:"center",gap:6}}>
+            <i className="ti ti-share" style={{fontSize:12}} aria-hidden="true"/> Social Hub {connectedPlatforms.length>0&&<span style={{background:GREEN,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:10,fontWeight:700}}>{connectedPlatforms.length} connected</span>}
+          </a>
         </div>
       </div>
+    </div>
 
-      {/* Tab bar */}
-      <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"8px 4%",display:"flex",gap:4}}>
-        <div style={{display:"flex",gap:2,background:"#F1F5F9",borderRadius:9,padding:3}}>
-          {[["create","✦ Create",""],["brand","🎨 Brand Kit",""],["history","📚 History",""],["calendar","📅 Calendar",""]].map(([t,l])=>(
-            <button key={t} className={`tab-btn${activeTab===t?" on":""}`} onClick={()=>setActiveTab(t)}>{l}</button>
+    {/* Tabs */}
+    <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"8px 5%",display:"flex",gap:4,overflowX:"auto"}}>
+      {[["create","✦ Create"],["weekly","📅 Weekly Plan"],["topics","💡 Topic Ideas"],["history","🕐 History"],["calendar","📊 Calendar Queue"]].map(([t,l])=>(
+        <button key={t} className={`tab ${activeTab===t?"ton":"toff"}`} onClick={()=>setActiveTab(t)}>
+          {l}{t==="calendar"&&calPosts.length>0&&<span style={{marginLeft:5,background:AMBER,color:N,borderRadius:8,padding:"1px 5px",fontSize:10,fontWeight:700}}>{calPosts.length}</span>}
+        </button>
+      ))}
+    </div>
+
+    <div style={{maxWidth:1200,margin:"0 auto",padding:"20px 5% 60px",display:"grid",gridTemplateColumns:"280px 1fr",gap:20,alignItems:"start"}}>
+
+      {/* LEFT: Content type selector */}
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        <div className="card" style={{padding:"14px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Content type</div>
+          {["Social","Content","Special"].map(group=>(
+            <div key={group} style={{marginBottom:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#CBD5E1",textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>{group}</div>
+              {CONTENT_TYPES.filter(t=>t.group===group).map(t=>(
+                <button key={t.id} className="type-btn" onClick={()=>{setActiveType(t.id);setOutput("");setPublishResult(null)}}
+                  style={{width:"100%",marginBottom:4,borderColor:activeType===t.id?t.color:"#E2E8F0",background:activeType===t.id?`${t.color}10`:"transparent",color:activeType===t.id?t.color:N}}>
+                  <i className={`ti ${t.icon}`} style={{fontSize:14,flexShrink:0}} aria-hidden="true"/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12.5,fontWeight:activeType===t.id?700:500}}>{t.label}</div>
+                    <div style={{fontSize:10.5,color:"#94A3B8",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center"}}>
-          <label style={{display:"flex",alignItems:"center",gap:6,fontSize:12.5,color:"#64748B",cursor:"pointer"}}>
-            <div onClick={()=>setUseCrm(u=>!u)} style={{width:34,height:18,borderRadius:9,background:useCrm?"#1D9E75":"#E2E8F0",position:"relative",transition:"background .2s",cursor:"pointer"}}>
-              <div style={{width:14,height:14,borderRadius:"50%",background:"#fff",position:"absolute",top:2,left:useCrm?18:2,transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.2)"}}/>
+
+        {/* Brand settings */}
+        <div className="card" style={{padding:"14px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Brand voice</div>
+          {[["name","Business name","BigTech Consulting"],["industry","Industry","Technology Consulting"],["audience","Target audience","CTOs, IT Directors"],["tone","Tone","Professional"],["usp","USP","AI-powered IT transformation"]].map(([k,l,ph])=>(
+            <div key={k} style={{marginBottom:8}}>
+              <label style={{fontSize:11,color:"#94A3B8",display:"block",marginBottom:3}}>{l}</label>
+              <input className="inp" style={{fontSize:12.5,padding:"7px 10px"}} value={brand[k]||""} placeholder={ph} onChange={e=>saveBrand({...brand,[k]:e.target.value})}/>
             </div>
-            Sync CRM ({crmContacts.length} contacts)
-          </label>
+          ))}
         </div>
       </div>
 
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"20px 20px 60px"}}>
+      {/* RIGHT: Main content area */}
+      <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
-        {/* ══ CREATE TAB ══ */}
-        {activeTab==="create" && (
-          <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:14}}>
-
-            {/* Type selector */}
-            <div>
-              <div className="card">
-                {CONTENT_GROUPS.map(group=>(
-                  <div key={group}>
-                    <div style={{padding:"7px 12px 4px",fontSize:9.5,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em"}}>{group}</div>
-                    {CONTENT_TYPES.filter(c=>c.group===group).map(ct=>(
-                      <button key={ct.id} className={`type-btn${activeType===ct.id?" on":""}`}
-                        style={{"--tc":ct.color}} onClick={()=>setActiveType(ct.id)}>
-                        <i className={`ti ${ct.icon}`} style={{fontSize:13,color:ct.color,flexShrink:0}} aria-hidden="true"/>
-                        <span style={{fontSize:12,fontWeight:500,color:activeType===ct.id?N:"#64748B",lineHeight:1.3}}>{ct.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                ))}
+        {/* CREATE TAB */}
+        {activeTab==="create"&&(<>
+          <div className="card fu">
+            <div style={{padding:"14px 18px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:32,height:32,borderRadius:9,background:`${CT.color}18`,border:`1px solid ${CT.color}40`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <i className={`ti ${CT.icon}`} style={{fontSize:15,color:CT.color}} aria-hidden="true"/>
+              </div>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:N}}>{CT.label}</div>
+                <div style={{fontSize:12,color:"#64748B"}}>{CT.desc}</div>
               </div>
             </div>
-
-            {/* Main panel */}
-            <div>
-              {/* Input card */}
-              <div className="card fu" style={{marginBottom:14}}>
-                <div style={{padding:"11px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",gap:10}}>
-                  <i className={`ti ${ct.icon}`} style={{fontSize:16,color:ct.color}} aria-hidden="true"/>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:13,fontWeight:600,color:N}}>{ct.label}</div>
-                    <div style={{fontSize:11.5,color:"#64748B"}}>{ct.desc}</div>
-                  </div>
-                  {useCrm && crmContacts.length>0 && <span style={{fontSize:10.5,padding:"2px 9px",borderRadius:8,background:"#E1F5EE",color:"#085041",fontWeight:500}}>Using {Math.min(crmContacts.length,10)} CRM contacts</span>}
+            <div style={{padding:"16px 18px",display:"flex",flexDirection:"column",gap:12}}>
+              <div>
+                <label style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:5}}>Topic / Main message *</label>
+                <input className="inp" value={params.topic} placeholder={`e.g. "5 ways AI is changing ${brand.industry||"business"} in 2025"`} onChange={e=>p("topic",e.target.value)} onKeyDown={e=>e.key==="Enter"&&generate()}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:5}}>Objective</label>
+                  <select className="inp" value={params.objective} onChange={e=>p("objective",e.target.value)}>
+                    <option value="">Choose…</option>
+                    {["Generate leads","Build authority","Drive traffic","Announce product","Educate audience","Build community","Share insight","Promote service"].map(o=><option key={o}>{o}</option>)}
+                  </select>
                 </div>
-                <div style={{padding:"16px 18px",display:"flex",flexDirection:"column",gap:11}}>
-                  {fields.map(([k,label,ph])=>(
-                    <div key={k}>
-                      <label style={{fontSize:10.5,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:4}}>{label}</label>
-                      <input className="inp" placeholder={ph} value={params[k]||""} onChange={e=>setP(k,e.target.value)}/>
-                    </div>
-                  ))}
-                  <button onClick={generate} disabled={loading}
-                    style={{width:"100%",padding:12,borderRadius:10,background:loading?"#F1F5F9":PINK,color:loading?"#94A3B8":"#fff",border:"none",cursor:loading?"not-allowed":"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s"}}>
-                    {loading ? <><div style={{width:14,height:14,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Generating {ct.label}…</> : `✦ Generate ${ct.label} →`}
-                  </button>
+                <div>
+                  <label style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:5}}>Audience</label>
+                  <input className="inp" value={params.audience||brand.audience} placeholder="CTOs, founders…" onChange={e=>p("audience",e.target.value)}/>
                 </div>
               </div>
+              <button className="btn-amber" onClick={generate} disabled={loading||!params.topic.trim()} style={{justifyContent:"center"}}>
+                {loading?<><div style={{width:16,height:16,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Generating…</>:<><i className="ti ti-wand" style={{fontSize:14}} aria-hidden="true"/> Generate {CT.label}</>}
+              </button>
+            </div>
+          </div>
 
-              {/* Output */}
-              {output && (
-                <div ref={outputRef} className="card fu">
-                  <div style={{padding:"11px 16px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                    <div style={{fontSize:13,fontWeight:600,color:N}}>Generated {ct.label}</div>
-                    <div style={{display:"flex",gap:7}}>
-                      <button onClick={addToCalendar} style={{padding:"5px 13px",borderRadius:7,background:"#EFF6FF",border:"1px solid #BFDBFE",fontSize:12,fontWeight:500,color:"#1D4ED8",cursor:"pointer",fontFamily:"inherit"}}>
-                        📅 Schedule
+          {/* Output */}
+          {output&&(
+            <div className="card fu">
+              <div style={{padding:"12px 18px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+                <div style={{fontSize:13.5,fontWeight:700,color:N}}>Generated {CT.label}</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button className="btn-outline" onClick={()=>copy()}><i className="ti ti-copy" style={{fontSize:12}} aria-hidden="true"/>{copied?"Copied!":"Copy"}</button>
+                  <button className="btn-outline" onClick={generate}><i className="ti ti-refresh" style={{fontSize:12}} aria-hidden="true"/>Regenerate</button>
+                </div>
+              </div>
+              <div style={{padding:"18px",maxHeight:360,overflowY:"auto"}}>
+                <pre ref={outputRef} style={{fontFamily:"inherit",fontSize:14,lineHeight:1.75,color:N,whiteSpace:"pre-wrap",wordBreak:"break-word"}}>{output}</pre>
+              </div>
+
+              {/* Publish actions */}
+              <div style={{padding:"14px 18px",borderTop:"1px solid #E8ECF4",background:"#FAFBFC"}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".08em",marginBottom:10}}>Publish or schedule</div>
+
+                {/* Platform selection */}
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+                  {SOCIAL_PLATFORMS.map(plat=>{
+                    const conn=socialStatus[plat.id]?.connected
+                    const sel=selPlatforms.includes(plat.id)
+                    return(
+                      <button key={plat.id} className="plat-btn" onClick={()=>setSelPlatforms(s=>s.includes(plat.id)?s.filter(x=>x!==plat.id):[...s,plat.id])}
+                        style={{borderColor:sel?plat.color:"#E2E8F0",background:sel?`${plat.color}12`:"#fff",color:sel?plat.color:"#94A3B8",opacity:conn?1:0.5,position:"relative"}}>
+                        <i className={`ti ${plat.icon}`} style={{fontSize:13}} aria-hidden="true"/>
+                        {plat.label}
+                        {!conn&&<span style={{fontSize:9,position:"absolute",top:-6,right:-4,background:"#FEF2F2",color:"#DC2626",padding:"1px 4px",borderRadius:4,border:"1px solid #FECACA"}}>setup</span>}
+                        {conn&&sel&&<span style={{fontSize:9,position:"absolute",top:-6,right:-4,background:"#E1F5EE",color:GREEN,padding:"1px 4px",borderRadius:4,border:"1px solid #6EE7B7"}}>✓</span>}
                       </button>
-                      <button onClick={openInSocialHub} style={{padding:"5px 13px",borderRadius:7,background:"#0A0E1A",border:"none",fontSize:12,fontWeight:600,color:"#EF9F27",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
-                        <i className="ti ti-share" style={{fontSize:11}} aria-hidden="true"/>Social Hub
-                      </button>
-                    <button onClick={exportMd} style={{padding:"5px 13px",borderRadius:7,background:"#F5F3FF",border:"1px solid #C4B5FD",fontSize:12,fontWeight:500,color:"#6D28D9",cursor:"pointer",fontFamily:"inherit"}}>
-                        ↓ Export .md
-                      </button>
-                      <button onClick={()=>navigator.clipboard.writeText(output).then(()=>showToast("Copied!"))}
-                        style={{padding:"5px 13px",borderRadius:7,background:PINK,border:"none",fontSize:12,fontWeight:600,color:"#fff",cursor:"pointer",fontFamily:"inherit"}}>
-                        Copy
-                      </button>
-                    </div>
+                    )
+                  })}
+                </div>
+
+                {/* Schedule date/time */}
+                <div style={{display:"flex",gap:10,marginBottom:12,flexWrap:"wrap"}}>
+                  <div style={{flex:1,minWidth:140}}>
+                    <label style={{fontSize:11,color:"#94A3B8",display:"block",marginBottom:4}}>Schedule date (optional)</label>
+                    <input className="inp" type="date" value={scheduleDate} min={getTodayDate()} onChange={e=>setScheduleDate(e.target.value)}/>
                   </div>
-                  <div style={{padding:"16px 20px",fontSize:14,color:N,lineHeight:1.85,whiteSpace:"pre-wrap",fontFamily:"'Plus Jakarta Sans',sans-serif",maxHeight:600,overflowY:"auto"}}>
-                    {output}
+                  <div style={{width:120}}>
+                    <label style={{fontSize:11,color:"#94A3B8",display:"block",marginBottom:4}}>Time</label>
+                    <input className="inp" type="time" value={scheduleTime} onChange={e=>setScheduleTime(e.target.value)}/>
                   </div>
-                  {/* ── Native Social Publish Panel ── */}
-                  {showPublish && (
-                    <div style={{padding:"16px 18px",borderTop:"1px solid #E8ECF4",background:"#F8F9FA"}}>
-                      {/* Header */}
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                        <i className="ti ti-share" style={{fontSize:14,color:N}} aria-hidden="true"/>
-                        <span style={{fontSize:13,fontWeight:600,color:N}}>Publish to social media</span>
-                        <button onClick={openInSocialHub} style={{marginLeft:"auto",padding:"4px 11px",borderRadius:7,background:"#0A0E1A",border:"none",fontSize:11,fontWeight:600,color:"#EF9F27",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
-                          <i className="ti ti-external-link" style={{fontSize:10}} aria-hidden="true"/>Open Social Hub
-                        </button>
-                      </div>
+                </div>
 
-                      {/* Platform selector */}
-                      <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:12}}>
-                        {SOCIAL_PLATFORMS.map(p=>{
-                          const connected = socialStatus[p.id]?.connected
-                          const sel = selPlatforms.includes(p.id)
-                          return (
-                            <button key={p.id}
-                              onClick={()=>connected&&setSelPlatforms(sel?selPlatforms.filter(x=>x!==p.id):[...selPlatforms,p.id])}
-                              title={!connected?`Connect ${p.label} at /social`:""}
-                              style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",borderRadius:20,border:`1.5px solid ${sel?p.color:connected?"#E2E8F0":"#F1F5F9"}`,background:sel?`${p.color}12`:connected?"#fff":"#FAFAFA",cursor:connected?"pointer":"not-allowed",fontFamily:"inherit",opacity:connected?1:.5,transition:"all .14s"}}>
-                              <i className={`ti ${p.icon}`} style={{fontSize:12,color:sel?p.color:connected?p.color:"#CBD5E1"}} aria-hidden="true"/>
-                              <span style={{fontSize:11.5,fontWeight:sel?600:400,color:sel?p.color:connected?N:"#94A3B8"}}>{p.label}</span>
-                              {connected
-                                ? <div style={{width:5,height:5,borderRadius:"50%",background:"#1D9E75",flexShrink:0}}/>
-                                : <span style={{fontSize:9,color:"#94A3B8"}}>connect</span>}
-                            </button>
-                          )
-                        })}
-                      </div>
+                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                  <button className="btn-amber" onClick={publishNow} disabled={publishing||!selPlatforms.length}>
+                    {publishing?<><div style={{width:14,height:14,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .7s linear infinite"}}/>Publishing…</>:<><i className="ti ti-send" style={{fontSize:13}} aria-hidden="true"/>Publish Now</>}
+                  </button>
+                  <button className="btn-outline" onClick={()=>sendToCalendar(output,activeType)}>
+                    <i className="ti ti-calendar-plus" style={{fontSize:13}} aria-hidden="true"/>
+                    {scheduleDate?"Schedule for "+scheduleDate:"Save to Calendar"}
+                  </button>
+                  <button className="btn-outline" onClick={()=>{sessionStorage.setItem(DRAFT_KEY,JSON.stringify({content:output,type:activeType}));window.open("/social","_blank")}}>
+                    <i className="ti ti-share" style={{fontSize:13}} aria-hidden="true"/>Open in Social Hub
+                  </button>
+                </div>
 
-                      {/* Not connected message */}
-                      {Object.values(socialStatus).filter(s=>s?.connected).length===0 && (
-                        <div style={{padding:"9px 12px",background:"#FFFBF2",border:"1px solid rgba(239,159,39,.3)",borderRadius:9,fontSize:12.5,color:"#92400E",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
-                          <i className="ti ti-plug" style={{fontSize:13}} aria-hidden="true"/>
-                          No accounts connected yet.{" "}
-                          <a href="/social" onClick={e=>{e.preventDefault();openInSocialHub()}} style={{color:AMBER,fontWeight:600,textDecoration:"none"}}>Connect accounts in Social Hub →</a>
-                        </div>
-                      )}
-
-                      {/* Schedule */}
-                      <div style={{marginBottom:12}}>
-                        <div style={{fontSize:10.5,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",marginBottom:5}}>Schedule (optional — leave empty to post now)</div>
-                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                          <input type="datetime-local" value={scheduleAt} onChange={e=>setScheduleAt(e.target.value)}
-                            style={{flex:1,padding:"8px 11px",border:"1.5px solid #E2E8F0",borderRadius:9,fontSize:13,fontFamily:"inherit",outline:"none",background:"#fff"}}/>
-                          {scheduleAt&&<button onClick={()=>setScheduleAt("")} style={{fontSize:11.5,color:"#94A3B8",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>Clear</button>}
-                        </div>
-                      </div>
-
-                      {/* Result */}
-                      {publishResult && (
-                        <div style={{marginBottom:10}}>
-                          {publishResult.published?.map((p,i)=>(
-                            <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 11px",borderRadius:8,background:"#E1F5EE",border:"1px solid #6EE7B7",marginBottom:5,fontSize:12.5,color:"#085041"}}>
-                              <i className={`ti ${SOCIAL_PLATFORMS.find(pl=>pl.id===p.platform)?.icon||"ti-check"}`} style={{fontSize:13}} aria-hidden="true"/>
-                              <span style={{flex:1,fontWeight:500}}>Published to {p.platform}</span>
-                              {p.url&&p.url!=="#"&&<a href={p.url} target="_blank" rel="noopener noreferrer" style={{color:"#085041",fontWeight:600,fontSize:11,textDecoration:"none"}}>View post ↗</a>}
-                            </div>
-                          ))}
-                          {publishResult.failed?.map((f,i)=>(
-                            <div key={i} style={{display:"flex",alignItems:"start",gap:8,padding:"7px 11px",borderRadius:8,background:"#FEF2F2",border:"1px solid #FECACA",marginBottom:5,fontSize:12.5,color:"#991B1B"}}>
-                              <i className="ti ti-x" style={{fontSize:13,marginTop:1,flexShrink:0}} aria-hidden="true"/>
-                              <div style={{flex:1}}><strong>{f.platform}:</strong> {f.error}</div>
-                            </div>
-                          ))}
-                          {publishResult.published?.length > 0 && (
-                            <a href="/social?tab=history" onClick={e=>{e.preventDefault();openInSocialHub()}} style={{display:"block",textAlign:"center",fontSize:11.5,color:"#378ADD",marginTop:6,textDecoration:"none"}}>
-                              View publish history in Social Hub →
-                            </a>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Publish button */}
-                      <button onClick={publishToSocial}
-                        disabled={publishing||!selPlatforms.length}
-                        style={{width:"100%",padding:"10px",borderRadius:9,border:"none",fontFamily:"inherit",fontSize:13.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"all .15s",cursor:publishing||!selPlatforms.length?"not-allowed":"pointer",background:publishing||!selPlatforms.length?"#F1F5F9":N,color:publishing||!selPlatforms.length?"#94A3B8":CHALK}}>
-                        {publishing
-                          ? <><div style={{width:13,height:13,border:"2px solid rgba(245,245,240,.3)",borderTopColor:CHALK,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>Publishing…</>
-                          : selPlatforms.length
-                            ? (scheduleAt ? `Schedule to ${selPlatforms.length} platform${selPlatforms.length!==1?"s":""}` : `Publish to ${selPlatforms.length} platform${selPlatforms.length!==1?"s":""} →`)
-                            : "Select a platform above"}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Push to leads */}
-                  <div style={{padding:"11px 16px",borderTop:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",gap:8,alignItems:"center",fontSize:12.5,color:"#64748B"}}>
-                    <i className="ti ti-arrow-right" aria-hidden="true"/>
-                    Share this content: publish it, then
-                    <a href="/leads" style={{color:"#1D9E75",fontWeight:500,textDecoration:"none"}}>add responding prospects to Lead Gen</a>
-                    or
-                    <a href="/proposal" style={{color:"#378ADD",fontWeight:500,textDecoration:"none"}}>write a proposal for a warm lead →</a>
+                {/* Publish result */}
+                {publishResult&&(
+                  <div style={{marginTop:12,padding:"11px 14px",borderRadius:10,background:publishResult.published?.length>0?"#E1F5EE":"#FEF2F2",border:`1px solid ${publishResult.published?.length>0?"#6EE7B7":"#FECACA"}`,fontSize:13}}>
+                    {publishResult.published?.map(p=><div key={p.platform} style={{color:GREEN,marginBottom:2}}>✓ {p.platform}{p.url?<a href={p.url} target="_blank" rel="noopener noreferrer" style={{marginLeft:8,fontSize:12,color:GREEN}}> View post ↗</a>:null}</div>)}
+                    {publishResult.failed?.map(f=><div key={f.platform} style={{color:"#DC2626",marginBottom:2}}>✗ {f.platform}: {f.error}</div>)}
                   </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>)}
+
+        {/* WEEKLY PLAN TAB */}
+        {activeTab==="weekly"&&(
+          <div className="fu">
+            <div className="card" style={{marginBottom:16}}>
+              <div style={{padding:"14px 18px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:N}}>Weekly Content Plan</div>
+                  <div style={{fontSize:12,color:"#64748B"}}>AI generates 7 days of content tailored to your business</div>
+                </div>
+                <button className="btn-amber" onClick={()=>{setActiveType("weekly_plan");generate()}} disabled={loading}>
+                  {loading?<><div style={{width:14,height:14,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .7s linear infinite"}}/>Generating…</>:<><i className="ti ti-wand" style={{fontSize:13}} aria-hidden="true"/>Generate This Week's Plan</>}
+                </button>
+              </div>
+              {!output&&!weeklyPlan&&(
+                <div style={{padding:"32px",textAlign:"center",color:"#94A3B8"}}>
+                  <i className="ti ti-calendar-week" style={{fontSize:40,display:"block",marginBottom:12,color:"#CBD5E1"}} aria-hidden="true"/>
+                  <div style={{fontSize:14,fontWeight:500,marginBottom:8}}>Generate your weekly content plan</div>
+                  <div style={{fontSize:13,lineHeight:1.7}}>Fill in your brand details on the left, then click "Generate This Week's Plan" for a complete Monday-Sunday content calendar with posts for LinkedIn, Twitter, Instagram and more.</div>
+                </div>
+              )}
+              {output&&activeType==="weekly_plan"&&(
+                <div style={{padding:"18px",maxHeight:500,overflowY:"auto"}}>
+                  <pre style={{fontFamily:"inherit",fontSize:13.5,lineHeight:1.8,color:N,whiteSpace:"pre-wrap"}}>{output}</pre>
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* ══ BRAND KIT TAB ══ */}
-        {activeTab==="brand" && (
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="fu">
-            <div className="card" style={{padding:"18px 20px"}}>
-              <div style={{fontSize:13,fontWeight:600,color:N,marginBottom:14}}>Brand configuration</div>
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {[
-                  {k:"name",label:"Brand name",ph:"SIXXAB AI"},
-                  {k:"tagline",label:"Tagline",ph:"Your business runs itself."},
-                  {k:"tone",label:"Brand voice / tone",ph:"direct, confident, founder-to-founder"},
-                  {k:"target",label:"Target audience",ph:"founders, entrepreneurs and SMB owners"},
-                  {k:"cta",label:"Primary CTA",ph:"Start at startupsinabox.com"},
-                ].map(f=>(
-                  <div key={f.k}>
-                    <label style={{fontSize:10.5,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:4}}>{f.label}</label>
-                    <input className="inp" placeholder={f.ph} value={brand[f.k]||""} onChange={e=>setBrandField(f.k,e.target.value)}/>
-                  </div>
-                ))}
-                <div style={{padding:"9px 12px",background:"#E1F5EE",borderRadius:9,border:"1px solid #6EE7B7",fontSize:12.5,color:"#085041"}}>
-                  ✓ Brand kit auto-applied to all generated content
-                </div>
+            {output&&activeType==="weekly_plan"&&(
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button className="btn-amber" onClick={()=>{
+                  // Parse and add all week's posts to calendar
+                  const weekStart = new Date()
+                  const day = weekStart.getDay()
+                  const diff = day===0?-6:1-day
+                  weekStart.setDate(weekStart.getDate()+diff)
+                  const newPosts = DAYS.map((d,i)=>{
+                    const date = new Date(weekStart); date.setDate(weekStart.getDate()+i)
+                    return { id:Date.now()+i, title:`${d} — ${brand.name||"Content"} Post`, content:`Content for ${d}\n\n${output.split(`## ${d.toUpperCase()}`)[1]?.split("##")[0]?.trim()||""}`, platforms:["linkedin"], date:date.toISOString().slice(0,10), time:"09:00", status:"scheduled", source:"studio", createdAt:new Date().toISOString() }
+                  })
+                  const updated=[...newPosts,...loadPosts()]; savePosts(updated); setCalPosts(updated)
+                  showToast("All 7 days added to Calendar!"); window.open("/calendar","_blank")
+                }}>
+                  <i className="ti ti-calendar-plus" style={{fontSize:13}} aria-hidden="true"/>Add All to Calendar
+                </button>
+                <button className="btn-outline" onClick={()=>copy()}><i className="ti ti-copy" style={{fontSize:12}} aria-hidden="true"/>Copy Plan</button>
               </div>
-            </div>
-            <div className="card" style={{padding:"18px 20px",background:N,border:"none"}}>
-              <div style={{fontSize:12,fontWeight:600,color:"rgba(245,245,240,.45)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:14}}>Brand preview</div>
-              <div style={{fontFamily:"Georgia,serif",fontSize:26,fontWeight:700,color:CHALK,letterSpacing:"-0.5px",marginBottom:6}}>{brand.name||"Your Brand"}</div>
-              <div style={{fontSize:15,color:AMBER,fontStyle:"italic",marginBottom:14}}>{brand.tagline||"Your tagline."}</div>
-              <div style={{fontSize:13,color:"rgba(245,245,240,.55)",lineHeight:1.75,marginBottom:14}}>Tone: {brand.tone||"Not set"}</div>
-              <div style={{fontSize:13,color:"rgba(245,245,240,.55)",lineHeight:1.75,marginBottom:14}}>Target: {brand.target||"Not set"}</div>
-              <div style={{padding:"10px 13px",borderRadius:9,background:"rgba(239,159,39,.15)",border:"1px solid rgba(239,159,39,.35)",fontSize:13,fontWeight:600,color:AMBER}}>{brand.cta||"Your CTA here"}</div>
-              <div style={{marginTop:20,fontSize:12,color:"rgba(245,245,240,.35)"}}>
-                Generate a Brand Story to get 3 versions — elevator, social bio and full narrative.
-              </div>
-              <button onClick={()=>{setActiveType("brand_story");setActiveTab("create");setParams(p=>({...p,product:brand.name}))}}
-                style={{marginTop:12,padding:"9px 18px",borderRadius:9,background:PINK,color:"#fff",border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:13,fontWeight:600}}>
-                Generate brand story →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ══ HISTORY TAB ══ */}
-        {activeTab==="history" && (
-          <div className="fu">
-            {history.length===0 ? (
-              <div style={{textAlign:"center",padding:"40px",color:"#94A3B8"}}>
-                <div style={{fontSize:24,marginBottom:8}}>📚</div>
-                <div style={{fontSize:13}}>No content generated yet. Go to Create to generate your first piece.</div>
-              </div>
-            ) : history.map((h,i)=>(
-              <div key={h.id} className="card" style={{padding:"14px 16px",marginBottom:10,display:"flex",gap:12,alignItems:"flex-start"}}>
-                <div style={{flex:1}}>
-                  <div style={{display:"flex",gap:8,marginBottom:4}}>
-                    <span style={{fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:8,background:"#F1F5F9",color:"#64748B"}}>{h.label}</span>
-                    <span style={{fontSize:11,color:"#94A3B8"}}>{new Date(h.timestamp).toLocaleDateString()}</span>
-                  </div>
-                  <div style={{fontSize:13.5,fontWeight:500,color:N,marginBottom:5}}>{h.topic}</div>
-                  <div style={{fontSize:12.5,color:"#64748B",lineHeight:1.65,overflow:"hidden",maxHeight:48,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{h.output.slice(0,180)}…</div>
-                </div>
-                <div style={{display:"flex",gap:6,flexShrink:0}}>
-                  <button onClick={()=>{ setOutput(h.output); setActiveTab("create"); showToast("Loaded into editor") }}
-                    style={{padding:"5px 12px",borderRadius:7,border:"1px solid #E2E8F0",background:"#F8F9FA",fontSize:11.5,color:"#64748B",cursor:"pointer",fontFamily:"inherit"}}>Load</button>
-                  <button onClick={()=>navigator.clipboard.writeText(h.output).then(()=>showToast("Copied!"))}
-                    style={{padding:"5px 12px",borderRadius:7,background:PINK,border:"none",fontSize:11.5,color:"#fff",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>Copy</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ══ CALENDAR TAB ══ */}
-        {activeTab==="calendar" && (
-          <div className="fu" style={{textAlign:"center",padding:"40px 20px"}}>
-            <div style={{width:64,height:64,borderRadius:16,background:"rgba(239,159,39,.12)",border:`2px solid ${AMBER}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,margin:"0 auto 16px"}}>
-              📅
-            </div>
-            <h3 style={{fontFamily:"Georgia,serif",fontSize:22,fontWeight:700,color:N,marginBottom:8}}>Content Publishing Calendar</h3>
-            <p style={{fontSize:14,color:"#64748B",lineHeight:1.75,maxWidth:400,margin:"0 auto 24px"}}>
-              Plan your entire content schedule — monthly and yearly views, direct publishing to all social platforms, status tracking and campaign management.
-            </p>
-            <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-              <button onClick={()=>{try{sessionStorage.setItem("sixxab_studio_draft",JSON.stringify({content:output,type:activeType}))}catch{}window.open("/calendar","_blank")}}
-                disabled={!output}
-                style={{padding:"12px 24px",borderRadius:10,background:output?N:"#F1F5F9",color:output?CHALK:"#94A3B8",border:"none",cursor:output?"pointer":"not-allowed",fontFamily:"inherit",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",gap:8}}>
-                <i className="ti ti-calendar-plus" style={{fontSize:14}} aria-hidden="true"/>
-                {output?"Schedule this content":"Generate content first"}
-              </button>
-              <a href="/calendar" target="_blank" style={{padding:"12px 24px",borderRadius:10,border:"1.5px solid #E2E8F0",background:"#fff",color:N,textDecoration:"none",fontSize:14,fontWeight:500,display:"inline-flex",alignItems:"center",gap:8}}>
-                <i className="ti ti-calendar-month" style={{fontSize:14}} aria-hidden="true"/>Open full calendar
-              </a>
-            </div>
-            {calendarItems.length>0&&(
-              <p style={{fontSize:12,color:"#94A3B8",marginTop:16}}>{calendarItems.length} item{calendarItems.length!==1?"s":""} in your local draft queue</p>
             )}
           </div>
         )}
+
+        {/* TOPICS TAB */}
+        {activeTab==="topics"&&(
+          <div className="fu">
+            <div className="card" style={{marginBottom:16}}>
+              <div style={{padding:"14px 18px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:N}}>Topic Ideas for {brand.name||"Your Business"}</div>
+                  <div style={{fontSize:12,color:"#64748B"}}>30 content ideas tailored to {brand.industry||"your industry"} for growth</div>
+                </div>
+                <button className="btn-amber" onClick={()=>{setActiveType("topic_ideas");generate()}} disabled={loading}>
+                  {loading?<><div style={{width:14,height:14,border:"2px solid rgba(10,14,26,.2)",borderTopColor:N,borderRadius:"50%",animation:"spin .7s linear infinite"}}/>Generating…</>:<><i className="ti ti-bulb" style={{fontSize:13}} aria-hidden="true"/>Generate 30 Topics</>}
+                </button>
+              </div>
+              {topicIdeas.length===0&&(
+                <div style={{padding:"32px",textAlign:"center",color:"#94A3B8"}}>
+                  <i className="ti ti-bulb" style={{fontSize:40,display:"block",marginBottom:12,color:"#CBD5E1"}} aria-hidden="true"/>
+                  <div style={{fontSize:14,fontWeight:500,marginBottom:8}}>Get 30 content ideas instantly</div>
+                  <div style={{fontSize:13,lineHeight:1.7}}>AI analyses your business, industry and audience to generate highly relevant topic ideas across LinkedIn, Twitter, Instagram, video and newsletters.</div>
+                </div>
+              )}
+              {topicIdeas.length>0&&(
+                <div style={{padding:"14px 18px",display:"flex",flexDirection:"column",gap:6,maxHeight:480,overflowY:"auto"}}>
+                  {topicIdeas.map((idea,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"10px 12px",borderRadius:9,background:idea.selected?"#FFFBF2":"#FAFAFA",border:`1px solid ${idea.selected?AMBER:"#E2E8F0"}`,cursor:"pointer",transition:"all .14s"}}
+                      onClick={()=>setTopicIdeas(prev=>prev.map((t,j)=>j===i?{...t,selected:!t.selected}:t))}>
+                      <div style={{width:20,height:20,borderRadius:5,border:`1.5px solid ${idea.selected?AMBER:"#CBD5E1"}`,background:idea.selected?AMBER:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>
+                        {idea.selected&&<i className="ti ti-check" style={{fontSize:11,color:N}} aria-hidden="true"/>}
+                      </div>
+                      <div style={{flex:1,fontSize:13.5,color:N,lineHeight:1.6}}>{idea.text}</div>
+                      <button onClick={e=>{e.stopPropagation();setParams(prev=>({...prev,topic:idea.text.split("—")[0].trim()}));setActiveType("linkedin_post");setActiveTab("create");showToast("Topic loaded — click Generate!")}}
+                        style={{padding:"4px 10px",borderRadius:7,background:AMBER,color:N,border:"none",cursor:"pointer",fontSize:11.5,fontWeight:600,fontFamily:"inherit",flexShrink:0}}>Use</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {topicIdeas.some(t=>t.selected)&&(
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button className="btn-amber" onClick={()=>{
+                  const selected=topicIdeas.filter(t=>t.selected)
+                  selected.forEach((idea,i)=>{
+                    const post={id:Date.now()+i,title:idea.text.split("—")[0].trim(),content:"",platforms:["linkedin"],date:new Date(Date.now()+(i+1)*86400000).toISOString().slice(0,10),time:"09:00",status:"draft",source:"topics",createdAt:new Date().toISOString()}
+                    const updated=[post,...loadPosts()]; savePosts(updated); setCalPosts(updated)
+                  })
+                  showToast(`${selected.length} topics added to Calendar!`); window.open("/calendar","_blank")
+                }}>
+                  <i className="ti ti-calendar-plus" style={{fontSize:13}} aria-hidden="true"/>Add {topicIdeas.filter(t=>t.selected).length} to Calendar
+                </button>
+                <button className="btn-outline" onClick={()=>copy(topicIdeas.filter(t=>t.selected).map(t=>t.text).join("\n"))}><i className="ti ti-copy" style={{fontSize:12}} aria-hidden="true"/>Copy Selected</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* HISTORY TAB */}
+        {activeTab==="history"&&(
+          <div className="card fu">
+            <div style={{padding:"12px 18px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontSize:14,fontWeight:700,color:N}}>Generation history ({history.length})</div>
+              {history.length>0&&<button onClick={()=>{if(confirm("Clear all history?"))setHistory([])}} style={{padding:"4px 10px",borderRadius:7,background:"#FEF2F2",border:"1px solid #FECACA",color:"#DC2626",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Clear all</button>}
+            </div>
+            {history.length===0
+              ?<div style={{padding:"40px",textAlign:"center",color:"#94A3B8",fontSize:14}}>No history yet. Generate content to see it here.</div>
+              :history.map(item=>(
+                <div key={item.id} style={{padding:"14px 18px",borderBottom:"1px solid #F1F5F9"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,flexWrap:"wrap",gap:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:12,fontWeight:600,color:CONTENT_TYPES.find(t=>t.id===item.type)?.color||"#64748B",background:`${CONTENT_TYPES.find(t=>t.id===item.type)?.color||"#64748B"}10`,padding:"2px 8px",borderRadius:6}}>{item.label}</span>
+                      <span style={{fontSize:12.5,fontWeight:500,color:N}}>{item.topic}</span>
+                    </div>
+                    <div style={{display:"flex",gap:6}}>
+                      <button onClick={()=>{setOutput(item.output);setActiveType(item.type);setActiveTab("create");showToast("Loaded!")}} style={{padding:"4px 10px",borderRadius:7,background:"#F8F9FA",border:"1px solid #E2E8F0",fontSize:12,cursor:"pointer",fontFamily:"inherit",color:N}}>Load</button>
+                      <button onClick={()=>sendToCalendar(item.output,item.type)} style={{padding:"4px 10px",borderRadius:7,background:`${AMBER}15`,border:`1px solid ${AMBER}40`,fontSize:12,cursor:"pointer",fontFamily:"inherit",color:AMBER}}>→ Calendar</button>
+                    </div>
+                  </div>
+                  <div style={{fontSize:13,color:"#64748B",lineHeight:1.6,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{item.output}</div>
+                  <div style={{fontSize:11,color:"#CBD5E1",marginTop:4}}>{new Date(item.createdAt).toLocaleString()}</div>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {/* CALENDAR QUEUE TAB */}
+        {activeTab==="calendar"&&(
+          <div className="card fu">
+            <div style={{padding:"12px 18px",borderBottom:"1px solid #E8ECF4",background:"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontSize:14,fontWeight:700,color:N}}>Calendar queue ({calPosts.length} posts)</div>
+              <a href="/calendar" style={{padding:"6px 14px",borderRadius:8,background:AMBER,color:N,textDecoration:"none",fontSize:13,fontWeight:700}}>Open full Calendar →</a>
+            </div>
+            {calPosts.length===0
+              ?<div style={{padding:"40px",textAlign:"center",color:"#94A3B8",fontSize:14}}>No posts in calendar yet. Generate content and add it to calendar.</div>
+              :calPosts.slice(0,20).map(post=>{
+                const SC={published:{color:GREEN,bg:"#E1F5EE"},scheduled:{color:"#1D4ED8",bg:"#EFF6FF"},draft:{color:"#64748B",bg:"#F1F5F9"},failed:{color:"#DC2626",bg:"#FEF2F2"}}
+                const sc=SC[post.status]||SC.draft
+                return(
+                  <div key={post.id} style={{padding:"12px 18px",borderBottom:"1px solid #F1F5F9",display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13.5,fontWeight:500,color:N,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{post.title}</div>
+                      <div style={{fontSize:11.5,color:"#94A3B8",marginTop:2}}>{post.date} {post.time} · {(post.platforms||[]).join(", ")}</div>
+                    </div>
+                    <span style={{padding:"3px 10px",borderRadius:20,background:sc.bg,fontSize:11.5,fontWeight:600,color:sc.color,flexShrink:0,textTransform:"capitalize"}}>{post.status}</span>
+                  </div>
+                )
+              })
+            }
+          </div>
+        )}
       </div>
-    </>
-  )
+    </div>
+  </>)
 }

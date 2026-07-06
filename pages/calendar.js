@@ -36,7 +36,7 @@ const MONTHS  = ["January","February","March","April","May","June","July","Augus
 const WEEKDAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
 const WEEKDAYS_FULL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
 
-const CAL_KEY = "sixxab_cal_posts"
+const CAL_KEY = "sixxab_social_posts"
 
 function loadPosts()  { try { return JSON.parse(localStorage.getItem(CAL_KEY)||"[]") } catch { return [] } }
 function savePosts(p) { try { localStorage.setItem(CAL_KEY, JSON.stringify(p)) } catch {} }
@@ -69,6 +69,14 @@ export default function CalendarPage() {
 
   useEffect(() => {
     setPosts(loadPosts())
+    // Listen for updates from Studio and Social Hub
+    const onUpdate = () => setPosts(loadPosts())
+    window.addEventListener("sixxab_posts_updated", onUpdate)
+    window.addEventListener("storage", (e) => { if (e.key === "sixxab_social_posts") onUpdate() })
+    return () => {
+      window.removeEventListener("sixxab_posts_updated", onUpdate)
+      window.removeEventListener("storage", onUpdate)
+    }
     fetch("/api/social/status").then(r=>r.json()).then(d=>setSocialStatus(d.status||{})).catch(()=>{})
     // Load draft from Studio
     try {
@@ -96,7 +104,7 @@ export default function CalendarPage() {
       setPosts(updated); savePosts(updated)
       showToast("Post updated")
     } else {
-      const post = { id:mkId(), ...form, status:"draft", createdAt:new Date().toISOString() }
+      const post = { id:mkId(), ...form, status: form.date && form.date > new Date().toISOString().slice(0,10) ? 'scheduled' : form.status||'draft', createdAt:new Date().toISOString() }
       const updated = [...posts, post]
       setPosts(updated); savePosts(updated)
       showToast("Post added to calendar")
@@ -232,8 +240,9 @@ export default function CalendarPage() {
             {/* Stats */}
             {[
               ["Total",posts.length,"#94A3B8"],
-              ["Scheduled",posts.filter(p=>p.status==="scheduled").length,"#378ADD"],
-              ["Published",posts.filter(p=>p.status==="published").length,"#1D9E75"],
+              ["Scheduled", posts.filter(p=>p.status==="scheduled").length, "#378ADD"],
+              ["Published", posts.filter(p=>p.status==="published").length, "#1D9E75"],
+              ["Auto-publish", Object.values(socialStatus).filter(s=>s?.connected).length > 0 ? "ON ✓" : "OFF", Object.values(socialStatus).filter(s=>s?.connected).length > 0 ? "#1D9E75" : "#94A3B8"],
             ].map(([l,v,c])=>(
               <div key={l} style={{textAlign:"center",padding:"4px 11px",borderRadius:8,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)"}}>
                 <div style={{fontFamily:"Georgia",fontSize:16,color:c,lineHeight:1}}>{v}</div>
@@ -589,6 +598,7 @@ export default function CalendarPage() {
                     <label style={{fontSize:10.5,fontWeight:600,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".07em",display:"block",marginBottom:5}}>
                       Content
                       <a href="/studio" style={{marginLeft:8,fontSize:11,color:PINK,textDecoration:"none",fontWeight:400,textTransform:"none"}}>Generate in Content Studio ↗</a>
+              <a href="/social" style={{marginLeft:8,fontSize:11,color:"#AMBER",textDecoration:"none",fontWeight:400,textTransform:"none",color:"#EF9F27"}}>Social Hub ↗</a>
                     </label>
                     <textarea className="inp" rows={5} placeholder="Write or paste your post content here…" value={form.content} onChange={e=>setF("content",e.target.value)}/>
                   </div>

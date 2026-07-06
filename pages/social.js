@@ -183,6 +183,16 @@ export default function SocialHub() {
       const item = { id:Date.now(), content:content.slice(0,120), platforms:selected, result:d, timestamp:new Date().toISOString() }
       const nh = [item,...history].slice(0,50)
       setHistory(nh); localStorage.setItem(HISTORY_KEY, JSON.stringify(nh))
+      // Also save to shared calendar store
+      if (d.published?.length > 0) {
+        try {
+          const sharedKey = "sixxab_social_posts"
+          const existing = JSON.parse(localStorage.getItem(sharedKey)||"[]")
+          const post = { id:Date.now(), title:content.slice(0,60)+"…", content, platforms:selected, date:new Date().toISOString().slice(0,10), time:new Date().toTimeString().slice(0,5), status:"published", publishedAt:new Date().toISOString(), source:"social_hub" }
+          localStorage.setItem(sharedKey, JSON.stringify([post,...existing].slice(0,500)))
+          window.dispatchEvent(new Event("sixxab_posts_updated"))
+        } catch {}
+      }
       if (d.success) showToast(`Published to ${d.published?.length} platform${d.published?.length!==1?"s":""}!`)
       else showToast(`Published to ${d.published?.length||0}/${selected.length} — check results below`, d.published?.length>0)
     } catch { showToast("Network error — check connection", false) }
